@@ -1,0 +1,224 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string (required)
+    //   - email: string (required)
+    //   - role: string (required, enum: admin, staff, member)
+    //   - partyRole: string (optional)
+    //   - committeeId: string (optional)
+    //   - createdAt: timestamp (optional)
+    //
+    // Collection: committees
+    // Document ID: {committeeId}
+    // Fields:
+    //   - name: string (required)
+    //   - level: string (required, enum: central, province, district, municipality, ward, wing)
+    //   - province: string (optional)
+    //   - district: string (optional)
+    //   - localLevel: string (optional)
+    //   - ward: int (optional)
+    //   - parentId: string (optional)
+    //
+    // Collection: members
+    // Document ID: {memberId}
+    // Fields:
+    //   - fullName: string (required)
+    //   - email: string (optional)
+    //   - phone: string (optional)
+    //   - province: string (required)
+    //   - district: string (required)
+    //   - localLevel: string (optional)
+    //   - ward: int (optional)
+    //   - joiningDate: string (required)
+    //   - status: string (required, enum: active, inactive, suspended)
+    //   - addedBy: string (optional)
+    //   - qrCode: string (optional)
+    //
+    // Collection: transactions
+    // Document ID: {transactionId}
+    // Fields:
+    //   - type: string (required, enum: income, expense)
+    //   - category: string (required, enum: fee, donation, campaign, administrative, other)
+    //   - amount: number (required)
+    //   - date: timestamp (required)
+    //   - description: string (required)
+    //   - recordedBy: string (required)
+    //
+    // Collection: grievances
+    // Document ID: {grievanceId}
+    // Fields:
+    //   - subject: string (required)
+    //   - description: string (required)
+    //   - submittedBy: string (required)
+    //   - status: string (required, enum: pending, in-review, resolved, closed)
+    //   - priority: string (required, enum: low, medium, high)
+    //   - date: timestamp (required)
+    //
+    // Collection: audit_logs
+    // Document ID: {logId}
+    // Fields:
+    //   - action: string (required)
+    //   - performedBy: string (required)
+    //   - details: string (required)
+    //   - timestamp: timestamp (required)
+    //
+    // Collection: documents
+    // Document ID: {docId}
+    // Fields:
+    //   - title: string (required)
+    //   - description: string (optional)
+    //   - category: string (required, enum: policy, legal, manifesto, finance, other)
+    //   - fileUrl: string (required)
+    //   - fileName: string (required)
+    //   - fileType: string (required)
+    //   - uploadedBy: string (required)
+    //   - uploadedAt: timestamp (required)
+    //   - size: int (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (getUserData().role == 'admin' || 
+         (request.auth.token.email == "beingrg556@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isStaff() {
+      return isAuthenticated() && (getUserData().role == 'staff' || isAdmin());
+    }
+
+    function isFinanceOfficer() {
+      return isAuthenticated() && (getUserData().role == 'finance_officer' || isAdmin());
+    }
+
+    function isFieldCoordinator() {
+      return isAuthenticated() && (getUserData().role == 'field_coordinator' || isAdmin());
+    }
+
+    function isBoothCoordinator() {
+      return isAuthenticated() && (getUserData().role == 'booth_coordinator' || isAdmin());
+    }
+
+    function isMember() {
+      return isAuthenticated() && (getUserData().role == 'member' || isStaff());
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return request.resource.data[field] is string && 
+             request.resource.data[field].size() >= minLen && 
+             request.resource.data[field].size() <= maxLen;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(uid) && 
+                    request.resource.data.role == 'member' && 
+                    isValidEmail(request.resource.data.email);
+      allow update: if (isOwner(uid) && request.resource.data.role == resource.data.role) || isAdmin();
+    }
+
+    match /committees/{committeeId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /members/{memberId} {
+      allow read: if isStaff() || isFieldCoordinator();
+      allow create, update: if isStaff() && 
+                            isValidString('fullName', 2, 100);
+      allow delete: if isAdmin();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isStaff() || isFinanceOfficer();
+      allow create: if isStaff() && request.resource.data.amount > 0;
+      allow update, delete: if isAdmin();
+    }
+
+    match /grievances/{grievanceId} {
+      allow read: if isStaff() || (isAuthenticated() && request.auth.uid == resource.data.submittedBy);
+      allow create: if isAuthenticated();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Audit logs are immutable
+    }
+
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isStaff() && isValidString('title', 2, 200);
+      allow delete: if isAdmin();
+    }
+
+    match /candidates/{candidateId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isStaff() && isValidString('name', 2, 100);
+      allow delete: if isAdmin();
+    }
+
+    match /documents/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isStaff() && 
+                    isValidString('title', 2, 200) && 
+                    request.resource.data.category in ['policy', 'legal', 'manifesto', 'finance', 'other'] &&
+                    request.resource.data.uploadedBy == request.auth.uid;
+      allow update: if isStaff() && 
+                    request.resource.data.uploadedBy == resource.data.uploadedBy &&
+                    request.resource.data.fileUrl == resource.data.fileUrl;
+      allow delete: if isAdmin() || (isStaff() && request.auth.uid == resource.data.uploadedBy);
+    }
+
+    match /supporters/{supporterId} {
+      allow read: if isStaff() || isFieldCoordinator() || isBoothCoordinator();
+      allow create, update: if (isStaff() || isFieldCoordinator() || isBoothCoordinator()) && isValidString('fullName', 2, 100);
+      allow delete: if isAdmin();
+    }
+
+    match /campaigns/{campaignId} {
+      allow read: if isAuthenticated();
+      allow create, update: if (isStaff() || isFieldCoordinator()) && isValidString('title', 2, 200);
+      allow delete: if isAdmin();
+    }
+
+    match /booths/{boothId} {
+      allow read: if isAuthenticated();
+      allow create, update: if (isStaff() || isBoothCoordinator()) && isValidString('name', 2, 100);
+      allow delete: if isAdmin();
+    }
+  }
+}

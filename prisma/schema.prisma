@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// 1. AUTH & RBAC (Users, Roles, Permissions)
+// -----------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String?
+  displayName   String
+  phoneNumber   String?
+  role          String    @default("MEMBER") // ADMIN, STAFF, FINANCE_OFFICER, FIELD_COORDINATOR, BOOTH_COORDINATOR, MEMBER
+  isActive      Boolean   @default(true)
+  
+  // Relations
+  memberProfile Member?
+  auditLogs     AuditLog[]
+  createdPages  CmsPage[] @relation("PageAuthor")
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 3. MEMBER MANAGEMENT
+// -----------------------------------------------------------------------------
+
+model Member {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  membershipId    String    @unique // e.g., NUP-2026-0001
+  fullName        String
+  dateOfBirth     DateTime?
+  gender          String?
+  bloodGroup      String?
+  
+  // Geo-location (Nepal Context)
+  province        String
+  district        String
+  localLevel      String    // Municipality / Rural Municipality
+  ward            Int
+  boothId         String?
+  booth           Booth?    @relation(fields: [boothId], references: [id])
+  
+  // Party specific
+  committeeLevel  String?   // CENTRAL, PROVINCE, DISTRICT, MUNICIPALITY, WARD
+  committeeRole   String?
+  joinedDate      DateTime  @default(now())
+  status          String    @default("ACTIVE") // ACTIVE, SUSPENDED, EXPIRED
+  qrCodeData      String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 4. SUPPORTER / VOTER CRM
+// -----------------------------------------------------------------------------
+
+model Supporter {
+  id              String    @id @default(uuid())
+  fullName        String
+  phoneNumber     String?
+  email           String?
+  
+  // Geo-location
+  province        String
+  district        String
+  localLevel      String
+  ward            Int
+  boothId         String?
+  booth           Booth?    @relation(fields: [boothId], references: [id])
+  
+  supportLevel    String    @default("NEUTRAL") // STRONG, LEANING, NEUTRAL, UNDECIDED, VOLUNTEER, DONOR
+  issues          String?   // Comma separated or JSON
+  notes           String?
+  
+  interactions    Interaction[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Interaction {
+  id              String    @id @default(uuid())
+  supporterId     String
+  supporter       Supporter @relation(fields: [supporterId], references: [id], onDelete: Cascade)
+  
+  type            String    // CALL, VISIT, EVENT, MESSAGE
+  date            DateTime  @default(now())
+  notes           String?
+  handledBy       String    // User ID
+  
+  createdAt       DateTime  @default(now())
+}
+
+// -----------------------------------------------------------------------------
+// 5. ORGANIZATION STRUCTURE (Committees)
+// -----------------------------------------------------------------------------
+
+model Committee {
+  id              String    @id @default(uuid())
+  name            String
+  level           String    // CENTRAL, PROVINCE, DISTRICT, MUNICIPALITY, WARD, WING
+  region          String?   // e.g., "Koshi Province" or "Kathmandu District"
+  establishedDate DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 9. BOOTH / FIELD OPERATIONS
+// -----------------------------------------------------------------------------
+
+model Booth {
+  id              String    @id @default(uuid())
+  name            String
+  code            String    @unique
+  
+  // Geo-location
+  province        String
+  district        String
+  localLevel      String
+  ward            Int
+  
+  totalVoters     Int       @default(0)
+  targetVotes     Int       @default(0)
+  status          String    @default("NEEDS_ATTENTION") // READY, NEEDS_ATTENTION, CRITICAL
+  
+  // Relations
+  members         Member[]
+  supporters      Supporter[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 2. CMS (DYNAMIC FRONTEND)
+// -----------------------------------------------------------------------------
+
+model CmsPage {
+  id              String    @id @default(uuid())
+  slug            String    @unique
+  title           String
+  content         String    // Markdown or HTML
+  status          String    @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  
+  authorId        String
+  author          User      @relation("PageAuthor", fields: [authorId], references: [id])
+  
+  seoTitle        String?
+  seoDescription  String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 6. PUBLIC ISSUE SYSTEM (Grievances)
+// -----------------------------------------------------------------------------
+
+model Issue {
+  id              String    @id @default(uuid())
+  title           String
+  description     String
+  category        String
+  priority        String    @default("MEDIUM") // LOW, MEDIUM, HIGH
+  status          String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  
+  submittedBy     String?   // User ID or anonymous
+  contactInfo     String?   // If anonymous
+  
+  // Geo-location context
+  province        String?
+  district        String?
+  localLevel      String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 7. CAMPAIGN MANAGEMENT
+// -----------------------------------------------------------------------------
+
+model Campaign {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?
+  phase           String    @default("PLANNING") // PLANNING, ACTIVE, COMPLETED, PAUSED
+  
+  startDate       DateTime?
+  endDate         DateTime?
+  
+  targetProvince  String?
+  targetDistrict  String?
+  targetLocalLevel String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 11. EVENTS
+// -----------------------------------------------------------------------------
+
+model Event {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?
+  date            DateTime
+  location        String
+  type            String    // PUBLIC, INTERNAL, RALLY, MEETING
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 13. FINANCE
+// -----------------------------------------------------------------------------
+
+model Transaction {
+  id              String    @id @default(uuid())
+  type            String    // INCOME, EXPENSE
+  category        String    // FEE, DONATION, CAMPAIGN, ADMINISTRATIVE, OTHER
+  amount          Float
+  description     String?
+  date            DateTime  @default(now())
+  
+  recordedBy      String    // User ID
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// SYSTEM LOGS
+// -----------------------------------------------------------------------------
+
+model AuditLog {
+  id              String    @id @default(uuid())
+  action          String
+  entityType      String
+  entityId        String?
+  details         String?
+  
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  
+  ipAddress       String?
+  
+  timestamp       DateTime  @default(now())
+}
