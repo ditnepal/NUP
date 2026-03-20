@@ -49,7 +49,7 @@ router.get('/summary', authenticate, async (req: AuthRequest, res) => {
     } else {
       // Regular Member
       const [myIssues, upcomingEvents] = await Promise.all([
-        prisma.issue.count({ where: { submittedBy: userId } }),
+        prisma.issue.count({ where: { reporterId: userId } }),
         prisma.event.count({ where: { date: { gte: new Date() } } })
       ]);
       summary = { myIssues, upcomingEvents };

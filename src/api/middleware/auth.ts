@@ -9,6 +9,9 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     role: string;
+    roleId?: string;
+    orgUnitId?: string;
+    orgUnitLevel?: string;
   };
 }
 
@@ -25,14 +28,33 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     // Verify user still exists and is active
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, role: true, isActive: true }
+      select: { 
+        id: true, 
+        email: true, 
+        role: true, 
+        isActive: true,
+        roleId: true,
+        orgUnitId: true,
+        orgUnit: {
+          select: {
+            level: true
+          }
+        }
+      }
     });
 
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'Unauthorized: User account is inactive or deleted' });
     }
 
-    req.user = { id: user.id, email: user.email, role: user.role };
+    req.user = { 
+      id: user.id, 
+      email: user.email, 
+      role: user.role,
+      roleId: user.roleId || undefined,
+      orgUnitId: user.orgUnitId || undefined,
+      orgUnitLevel: user.orgUnit?.level || undefined
+    };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });

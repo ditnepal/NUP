@@ -21,8 +21,7 @@ const documentSchema = z.object({
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const documents = await prisma.document.findMany({
-      orderBy: { uploadedAt: 'desc' },
-      include: { uploader: { select: { displayName: true } } }
+      orderBy: { createdAt: 'desc' },
     });
     res.json(documents);
   } catch (error) {
@@ -58,7 +57,7 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
         fileName: req.file.originalname,
         fileType: req.file.mimetype,
         size: req.file.size,
-        uploaderId,
+        uploadedBy: uploaderId,
       }
     });
 

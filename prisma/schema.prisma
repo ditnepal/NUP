@@ -17,32 +17,220 @@ model User {
   passwordHash  String?
   displayName   String
   phoneNumber   String?
-  role          String    @default("MEMBER") // ADMIN, STAFF, FINANCE_OFFICER, FIELD_COORDINATOR, BOOTH_COORDINATOR, MEMBER
+  role          String    @default("MEMBER") // Legacy role field for backward compatibility
   isActive      Boolean   @default(true)
   
+  // Advanced RBAC
+  roleId        String?
+  roleProfile   Role?     @relation(fields: [roleId], references: [id])
+  
+  // Hierarchy Scope
+  orgUnitId     String?
+  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  
   // Relations
-  memberProfile Member?
-  auditLogs     AuditLog[]
-  createdPages  CmsPage[] @relation("PageAuthor")
+  memberProfile   Member?
+  verifiedMembers Member[]  @relation("MemberVerifier")
+  approvedMembers Member[]  @relation("MemberApprover")
+  volunteerProfile Volunteer?
+  
+  auditLogs       AuditLog[]
+  createdPages    CmsPage[] @relation("PageAuthor")
+  notifications   Notification[]
+  officeBearers   OfficeBearer[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
 
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // e.g., "NATIONAL_ADMIN", "DISTRICT_COORDINATOR"
+  description String?
+  permissions Permission[]
+  users       User[]
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   // e.g., "CREATE", "READ", "UPDATE", "DELETE", "APPROVE", "BROADCAST"
+  resource    String   // e.g., "USER", "MEMBER", "FINANCE", "CAMPAIGN", "INTEL"
+  roles       Role[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // -----------------------------------------------------------------------------
-// 3. MEMBER MANAGEMENT
+// 2. ORGANIZATION HIERARCHY (The Backbone)
 // -----------------------------------------------------------------------------
+
+model OrganizationUnit {
+  id          String   @id @default(uuid())
+  name        String
+  level       String   // NATIONAL, PROVINCE, DISTRICT, CONSTITUENCY, MUNICIPALITY, WARD, BOOTH
+  code        String?  @unique
+  
+  parentId    String?
+  parent      OrganizationUnit? @relation("Hierarchy", fields: [parentId], references: [id])
+  children    OrganizationUnit[] @relation("Hierarchy")
+  
+  // Scoped Entities
+  users       User[]
+  members     Member[]
+  booths      Booth[]
+  offices     Office[]
+  committees  Committee[]
+  departments Department[]
+  wings       Wing[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Office {
+  id              String    @id @default(uuid())
+  name            String
+  type            String    // HEADQUARTERS, REGIONAL, CONTACT_POINT
+  
+  orgUnitId       String
+  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
+  
+  address         String
+  contactNumber   String?
+  email           String?
+  
+  // Geo-coordinates
+  latitude        Float?
+  longitude       Float?
+  
+  isActive        Boolean   @default(true)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Committee {
+  id              String    @id @default(uuid())
+  name            String
+  type            String    // MAIN, AD-HOC, ADVISORY
+  
+  orgUnitId       String
+  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
+  
+  bearers         OfficeBearer[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model OfficeBearer {
+  id              String    @id @default(uuid())
+  committeeId     String
+  committee       Committee @relation(fields: [committeeId], references: [id])
+  
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  
+  fullName        String
+  position        String    // PRESIDENT, SECRETARY, TREASURER, etc.
+  termStart       DateTime
+  termEnd         DateTime?
+  
+  status          String    @default("ACTIVE") // ACTIVE, RETIRED, SUSPENDED
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Department {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  
+  orgUnitId       String
+  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
+  
+  headId          String?   // User ID
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Wing {
+  id              String    @id @default(uuid())
+  name            String    // e.g., "Youth Wing", "Women Wing"
+  description     String?
+  
+  orgUnitId       String
+  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 3. SYSTEM UTILITIES (Config, Audit, Notifications)
+// -----------------------------------------------------------------------------
+
+model SystemConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   // JSON string
+  description String?
+  updatedBy   String?
+  
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title       String
+  message     String
+  type        String   // INFO, WARNING, SUCCESS, ERROR, TASK, ALERT
+  status      String   @default("UNREAD") // UNREAD, READ, ARCHIVED
+  
+  link        String?  // Optional action link
+  metadata    String?  // JSON string for extra data
+  
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id              String    @id @default(uuid())
+  action          String    // e.g., "USER_LOGIN", "MEMBER_CREATED"
+  entityType      String?   
+  entityId        String?
+  details         String?   // JSON string
+  
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  
+  ipAddress       String?
+  userAgent       String?
+  
+  timestamp       DateTime  @default(now())
+}
 
 model Member {
   id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String?   @unique
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   
-  membershipId    String    @unique // e.g., NUP-2026-0001
+  membershipId    String?   @unique // e.g., NUP-2026-0001 (generated after approval)
+  trackingCode    String    @unique // e.g., T-123456 (generated on application)
+  
   fullName        String
   dateOfBirth     DateTime?
   gender          String?
   bloodGroup      String?
+  citizenshipNumber String? @unique // ECN requirement
   
   // Geo-location (Nepal Context)
   province        String
@@ -52,12 +240,80 @@ model Member {
   boothId         String?
   booth           Booth?    @relation(fields: [boothId], references: [id])
   
+  // Hierarchy Scope
+  orgUnitId       String?
+  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  
   // Party specific
   committeeLevel  String?   // CENTRAL, PROVINCE, DISTRICT, MUNICIPALITY, WARD
   committeeRole   String?
-  joinedDate      DateTime  @default(now())
-  status          String    @default("ACTIVE") // ACTIVE, SUSPENDED, EXPIRED
+  joinedDate      DateTime?
+  expiryDate      DateTime?
+  
+  status          String    @default("PENDING") // PENDING, VERIFIED, APPROVED, ACTIVE, SUSPENDED, TERMINATED
+  
+  verifiedById    String?
+  verifiedBy      User?     @relation("MemberVerifier", fields: [verifiedById], references: [id])
+  approvedById    String?
+  approvedBy      User?     @relation("MemberApprover", fields: [approvedById], references: [id])
+  
   qrCodeData      String?
+  
+  // Volunteer link
+  volunteer       Volunteer?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Volunteer {
+  id              String    @id @default(uuid())
+  memberId        String?   @unique
+  member          Member?   @relation(fields: [memberId], references: [id])
+  
+  userId          String?   @unique
+  user            User?     @relation(fields: [userId], references: [id])
+  
+  fullName        String
+  email           String?
+  phone           String?
+  
+  skills          String    // Comma separated or JSON string
+  availability    String?   // Description of availability
+  
+  status          String    @default("ACTIVE") // ACTIVE, INACTIVE
+  
+  assignments     VolunteerAssignment[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model VolunteerAssignment {
+  id              String    @id @default(uuid())
+  volunteerId     String
+  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
+  
+  campaignId      String?
+  campaign        Campaign? @relation(fields: [campaignId], references: [id])
+  
+  taskName        String
+  description     String?
+  status          String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  
+  reports         VolunteerReport[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model VolunteerReport {
+  id              String    @id @default(uuid())
+  assignmentId    String
+  assignment      VolunteerAssignment @relation(fields: [assignmentId], references: [id])
+  
+  content         String
+  hoursSpent      Float?
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -105,48 +361,6 @@ model Interaction {
 }
 
 // -----------------------------------------------------------------------------
-// 5. ORGANIZATION STRUCTURE (Committees)
-// -----------------------------------------------------------------------------
-
-model Committee {
-  id              String    @id @default(uuid())
-  name            String
-  level           String    // CENTRAL, PROVINCE, DISTRICT, MUNICIPALITY, WARD, WING
-  region          String?   // e.g., "Koshi Province" or "Kathmandu District"
-  establishedDate DateTime?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-}
-
-// -----------------------------------------------------------------------------
-// 9. BOOTH / FIELD OPERATIONS
-// -----------------------------------------------------------------------------
-
-model Booth {
-  id              String    @id @default(uuid())
-  name            String
-  code            String    @unique
-  
-  // Geo-location
-  province        String
-  district        String
-  localLevel      String
-  ward            Int
-  
-  totalVoters     Int       @default(0)
-  targetVotes     Int       @default(0)
-  status          String    @default("NEEDS_ATTENTION") // READY, NEEDS_ATTENTION, CRITICAL
-  
-  // Relations
-  members         Member[]
-  supporters      Supporter[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-}
-
-// -----------------------------------------------------------------------------
 // 2. CMS (DYNAMIC FRONTEND)
 // -----------------------------------------------------------------------------
 
@@ -176,10 +390,10 @@ model Issue {
   title           String
   description     String
   category        String
-  priority        String    @default("MEDIUM") // LOW, MEDIUM, HIGH
+  priority        String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
   status          String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
   
-  submittedBy     String?   // User ID or anonymous
+  reporterId      String?   // User ID
   contactInfo     String?   // If anonymous
   
   // Geo-location context
@@ -197,9 +411,12 @@ model Issue {
 
 model Campaign {
   id              String    @id @default(uuid())
-  title           String
+  name            String
+  title           String?   // Keep for compatibility if needed
   description     String?
+  type            String?   // ELECTION, MEMBERSHIP_DRIVE, etc.
   phase           String    @default("PLANNING") // PLANNING, ACTIVE, COMPLETED, PAUSED
+  status          String?   // PLANNED, ACTIVE, etc.
   
   startDate       DateTime?
   endDate         DateTime?
@@ -207,6 +424,85 @@ model Campaign {
   targetProvince  String?
   targetDistrict  String?
   targetLocalLevel String?
+  targetAudience  String?
+  budget          Float?
+  
+  managerId       String?   // User ID
+  
+  volunteerAssignments VolunteerAssignment[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 8. CANDIDATES
+// -----------------------------------------------------------------------------
+
+model Candidate {
+  id              String    @id @default(uuid())
+  name            String
+  position        String
+  electionType    String?   // FEDERAL, PROVINCIAL, LOCAL
+  constituency    String?
+  electionYear    Int
+  province        String?
+  district        String?
+  localLevel      String?
+  ward            Int?
+  manifesto       String?
+  status          String    @default("ACTIVE") // ACTIVE, WITHDRAWN, WON, LOST, NOMINATED, ELECTED, DEFEATED
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 9. BOOTH / FIELD OPERATIONS
+// -----------------------------------------------------------------------------
+
+model Booth {
+  id              String    @id @default(uuid())
+  name            String
+  code            String?   @unique
+  ward            Int
+  localLevel      String
+  district        String
+  province        String?
+  
+  totalVoters     Int       @default(0)
+  voterCount      Int?      // Match API
+  targetVotes     Int       @default(0)
+  status          String    @default("NEEDS_ATTENTION") // READY, NEEDS_ATTENTION, CRITICAL, SAFE, COMPETITIVE, WEAK
+  
+  coordinatorId   String?   // User ID
+  
+  // Hierarchy Scope
+  orgUnitId       String?
+  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  
+  // Relations
+  members         Member[]
+  supporters      Supporter[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 10. DOCUMENTS
+// -----------------------------------------------------------------------------
+
+model Document {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?
+  category        String
+  fileUrl         String
+  fileName        String
+  fileType        String
+  size            Int
+  uploadedBy      String    // User ID
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -222,7 +518,9 @@ model Event {
   description     String?
   date            DateTime
   location        String
-  type            String    // PUBLIC, INTERNAL, RALLY, MEETING
+  type            String    // PUBLIC, INTERNAL, RALLY, MEETING, CAMPAIGN
+  
+  organizerId     String?   // User ID
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -240,7 +538,8 @@ model Transaction {
   description     String?
   date            DateTime  @default(now())
   
-  recordedBy      String    // User ID
+  recordedById    String?   // User ID
+  recordedBy      String?   // Keep for compatibility
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -250,17 +549,4 @@ model Transaction {
 // SYSTEM LOGS
 // -----------------------------------------------------------------------------
 
-model AuditLog {
-  id              String    @id @default(uuid())
-  action          String
-  entityType      String
-  entityId        String?
-  details         String?
-  
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  ipAddress       String?
-  
-  timestamp       DateTime  @default(now())
-}
+// AuditLog is now defined in the Utilities section above

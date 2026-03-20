@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'staff' | 'member' | 'field_coordinator' | 'booth_coordinator' | 'finance_officer';
+export type UserRole = 'ADMIN' | 'STAFF' | 'MEMBER' | 'FIELD_COORDINATOR' | 'BOOTH_COORDINATOR' | 'FINANCE_OFFICER';
 export type CommitteeLevel = 'central' | 'province' | 'district' | 'municipality' | 'ward' | 'wing';
 export type SupporterLevel = 'strong' | 'leaning' | 'neutral' | 'undecided' | 'volunteer' | 'donor';
 export type IssueCategory = 'road' | 'water' | 'electricity' | 'agriculture' | 'education' | 'health' | 'youth' | 'women' | 'corruption' | 'other';
@@ -9,13 +9,39 @@ export type GrievanceStatus = 'pending' | 'in-review' | 'resolved' | 'closed';
 export type GrievancePriority = 'low' | 'medium' | 'high';
 
 export interface UserProfile {
-  uid: string;
+  id: string;
   displayName: string;
   email: string;
   role: UserRole;
   partyRole?: string;
   committeeId?: string;
+  orgUnitId?: string;
+  orgUnitLevel?: string;
   createdAt?: string;
+}
+
+export interface OrganizationUnit {
+  id: string;
+  name: string;
+  level: 'NATIONAL' | 'PROVINCE' | 'DISTRICT' | 'CONSTITUENCY' | 'MUNICIPALITY' | 'WARD' | 'BOOTH';
+  code?: string;
+  parentId?: string;
+  children?: OrganizationUnit[];
+  offices?: Office[];
+  users?: UserProfile[];
+}
+
+export interface Office {
+  id: string;
+  name: string;
+  type: 'HEADQUARTERS' | 'REGIONAL' | 'CONTACT_POINT';
+  orgUnitId: string;
+  address: string;
+  contactNumber?: string;
+  email?: string;
+  latitude?: number;
+  longitude?: number;
+  isActive: boolean;
 }
 
 export interface Committee {
@@ -50,7 +76,7 @@ export interface Transaction {
   type: TransactionType;
   category: TransactionCategory;
   amount: number;
-  date: any; // Firestore Timestamp
+  date: string;
   description: string;
   recordedBy: string;
 }
@@ -62,7 +88,7 @@ export interface Grievance {
   submittedBy: string;
   status: GrievanceStatus;
   priority: GrievancePriority;
-  date: any; // Firestore Timestamp
+  date: string;
 }
 
 export interface AuditLog {
@@ -70,14 +96,14 @@ export interface AuditLog {
   action: string;
   performedBy: string;
   details: string;
-  timestamp: any; // Firestore Timestamp
+  timestamp: string;
 }
 
 export interface PartyEvent {
   id?: string;
   title: string;
   description?: string;
-  date: any; // Firestore Timestamp
+  date: string;
   location: string;
   type: 'rally' | 'meeting' | 'fundraiser' | 'press-conference';
   organizer?: string;
@@ -102,7 +128,7 @@ export interface PartyDocument {
   fileName: string;
   fileType: string;
   uploadedBy: string;
-  uploadedAt: any; // Firestore Timestamp
+  uploadedAt: string;
   size: number;
 }
 
@@ -118,8 +144,8 @@ export interface Supporter {
   issues: IssueCategory[];
   notes?: string;
   assignedTo?: string; // UID of field worker
-  lastContactedAt?: any; // Firestore Timestamp
-  createdAt: any; // Firestore Timestamp
+  lastContactedAt?: string;
+  createdAt: string;
 }
 
 export interface Campaign {
@@ -130,8 +156,8 @@ export interface Campaign {
   targetProvince?: string;
   targetDistrict?: string;
   targetLocalLevel?: string;
-  startDate: any; // Firestore Timestamp
-  endDate?: any; // Firestore Timestamp
+  startDate: string;
+  endDate?: string;
   budget?: number;
   managerId: string; // UID
 }
@@ -147,32 +173,4 @@ export interface Booth {
   totalVoters?: number;
   estimatedSupporters?: number;
   status: 'ready' | 'needs_attention' | 'critical';
-}
-
-export enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-export interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string;
-    email?: string | null;
-    emailVerified?: boolean;
-    isAnonymous?: boolean;
-    tenantId?: string | null;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
 }

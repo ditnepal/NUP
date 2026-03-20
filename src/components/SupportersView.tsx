@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Supporter, IssueCategory, SupporterLevel } from '../types';
 import { Search, Filter, UserPlus, Phone, MapPin, HeartHandshake, AlertCircle, Plus, X } from 'lucide-react';
-import { addDoc, Timestamp } from 'firebase/firestore';
-import { supportersRef } from '../firebase';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -47,7 +46,7 @@ export const SupportersView = ({ supporters }: { supporters: Supporter[] }) => {
     const formData = new FormData(e.currentTarget);
     
     try {
-      await addDoc(supportersRef, {
+      await api.post('/supporters', {
         fullName: formData.get('fullName') as string,
         phone: formData.get('phone') as string,
         province: formData.get('province') as string,
@@ -57,8 +56,8 @@ export const SupportersView = ({ supporters }: { supporters: Supporter[] }) => {
         supportLevel: formData.get('supportLevel') as SupporterLevel,
         issues: (formData.get('issues') as string).split(',').map(i => i.trim()) as IssueCategory[],
         notes: formData.get('notes') as string,
-        createdAt: Timestamp.now(),
-        lastContactedAt: Timestamp.now()
+        createdAt: new Date().toISOString(),
+        lastContactedAt: new Date().toISOString()
       });
       setIsModalOpen(false);
     } catch (error) {
@@ -181,7 +180,7 @@ export const SupportersView = ({ supporters }: { supporters: Supporter[] }) => {
                     </div>
                   </td>
                   <td className="py-3 text-slate-500">
-                    {supporter.lastContactedAt ? new Date(supporter.lastContactedAt.toDate()).toLocaleDateString() : 'Never'}
+                    {supporter.lastContactedAt ? new Date(supporter.lastContactedAt).toLocaleDateString() : 'Never'}
                   </td>
                 </tr>
               ))}

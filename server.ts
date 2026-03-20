@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
+import fs from 'fs';
 import { setupSwagger } from './src/lib/swagger';
 
 // Import routers
@@ -12,15 +13,18 @@ import supportersRouter from './src/api/supporters';
 import cmsRouter from './src/api/cms';
 import publicRouter from './src/api/public';
 import dashboardRouter from './src/api/dashboard';
-import transactionsRouter from './src/api/transactions';
+import auditlogsRouter from './src/api/auditlogs';
+import boothsRouter from './src/api/booths';
+import campaignsRouter from './src/api/campaigns';
+import candidatesRouter from './src/api/candidates';
+import committeesRouter from './src/api/committees';
+import documentsRouter from './src/api/documents';
 import eventsRouter from './src/api/events';
 import grievancesRouter from './src/api/grievances';
-import auditlogsRouter from './src/api/auditlogs';
-import committeesRouter from './src/api/committees';
-import candidatesRouter from './src/api/candidates';
-import documentsRouter from './src/api/documents';
-import campaignsRouter from './src/api/campaigns';
-import boothsRouter from './src/api/booths';
+import transactionsRouter from './src/api/transactions';
+import hierarchyRouter from './src/api/hierarchy';
+import officesRouter from './src/api/offices';
+import volunteersRouter from './src/api/volunteers';
 
 dotenv.config();
 
@@ -36,36 +40,49 @@ async function startServer() {
   setupSwagger(app);
 
   // API Routes
+  app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+  app.get('/test', (req, res) => res.send('Server is running!'));
+
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/members', membersRouter);
   app.use('/api/v1/supporters', supportersRouter);
   app.use('/api/v1/cms', cmsRouter);
   app.use('/api/v1/public', publicRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
-  app.use('/api/v1/transactions', transactionsRouter);
+  app.use('/api/v1/auditlogs', auditlogsRouter);
+  app.use('/api/v1/booths', boothsRouter);
+  app.use('/api/v1/campaigns', campaignsRouter);
+  app.use('/api/v1/candidates', candidatesRouter);
+  app.use('/api/v1/committees', committeesRouter);
+  app.use('/api/v1/documents', documentsRouter);
   app.use('/api/v1/events', eventsRouter);
   app.use('/api/v1/grievances', grievancesRouter);
-  app.use('/api/v1/auditlogs', auditlogsRouter);
-  app.use('/api/v1/committees', committeesRouter);
-  app.use('/api/v1/candidates', candidatesRouter);
-  app.use('/api/v1/documents', documentsRouter);
-  app.use('/api/v1/campaigns', campaignsRouter);
-  app.use('/api/v1/booths', boothsRouter);
+  app.use('/api/v1/transactions', transactionsRouter);
+  app.use('/api/v1/hierarchy', hierarchyRouter);
+  app.use('/api/v1/offices', officesRouter);
+  app.use('/api/v1/volunteers', volunteersRouter);
 
   // Health check
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}`);
+  const isProd = process.env.NODE_ENV === 'production';
+  const distPath = path.join(process.cwd(), 'dist');
+  const hasDist = fs.existsSync(distPath);
+
   // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProd || !hasDist) {
+    console.log('[SERVER] Initializing Vite middleware...');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
+    console.log('[SERVER] Vite middleware initialized.');
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    console.log(`[SERVER] Serving static files from ${distPath}`);
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
@@ -73,9 +90,13 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`API documentation available at http://localhost:${PORT}/api-docs`);
+    console.log(`[SERVER] Running on http://0.0.0.0:${PORT}`);
+    console.log(`[SERVER] API Base Path: /api/v1`);
+    console.log(`[SERVER] Swagger Docs: /api-docs`);
   });
 }
 
-startServer();
+console.log('[SERVER] Starting server initialization...');
+startServer().catch(err => {
+  console.error('[SERVER] Failed to start server:', err);
+});

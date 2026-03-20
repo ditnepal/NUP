@@ -70,7 +70,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
 
     res.json({ token, user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role } });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }
@@ -104,7 +104,7 @@ router.post('/register', authenticate, authorize(['ADMIN']), async (req: AuthReq
     });
 
     res.status(201).json({ message: 'User created successfully', user: { id: user.id, email: user.email, role: user.role } });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }

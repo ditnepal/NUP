@@ -7,7 +7,9 @@ const router = express.Router();
 
 const committeeSchema = z.object({
   name: z.string().min(2),
+  type: z.enum(['MAIN', 'YOUTH', 'WOMEN', 'STUDENT', 'OTHER']),
   level: z.enum(['CENTRAL', 'PROVINCIAL', 'DISTRICT', 'LOCAL', 'WARD', 'BOOTH']),
+  orgUnitId: z.string(),
   province: z.string().optional(),
   district: z.string().optional(),
   localLevel: z.string().optional(),

@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Booth } from '../types';
 import { Search, MapPin, Users, AlertCircle, Plus, X, CheckCircle2 } from 'lucide-react';
-import { addDoc } from 'firebase/firestore';
-import { boothsRef } from '../firebase';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -47,7 +46,7 @@ export const BoothsView = ({ booths }: { booths: Booth[] }) => {
     const formData = new FormData(e.currentTarget);
     
     try {
-      await addDoc(boothsRef, {
+      await api.post('/booths', {
         name: formData.get('name') as string,
         pollingCenterId: formData.get('pollingCenterId') as string,
         ward: Number(formData.get('ward')),

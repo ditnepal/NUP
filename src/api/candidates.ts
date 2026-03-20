@@ -7,6 +7,7 @@ const router = express.Router();
 
 const candidateSchema = z.object({
   name: z.string().min(2),
+  position: z.string().min(2),
   electionType: z.enum(['FEDERAL', 'PROVINCIAL', 'LOCAL']),
   electionYear: z.number(),
   constituency: z.string().optional(),

@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Campaign, CampaignPhase } from '../types';
 import { Search, Filter, Flag, Calendar, Target, Plus, X, Activity } from 'lucide-react';
-import { addDoc, Timestamp } from 'firebase/firestore';
-import { campaignsRef } from '../firebase';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -47,17 +46,16 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
     const formData = new FormData(e.currentTarget);
     
     try {
-      await addDoc(campaignsRef, {
+      await api.post('/campaigns', {
         title: formData.get('title') as string,
         description: formData.get('description') as string,
         phase: formData.get('phase') as CampaignPhase,
         targetProvince: formData.get('targetProvince') as string,
         targetDistrict: formData.get('targetDistrict') as string,
         targetLocalLevel: formData.get('targetLocalLevel') as string,
-        startDate: Timestamp.fromDate(new Date(formData.get('startDate') as string)),
-        endDate: formData.get('endDate') ? Timestamp.fromDate(new Date(formData.get('endDate') as string)) : null,
+        startDate: new Date(formData.get('startDate') as string).toISOString(),
+        endDate: formData.get('endDate') ? new Date(formData.get('endDate') as string).toISOString() : null,
         budget: Number(formData.get('budget')),
-        managerId: 'current-user-id', // Replace with actual auth UID
       });
       setIsModalOpen(false);
     } catch (error) {
@@ -166,8 +164,8 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={14} className="text-slate-400" />
-                  {new Date(campaign.startDate.toDate()).toLocaleDateString()}
-                  {campaign.endDate && ` - ${new Date(campaign.endDate.toDate()).toLocaleDateString()}`}
+                  {new Date(campaign.startDate).toLocaleDateString()}
+                  {campaign.endDate && ` - ${new Date(campaign.endDate).toLocaleDateString()}`}
                 </div>
               </div>
             </Card>
