@@ -13,6 +13,10 @@ const documentSchema = z.object({
   title: z.string().min(2),
   description: z.string().optional(),
   category: z.string(),
+  fileUrl: z.string().url().optional(),
+  fileName: z.string().optional(),
+  fileType: z.string().optional(),
+  size: z.number().optional(),
 });
 
 // @route   GET /api/v1/documents
@@ -25,6 +29,41 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
     });
     res.json(documents);
   } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   POST /api/v1/documents
+// @desc    Create a new document with manual metadata
+// @access  Private
+router.post('/', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const uploaderId = req.user?.id;
+    if (!uploaderId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const data = documentSchema.parse(req.body);
+
+    const document = await prisma.document.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        fileUrl: data.fileUrl || '',
+        fileName: data.fileName || 'document',
+        fileType: data.fileType || 'application/octet-stream',
+        size: data.size || 0,
+        uploadedBy: uploaderId,
+      }
+    });
+
+    res.status(201).json(document);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: (error as any).errors });
+    }
+    console.error('Document creation error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

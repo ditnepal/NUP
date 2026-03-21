@@ -28,12 +28,12 @@ export function CandidateDashboard() {
     try {
       // In a real app, we'd fetch the candidate profile for the logged-in user
       // For this demo, we'll fetch the first candidate in the active cycle
-      const cycles = await api.get('/api/v1/election/cycles');
+      const cycles = await api.get('/election/cycles');
       if (cycles.length > 0) {
-        const candidates = await api.get(`/api/v1/election/candidates?cycleId=${cycles[0].id}`);
+        const candidates = await api.get(`/election/candidates?cycleId=${cycles[0].id}`);
         if (candidates.length > 0) {
           setCandidate(candidates[0]);
-          const resData = await api.get(`/api/v1/election/results?cycleId=${cycles[0].id}&candidateId=${candidates[0].id}`);
+          const resData = await api.get(`/election/results?cycleId=${cycles[0].id}&candidateId=${candidates[0].id}`);
           setResults(resData);
         }
       }
@@ -67,14 +67,15 @@ export function CandidateDashboard() {
   return (
     <div className="space-y-6">
       {/* Candidate Header */}
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-8">
-        <div className="w-32 h-32 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 border-4 border-emerald-50">
-          <User size={64} />
+      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-6 sm:gap-8">
+        <div className="w-24 h-24 sm:w-32 sm:h-32 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 border-4 border-emerald-50 flex-shrink-0">
+          <User size={48} className="sm:hidden" />
+          <User size={64} className="hidden sm:block" />
         </div>
         <div className="flex-1 text-center md:text-left">
-          <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-slate-900">{candidate.name}</h1>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+          <div className="flex flex-col md:flex-row md:items-center gap-2 sm:gap-3 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{candidate.name}</h1>
+            <span className={`inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold w-fit mx-auto md:mx-0 ${
               candidate.status === 'WON' ? 'bg-emerald-100 text-emerald-600' :
               candidate.status === 'ACTIVE' ? 'bg-blue-100 text-blue-600' :
               'bg-slate-100 text-slate-600'
@@ -82,24 +83,24 @@ export function CandidateDashboard() {
               {candidate.status}
             </span>
           </div>
-          <p className="text-lg text-slate-600 font-medium mb-4">{candidate.position} • {candidate.constituency?.name || 'N/A'}</p>
-          <div className="flex flex-wrap justify-center md:justify-start gap-4">
-            <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
-              <MapPin size={16} />
+          <p className="text-base sm:text-lg text-slate-600 font-medium mb-4">{candidate.position} • {candidate.constituency?.name || 'N/A'}</p>
+          <div className="flex flex-wrap justify-center md:justify-start gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
+              <MapPin size={14} />
               {candidate.constituency?.province}, {candidate.constituency?.district}
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
-              <Calendar size={16} />
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
+              <Calendar size={14} />
               Election Year: {candidate.electionYear || '2026'}
             </div>
           </div>
         </div>
-        <div className="flex flex-col gap-2 w-full md:w-auto">
-          <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-col gap-2 w-full md:w-auto">
+          <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold text-sm">
             <FileText size={18} />
             Edit Manifesto
           </button>
-          <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold">
+          <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold text-sm">
             <Users size={18} />
             Campaign Team
           </button>

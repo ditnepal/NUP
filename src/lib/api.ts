@@ -3,31 +3,22 @@ const API_URL = '/api/v1';
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
     let errorMessage = 'API Error';
+    const text = await response.text();
     try {
-      const error = await response.json();
+      const error = text ? JSON.parse(text) : {};
       errorMessage = error.error || errorMessage;
     } catch (e) {
-      // If JSON parsing fails, the response might be HTML (e.g., from a 404 or 500 page)
-      try {
-        const text = await response.text();
-        console.error('API Error (non-JSON):', text.substring(0, 100));
-        errorMessage = `API Error: ${response.status} ${response.statusText}`;
-      } catch (textError) {
-        errorMessage = `API Error: ${response.status} ${response.statusText}`;
-      }
+      console.error('API Error (non-JSON):', text.substring(0, 100));
+      errorMessage = `API Error: ${response.status} ${response.statusText}`;
     }
     throw new Error(errorMessage);
   }
 
+  const text = await response.text();
   try {
-    return await response.json();
+    return text ? JSON.parse(text) : {};
   } catch (e) {
-    try {
-      const text = await response.text();
-      console.error('API Success (non-JSON):', text.substring(0, 100));
-    } catch (textError) {
-      // Ignore
-    }
+    console.error('API Success (non-JSON):', text.substring(0, 100));
     throw new Error('Invalid JSON response from server');
   }
 };

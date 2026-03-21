@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText } from 'lucide-react';
+import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User } from 'lucide-react';
+import { UserProfile } from '../types';
 
-export const PublicPortal: React.FC = () => {
+interface PublicPortalProps {
+  user?: UserProfile | null;
+  onPortalClick?: () => void;
+}
+
+export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,9 +46,19 @@ export const PublicPortal: React.FC = () => {
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">News</a>
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Leadership</a>
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Contact</a>
-              <button className="bg-emerald-600 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
-                Join Us
-              </button>
+              {user ? (
+                <button 
+                  onClick={onPortalClick}
+                  className="bg-slate-900 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center gap-2"
+                >
+                  <User size={16} />
+                  Member Portal
+                </button>
+              ) : (
+                <button className="bg-emerald-600 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
+                  Join Us
+                </button>
+              )}
             </div>
 
             <button className="md:hidden p-2 text-slate-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -60,9 +76,19 @@ export const PublicPortal: React.FC = () => {
             <a href="#" className="text-2xl font-bold text-slate-800">News</a>
             <a href="#" className="text-2xl font-bold text-slate-800">Leadership</a>
             <a href="#" className="text-2xl font-bold text-slate-800">Contact</a>
-            <button className="bg-emerald-600 text-white w-full py-4 rounded-2xl text-lg font-bold">
-              Join Us
-            </button>
+            {user ? (
+              <button 
+                onClick={onPortalClick}
+                className="bg-slate-900 text-white w-full py-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-2"
+              >
+                <User size={20} />
+                Member Portal
+              </button>
+            ) : (
+              <button className="bg-emerald-600 text-white w-full py-4 rounded-2xl text-lg font-bold">
+                Join Us
+              </button>
+            )}
           </div>
         </div>
       )}

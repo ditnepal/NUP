@@ -37,7 +37,7 @@ export function ElectionAdmin() {
 
   const fetchCycles = async () => {
     try {
-      const data = await api.get('/api/v1/election/cycles');
+      const data = await api.get('/election/cycles');
       setCycles(data);
       if (data.length > 0) setSelectedCycle(data[0]);
     } catch (error) {
@@ -51,10 +51,10 @@ export function ElectionAdmin() {
     setLoading(true);
     try {
       const [candData, incData, resData, readData] = await Promise.all([
-        api.get(`/api/v1/election/candidates?cycleId=${selectedCycle.id}`),
-        api.get(`/api/v1/election/incidents?cycleId=${selectedCycle.id}`),
-        api.get(`/api/v1/election/results?cycleId=${selectedCycle.id}`),
-        api.get('/api/v1/election/booth-readiness')
+        api.get(`/election/candidates?cycleId=${selectedCycle.id}`),
+        api.get(`/election/incidents?cycleId=${selectedCycle.id}`),
+        api.get(`/election/results?cycleId=${selectedCycle.id}`),
+        api.get('/election/booth-readiness')
       ]);
       setCandidates(candData);
       setIncidents(incData);
@@ -152,34 +152,34 @@ export function ElectionAdmin() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-100">
+      <div className="flex items-center gap-2 border-b border-slate-100 overflow-x-auto no-scrollbar pb-1">
         <button 
           onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 font-medium transition-all border-b-2 ${activeTab === 'overview' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2 font-medium transition-all border-b-2 whitespace-nowrap ${activeTab === 'overview' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           Overview
         </button>
         <button 
           onClick={() => setActiveTab('candidates')}
-          className={`px-4 py-2 font-medium transition-all border-b-2 ${activeTab === 'candidates' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2 font-medium transition-all border-b-2 whitespace-nowrap ${activeTab === 'candidates' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           Candidates
         </button>
         <button 
           onClick={() => setActiveTab('incidents')}
-          className={`px-4 py-2 font-medium transition-all border-b-2 ${activeTab === 'incidents' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2 font-medium transition-all border-b-2 whitespace-nowrap ${activeTab === 'incidents' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           Incidents
         </button>
         <button 
           onClick={() => setActiveTab('results')}
-          className={`px-4 py-2 font-medium transition-all border-b-2 ${activeTab === 'results' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2 font-medium transition-all border-b-2 whitespace-nowrap ${activeTab === 'results' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           Results
         </button>
         <button 
           onClick={() => setActiveTab('readiness')}
-          className={`px-4 py-2 font-medium transition-all border-b-2 ${activeTab === 'readiness' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2 font-medium transition-all border-b-2 whitespace-nowrap ${activeTab === 'readiness' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           Booth Readiness
         </button>

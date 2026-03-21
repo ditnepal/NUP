@@ -72,13 +72,13 @@ export const HierarchyAdmin: React.FC = () => {
   const rootUnits = units.filter(u => !u.parentId);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Organization Hierarchy</h1>
-          <p className="text-gray-500">Manage your party's structural units and geographic scope.</p>
+          <p className="text-gray-500 text-sm">Manage your party's structural units and geographic scope.</p>
         </div>
-        <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
           <Plus size={20} />
           Add Root Unit
         </button>
@@ -86,11 +86,13 @@ export const HierarchyAdmin: React.FC = () => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Unit Name & Level</span>
-          <span className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</span>
+          <span className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider">Unit Name & Level</span>
+          <span className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</span>
         </div>
-        <div className="p-2">
-          {rootUnits.map(unit => renderUnit(unit))}
+        <div className="p-2 overflow-x-auto">
+          <div className="min-w-[300px]">
+            {rootUnits.map(unit => renderUnit(unit))}
+          </div>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import { BoothsView } from './components/BoothsView';
 import { HierarchyAdmin } from './components/HierarchyAdmin';
 import { MembershipAdmin } from './components/MembershipAdmin';
 import { VolunteerAdmin } from './components/VolunteerAdmin';
+import { DocumentsView } from './components/DocumentsView';
 import { CmsAdmin } from './components/CmsAdmin';
 import { CommunicationAdmin } from './components/CommunicationAdmin';
 import { TrainingPortal } from './components/TrainingPortal';
@@ -21,31 +22,42 @@ import { SurveyPolls } from './components/SurveyPolls';
 import { PgisDashboard } from './components/PgisDashboard';
 import { PublicPortal } from './components/PublicPortal';
 import { WarRoomDashboard } from './components/WarRoomDashboard';
+import { UserProfileDashboard } from './components/UserProfileDashboard';
+import { MemberDashboard } from './components/MemberDashboard';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'grievances' | 'surveys' | 'pgis' | 'warroom';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard';
 
 export default function App() {
   const { t, i18n } = useTranslation();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [booths, setBooths] = useState<Booth[]>([]);
 
   useEffect(() => {
+    // Close sidebar on view change on mobile
+    setIsSidebarOpen(false);
+  }, [currentView]);
+
+  useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          // In a real app, we'd verify the token and get user info
-          // For now, we'll assume it's valid if present
           const userData = await api.get('/auth/me');
           setUser(userData);
+          if (userData.role === 'MEMBER') {
+            setCurrentView('member-dashboard');
+          } else {
+            setCurrentView('dashboard');
+          }
           fetchData();
         } catch (error) {
           localStorage.removeItem('token');
@@ -73,12 +85,18 @@ export default function App() {
 
   const handleLoginSuccess = (userData: UserProfile) => {
     setUser(userData);
+    if (userData.role === 'MEMBER') {
+      setCurrentView('member-dashboard');
+    } else {
+      setCurrentView('dashboard');
+    }
     fetchData();
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    setCurrentView('dashboard');
   };
 
   const toggleLanguage = () => {
@@ -99,46 +117,76 @@ export default function App() {
   }
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'warroom', label: 'War Room', icon: ShieldAlert },
-    { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
-    { id: 'supporters', label: 'Supporters', icon: Users },
-    { id: 'booths', label: 'Booths', icon: MapPin },
-    { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph },
-    { id: 'membership', label: 'Membership', icon: UserPlus },
-    { id: 'volunteers', label: 'Volunteers', icon: Heart },
-    { id: 'cms', label: 'CMS', icon: Layout },
-    { id: 'communication', label: 'Communication', icon: MessageSquare },
-    { id: 'training', label: 'Training', icon: GraduationCap },
-    { id: 'events', label: 'Events', icon: Calendar },
-    { id: 'finance', label: 'Finance', icon: DollarSign },
-    { id: 'election', label: 'Election', icon: Vote },
-    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck },
-    { id: 'grievances', label: 'Grievances', icon: ShieldAlert },
-    { id: 'surveys', label: 'Surveys', icon: ClipboardList },
-    { id: 'pgis', label: 'PGIS', icon: Shield },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
+    { id: 'member-dashboard', label: 'Member Portal', icon: Award, roles: ['MEMBER'] },
+    { id: 'warroom', label: 'War Room', icon: ShieldAlert, roles: ['ADMIN', 'STAFF'] },
+    { id: 'campaigns', label: 'Campaigns', icon: Megaphone, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
+    { id: 'supporters', label: 'Supporters', icon: Users, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
+    { id: 'booths', label: 'Booths', icon: MapPin, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR'] },
+    { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph, roles: ['ADMIN'] },
+    { id: 'membership', label: 'Membership', icon: UserPlus, roles: ['ADMIN', 'STAFF'] },
+    { id: 'volunteers', label: 'Volunteers', icon: Heart, roles: ['ADMIN', 'STAFF'] },
+    { id: 'cms', label: 'CMS', icon: Layout, roles: ['ADMIN', 'STAFF'] },
+    { id: 'documents', label: 'Documents', icon: FileText, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
+    { id: 'communication', label: 'Communication', icon: MessageSquare, roles: ['ADMIN', 'STAFF'] },
+    { id: 'training', label: 'Training', icon: GraduationCap, roles: ['ADMIN', 'STAFF', 'MEMBER', 'FIELD_COORDINATOR'] },
+    { id: 'events', label: 'Events', icon: Calendar, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
+    { id: 'finance', label: 'Finance', icon: DollarSign, roles: ['ADMIN', 'FINANCE_OFFICER'] },
+    { id: 'election', label: 'Election', icon: Vote, roles: ['ADMIN', 'STAFF'] },
+    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, roles: ['ADMIN', 'STAFF'] },
+    { id: 'grievances', label: 'Grievances', icon: ShieldAlert, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
+    { id: 'surveys', label: 'Surveys', icon: ClipboardList, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
+    { id: 'pgis', label: 'PGIS', icon: Shield, roles: ['ADMIN', 'STAFF'] },
   ];
+
+  const filteredNavItems = navItems.filter(item => !item.roles || item.roles.includes(user.role));
 
   if (currentView === 'public') {
     return (
       <div className="relative">
-        <PublicPortal />
+        <PublicPortal user={user} onPortalClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')} />
         <button 
-          onClick={() => setCurrentView('dashboard')}
+          onClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')}
           className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl z-50 flex items-center gap-2 hover:scale-105 transition-all"
         >
           <LayoutDashboard size={20} />
-          Back to Admin
+          Back to Portal
         </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-2 text-emerald-600">
+          <Globe size={24} />
+          <span className="font-black text-xl tracking-tight text-slate-800">PPOS</span>
+        </div>
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+        >
+          {isSidebarOpen ? <CloseIcon size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
-        <div className="p-6 border-b border-slate-100">
+      <aside className={`
+        fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform
+        lg:translate-x-0 lg:static lg:inset-auto
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-6 border-b border-slate-100 hidden lg:block">
           <div className="flex items-center gap-3 text-emerald-600">
             <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
               <Globe size={24} />
@@ -147,79 +195,84 @@ export default function App() {
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => (
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {filteredNavItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setCurrentView(item.id as View)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${
                 currentView === item.id 
                   ? 'bg-emerald-50 text-emerald-600' 
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
               }`}
             >
-              <item.icon size={20} />
+              <item.icon size={18} />
               {item.label}
             </button>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 space-y-2">
+        <div className="p-4 border-t border-slate-100 space-y-1">
           <button 
             onClick={() => setCurrentView('donations')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
           >
-            <Heart size={20} />
+            <Heart size={18} />
             Donation Portal
           </button>
           <button 
             onClick={() => setCurrentView('public')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
           >
-            <ExternalLink size={20} />
-            View Public Portal
+            <ExternalLink size={18} />
+            Public Portal
           </button>
           <button 
             onClick={toggleLanguage}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
           >
-            <Globe size={20} />
+            <Globe size={18} />
             {i18n.language === 'en' ? 'नेपाली' : 'English'}
           </button>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-rose-500 hover:bg-rose-50 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-rose-500 hover:bg-rose-50 transition-all"
           >
-            <LogOut size={20} />
+            <LogOut size={18} />
             Logout
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8">
-        <header className="flex items-center justify-between mb-8">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
               Welcome, {user.displayName}
             </h1>
-            <p className="text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               {user.role.replace('_', ' ').toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} | Political Party Organization System
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <NotificationCenter />
-            <div className="text-right">
-              <p className="text-sm font-bold text-slate-800">{user.displayName}</p>
-              <p className="text-xs text-slate-500">{user.email}</p>
-            </div>
-            <div className="w-12 h-12 bg-slate-200 rounded-full border-2 border-white shadow-sm overflow-hidden">
-              <img 
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
-                alt="Avatar"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+            <button 
+              onClick={() => setCurrentView('profile')}
+              className="flex items-center gap-3 sm:gap-4 hover:bg-slate-100 p-1 rounded-2xl transition-all"
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-bold text-slate-800">{user.displayName}</p>
+                <p className="text-xs text-slate-500">{user.email}</p>
+              </div>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-200 rounded-full border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
+                  alt="Avatar"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            </button>
           </div>
         </header>
 
@@ -266,6 +319,8 @@ export default function App() {
         {currentView === 'pgis' && <PgisDashboard />}
         {currentView === 'warroom' && <WarRoomDashboard />}
         {currentView === 'donations' && <DonationPortal />}
+        {currentView === 'profile' && <UserProfileDashboard user={user} onLogout={handleLogout} />}
+        {currentView === 'member-dashboard' && <MemberDashboard user={user} />}
       </main>
     </div>
   );

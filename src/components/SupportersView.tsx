@@ -198,12 +198,12 @@ export const SupportersView = ({ supporters }: { supporters: Supporter[] }) => {
 
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden"
+              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl my-auto overflow-hidden"
             >
               <div className="flex items-center justify-between p-6 border-b border-slate-100">
                 <h3 className="text-xl font-bold text-slate-800">Add New Supporter</h3>
@@ -211,7 +211,7 @@ export const SupportersView = ({ supporters }: { supporters: Supporter[] }) => {
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleAddSupporter} className="p-6 space-y-6">
+              <form onSubmit={handleAddSupporter} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
                     <label className="text-sm font-semibold text-slate-700">Full Name</label>

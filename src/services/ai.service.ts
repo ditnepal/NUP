@@ -1,10 +1,22 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+let aiClient: GoogleGenAI | null = null;
+
+function getAiClient() {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY environment variable is required');
+    }
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 export const aiService = {
   async generateStrategicSummary(data: any) {
     try {
+      const ai = getAiClient();
       const prompt = `
         As a senior political strategist for the National Unity Party (NUP) in Nepal, analyze the following real-time data and provide a strategic summary.
         
@@ -34,6 +46,7 @@ export const aiService = {
 
   async analyzeSentiment(reports: any[]) {
     try {
+      const ai = getAiClient();
       const prompt = `
         Analyze the sentiment of the following ground intelligence reports from Nepal.
         Reports:

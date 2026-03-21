@@ -58,6 +58,56 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+// @route   GET /api/v1/members/me
+// @desc    Get current user's member profile
+// @access  Private
+router.get('/me', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const member = await prisma.member.findUnique({
+      where: { userId: req.user?.id },
+      include: { 
+        orgUnit: true,
+        user: { select: { email: true, displayName: true } }
+      }
+    });
+
+    if (!member) {
+      return res.status(404).json({ error: 'Member profile not found' });
+    }
+
+    // Fetch some stats for the dashboard
+    const [donorProfile, eventsAttended, volunteerStats] = await Promise.all([
+      prisma.donorProfile.findUnique({
+        where: { userId: req.user?.id }
+      }),
+      prisma.eventRegistration.count({
+        where: { userId: req.user?.id, status: 'ATTENDED' }
+      }),
+      prisma.volunteerReport.aggregate({
+        where: {
+          assignment: {
+            volunteer: {
+              userId: req.user?.id
+            }
+          }
+        },
+        _sum: { hoursSpent: true }
+      })
+    ]);
+
+    res.json({
+      ...member,
+      stats: {
+        totalDonated: donorProfile?.totalDonated || 0,
+        eventsAttended,
+        volunteerHours: volunteerStats._sum.hoursSpent || 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   POST /api/v1/members/apply
 // @desc    Submit membership application
 // @access  Public (or Staff)

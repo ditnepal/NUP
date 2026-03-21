@@ -35,11 +35,13 @@ import {
   Area 
 } from 'recharts';
 import ReactMarkdown from 'react-markdown';
+import { aiService } from '../services/ai.service';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'];
 
 export function WarRoomDashboard() {
   const [data, setData] = useState<any>(null);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +53,15 @@ export function WarRoomDashboard() {
   const fetchAnalytics = async () => {
     setRefreshing(true);
     try {
-      const response = await api.get('/api/v1/warroom/analytics');
+      const response = await api.get('/warroom/analytics');
       setData(response);
       setError(null);
+      
+      // Generate AI Summary on the frontend
+      if (response && response.data) {
+        const summary = await aiService.generateStrategicSummary(response.data);
+        setAiSummary(summary);
+      }
     } catch (err) {
       console.error('Failed to fetch War Room analytics', err);
       setError('Failed to load strategic data. Ensure you have NATIONAL_COMMAND permissions.');
@@ -90,7 +98,7 @@ export function WarRoomDashboard() {
     );
   }
 
-  const { data: analytics, aiSummary } = data;
+  const { data: analytics } = data;
 
   // Prepare chart data
   const boothData = analytics.booths.map((b: any) => ({ name: b.status, value: b._count.id }));
@@ -103,22 +111,22 @@ export function WarRoomDashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-6 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 sm:p-6 font-sans">
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-slate-800 pb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg border border-emerald-500/20">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6 border-b border-slate-800 pb-6">
+        <div className="w-full lg:w-auto">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg border border-emerald-500/20 flex-shrink-0">
               <ShieldAlert size={24} />
             </div>
-            <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">National Command War Room</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white uppercase italic leading-tight">National Command War Room</h1>
           </div>
-          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">
+          <p className="text-slate-500 font-mono text-[10px] sm:text-xs uppercase tracking-widest">
             Strategic Intelligence Dashboard • Real-time Aggregated Analytics • Nepal 2026
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden md:block">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full lg:w-auto">
+          <div className="text-right hidden sm:block">
             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Last Updated</p>
             <p className="text-sm font-mono text-emerald-500">{new Date(data.timestamp).toLocaleTimeString()}</p>
           </div>
@@ -129,8 +137,8 @@ export function WarRoomDashboard() {
           >
             <RefreshCw size={20} />
           </button>
-          <button className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold flex items-center gap-2 shadow-lg shadow-emerald-900/20">
-            <FileText size={18} /> Generate Executive Report
+          <button className="flex-1 lg:flex-none px-4 sm:px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 text-sm">
+            <FileText size={18} /> <span className="hidden sm:inline">Generate Executive Report</span><span className="sm:hidden">Report</span>
           </button>
         </div>
       </header>

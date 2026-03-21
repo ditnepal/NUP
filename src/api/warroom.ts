@@ -1,7 +1,6 @@
 import express from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, AuthRequest, authorize } from './middleware/auth';
-import { aiService } from '../services/ai.service';
 
 const router = express.Router();
 
@@ -75,12 +74,8 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']),
       areaScores: areaScores
     };
 
-    // Generate AI Strategic Summary
-    const aiSummary = await aiService.generateStrategicSummary(aggregatedData);
-
     res.json({
       data: aggregatedData,
-      aiSummary,
       timestamp: new Date()
     });
   } catch (error) {
@@ -90,7 +85,7 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']),
 });
 
 // @route   GET /api/v1/warroom/sentiment
-// @desc    Get AI-powered sentiment analysis of ground reports
+// @desc    Get ground reports for sentiment analysis
 // @access  Private (ADMIN, NATIONAL_COMMAND)
 router.get('/sentiment', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']), async (req: AuthRequest, res) => {
   try {
@@ -99,10 +94,9 @@ router.get('/sentiment', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']),
       orderBy: { createdAt: 'desc' }
     });
 
-    const analysis = await aiService.analyzeSentiment(reports);
-    res.json(analysis);
+    res.json(reports);
   } catch (error) {
-    res.status(500).json({ error: 'Sentiment analysis failed' });
+    res.status(500).json({ error: 'Failed to fetch reports for sentiment analysis' });
   }
 });
 
