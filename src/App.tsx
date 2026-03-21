@@ -20,11 +20,12 @@ import { GrievancePortal } from './components/GrievancePortal';
 import { SurveyPolls } from './components/SurveyPolls';
 import { PgisDashboard } from './components/PgisDashboard';
 import { PublicPortal } from './components/PublicPortal';
+import { WarRoomDashboard } from './components/WarRoomDashboard';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'grievances' | 'surveys' | 'pgis';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'grievances' | 'surveys' | 'pgis' | 'warroom';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -99,6 +100,7 @@ export default function App() {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'warroom', label: 'War Room', icon: ShieldAlert },
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
     { id: 'supporters', label: 'Supporters', icon: Users },
     { id: 'booths', label: 'Booths', icon: MapPin },
@@ -262,6 +264,7 @@ export default function App() {
         {currentView === 'grievances' && <GrievancePortal />}
         {currentView === 'surveys' && <SurveyPolls />}
         {currentView === 'pgis' && <PgisDashboard />}
+        {currentView === 'warroom' && <WarRoomDashboard />}
         {currentView === 'donations' && <DonationPortal />}
       </main>
     </div>

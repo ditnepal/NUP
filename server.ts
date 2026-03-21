@@ -5,6 +5,7 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
 import { setupSwagger } from './src/lib/swagger';
+import rateLimit from 'express-rate-limit';
 
 // Import routers
 import authRouter from './src/api/auth';
@@ -32,16 +33,32 @@ import trainingRouter from './src/api/training';
 import notificationsRouter from './src/api/notifications';
 import financeRouter from './src/api/finance';
 import electionRouter from './src/api/election';
+import warroomRouter from './src/api/warroom';
 
-dotenv.config();
-
-async function startServer() {
+export async function createApp() {
+  dotenv.config();
   const app = express();
-  const PORT = 3000;
 
   // Middleware
   app.use(cors());
   app.use(express.json());
+
+  // Rate Limiting
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: { error: 'Too many login attempts, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  const publicLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 500,
+    message: { error: 'Too many requests from this IP, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
 
   // Setup Swagger API Documentation
   setupSwagger(app);
@@ -50,11 +67,11 @@ async function startServer() {
   app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
   app.get('/test', (req, res) => res.send('Server is running!'));
 
-  app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/auth', authLimiter, authRouter);
   app.use('/api/v1/members', membersRouter);
   app.use('/api/v1/supporters', supportersRouter);
   app.use('/api/v1/cms', cmsRouter);
-  app.use('/api/v1/public', publicRouter);
+  app.use('/api/v1/public', publicLimiter, publicRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/auditlogs', auditlogsRouter);
   app.use('/api/v1/booths', boothsRouter);
@@ -75,19 +92,16 @@ async function startServer() {
   app.use('/api/v1/notifications', notificationsRouter);
   app.use('/api/v1/finance', financeRouter);
   app.use('/api/v1/election', electionRouter);
-
-  // Health check
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-  });
+  app.use('/api/v1/warroom', warroomRouter);
 
   console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}`);
   const isProd = process.env.NODE_ENV === 'production';
+  const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST;
   const distPath = path.join(process.cwd(), 'dist');
   const hasDist = fs.existsSync(distPath);
 
   // Vite middleware for development
-  if (!isProd || !hasDist) {
+  if (!isTest && (!isProd || !hasDist)) {
     console.log('[SERVER] Initializing Vite middleware...');
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -95,13 +109,20 @@ async function startServer() {
     });
     console.log('[SERVER] Vite middleware initialized.');
     app.use(vite.middlewares);
-  } else {
+  } else if (!isTest) {
     console.log(`[SERVER] Serving static files from ${distPath}`);
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+  return app;
+}
+
+async function startServer() {
+  const PORT = 3000;
+  const app = await createApp();
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER] Running on http://0.0.0.0:${PORT}`);
@@ -110,7 +131,9 @@ async function startServer() {
   });
 }
 
-console.log('[SERVER] Starting server initialization...');
-startServer().catch(err => {
-  console.error('[SERVER] Failed to start server:', err);
-});
+if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+  console.log('[SERVER] Starting server initialization...');
+  startServer().catch(err => {
+    console.error('[SERVER] Failed to start server:', err);
+  });
+}

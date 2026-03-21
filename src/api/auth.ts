@@ -50,6 +50,7 @@ const registerSchema = z.object({
  */
 router.post('/login', async (req, res) => {
   try {
+    const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-nup-os-2026';
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
