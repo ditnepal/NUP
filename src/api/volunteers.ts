@@ -74,18 +74,51 @@ router.post('/assign', authenticate, authorize(['ADMIN', 'STAFF', 'FIELD_COORDIN
   }
 });
 
-// @route   POST /api/v1/volunteers/report
-// @desc    Submit volunteer report
-// @access  Private
-router.post('/report', authenticate, async (req: AuthRequest, res) => {
+// @route   POST /api/v1/volunteers/apply
+// @desc    Apply for volunteering
+// @access  Public
+router.post('/apply', async (req, res) => {
   try {
-    const data = reportSchema.parse(req.body);
-    const report = await volunteerService.submitReport(data);
-    res.status(201).json(report);
+    const data = volunteerSchema.pick({ fullName: true, email: true, phone: true, skills: true, availability: true }).parse(req.body);
+    const application = await volunteerService.apply(data);
+    res.status(201).json(application);
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: (error as any).errors });
-    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/volunteers/:id/approve
+// @desc    Approve volunteer application
+// @access  Private (Admin)
+router.post('/:id/approve', authenticate, authorize(['ADMIN', 'VOLUNTEER_MANAGER']), async (req, res) => {
+  try {
+    const volunteer = await volunteerService.approveApplication(req.params.id);
+    res.json(volunteer);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/volunteers/:id/evaluate
+// @desc    Evaluate volunteer performance
+// @access  Private (Admin)
+router.post('/:id/evaluate', authenticate, authorize(['ADMIN', 'VOLUNTEER_MANAGER']), async (req, res) => {
+  try {
+    const performance = await volunteerService.evaluatePerformance({ volunteerId: req.params.id, ...req.body });
+    res.status(201).json(performance);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/volunteers/:id/recognize
+// @desc    Recognize volunteer
+// @access  Private (Admin)
+router.post('/:id/recognize', authenticate, authorize(['ADMIN', 'VOLUNTEER_MANAGER']), async (req, res) => {
+  try {
+    const recognition = await volunteerService.recognize({ volunteerId: req.params.id, ...req.body });
+    res.status(201).json(recognition);
+  } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });

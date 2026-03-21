@@ -287,7 +287,7 @@ export default function App() {
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
               <p className="text-3xl font-bold text-slate-800 mt-2">
-                {campaigns.filter(c => c.phase === 'active').length}
+                {campaigns.filter(c => c.status === 'ACTIVE').length}
               </p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -335,6 +335,7 @@ export default function App() {
         {currentView === 'event-detail' && selectedEventId && (
           <EventDetailView 
             eventId={selectedEventId} 
+            user={user}
             onBack={() => setCurrentView('member-dashboard')} 
           />
         )}

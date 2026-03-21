@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, Event } from '../types';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { 
@@ -17,7 +17,10 @@ import {
   Clock,
   Loader2,
   AlertCircle,
-  ListTodo
+  ListTodo,
+  Mail,
+  Phone,
+  Globe
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -50,7 +53,7 @@ interface MemberProfile {
 export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEvent }) => {
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [news, setNews] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -254,6 +257,20 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                     <div>
                       <h4 className="font-bold text-slate-800">{event.title}</h4>
                       <p className="text-xs text-slate-500">{event.location} • {event.type}</p>
+                      <div className="text-xs text-slate-600 mt-2 flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">Organizer: {event.organizer.name}</span>
+                        <a href={`mailto:${event.organizer.email}`} className="flex items-center gap-1 text-blue-600 hover:underline">
+                          <Mail size={12} /> Email
+                        </a>
+                        <a href={`tel:${event.organizer.phone}`} className="flex items-center gap-1 text-blue-600 hover:underline">
+                          <Phone size={12} /> Call
+                        </a>
+                        {event.organizer.socialMedia.facebook && (
+                          <a href={event.organizer.socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline">
+                            <Globe size={12} /> FB
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <button 

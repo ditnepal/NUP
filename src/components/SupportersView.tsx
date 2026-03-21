@@ -1,15 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Supporter, IssueCategory, SupporterLevel } from '../types';
-import { Search, Filter, UserPlus, Phone, MapPin, HeartHandshake, AlertCircle, Plus, X } from 'lucide-react';
+import { Search, UserPlus, Phone, MapPin, HeartHandshake, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
-
-const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden ${className}`}>
-    {children}
-  </div>
-);
+import { StatCard } from './ui/StatCard';
 
 const Button = ({ children, variant = 'primary', className = '', ...props }: any) => {
   const base = "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -66,7 +61,7 @@ export const SupportersView = ({ supporters }: { supporters: Supporter[] }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-6 w-full max-w-screen-2xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Supporter CRM</h2>
@@ -79,29 +74,11 @@ export const SupportersView = ({ supporters }: { supporters: Supporter[] }) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-            <HeartHandshake size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Total Contacts</p>
-            <p className="text-2xl font-bold text-slate-800">{supporters.length}</p>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
-            <UserPlus size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Strong Supporters</p>
-            <p className="text-2xl font-bold text-slate-800">
-              {supporters.filter(s => s.supportLevel === 'strong').length}
-            </p>
-          </div>
-        </Card>
+        <StatCard label="Total Contacts" value={supporters.length} icon={HeartHandshake} color="text-emerald-600" bg="bg-emerald-50" />
+        <StatCard label="Strong Supporters" value={supporters.filter(s => s.supportLevel === 'strong').length} icon={UserPlus} color="text-blue-600" bg="bg-blue-50" />
       </div>
 
-      <Card className="p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -194,7 +171,7 @@ export const SupportersView = ({ supporters }: { supporters: Supporter[] }) => {
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
 
       <AnimatePresence>
         {isModalOpen && (

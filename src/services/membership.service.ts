@@ -119,6 +119,66 @@ export class MembershipService extends BaseService {
     return member;
   }
 
+  /**
+   * Renew Membership
+   */
+  async renew(memberId: string) {
+    const expiryDate = new Date();
+    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+    return await this.db.member.update({
+      where: { id: memberId },
+      data: {
+        expiryDate,
+        status: 'ACTIVE'
+      }
+    });
+  }
+
+  /**
+   * Transfer Membership to another OrgUnit
+   */
+  async transfer(memberId: string, newOrgUnitId: string) {
+    return await this.db.member.update({
+      where: { id: memberId },
+      data: { orgUnitId: newOrgUnitId }
+    });
+  }
+
+  /**
+   * Suspend Membership
+   */
+  async suspend(memberId: string, reason: string) {
+    const member = await this.db.member.findUnique({ where: { id: memberId } });
+    const history = JSON.parse(member?.suspensionHistory || '[]');
+    history.push({ reason, date: new Date() });
+
+    return await this.db.member.update({
+      where: { id: memberId },
+      data: {
+        status: 'SUSPENDED',
+        suspensionHistory: JSON.stringify(history)
+      }
+    });
+  }
+
+  /**
+   * Terminate Membership
+   */
+  async terminate(memberId: string, reason: string) {
+    const member = await this.db.member.findUnique({ where: { id: memberId } });
+    const history = JSON.parse(member?.terminationHistory || '[]');
+    history.push({ reason, date: new Date() });
+
+    return await this.db.member.update({
+      where: { id: memberId },
+      data: {
+        status: 'TERMINATED',
+        terminationHistory: JSON.stringify(history)
+      }
+    });
+  }
+
   private calculateAge(dob: Date): number {
     const diff = Date.now() - dob.getTime();
     const ageDate = new Date(diff);

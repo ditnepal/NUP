@@ -202,4 +202,59 @@ router.get('/:id/card', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+// @route   POST /api/v1/members/:id/renew
+// @desc    Renew membership
+// @access  Private (Admin/Staff)
+router.post('/:id/renew', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const member = await membershipService.renew(id);
+    res.json(member);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/members/:id/transfer
+// @desc    Transfer membership
+// @access  Private (Admin)
+router.post('/:id/transfer', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { newOrgUnitId } = req.body;
+    const member = await membershipService.transfer(id, newOrgUnitId);
+    res.json(member);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/members/:id/suspend
+// @desc    Suspend membership
+// @access  Private (Admin/Staff)
+router.post('/:id/suspend', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const member = await membershipService.suspend(id, reason);
+    res.json(member);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/members/:id/terminate
+// @desc    Terminate membership
+// @access  Private (Admin)
+router.post('/:id/terminate', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const member = await membershipService.terminate(id, reason);
+    res.json(member);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

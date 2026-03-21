@@ -36,8 +36,8 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
     return campaigns.filter(c => {
       const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                            c.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPhase = phaseFilter === 'all' || c.phase === phaseFilter;
-      return matchesSearch && matchesPhase;
+      const matchesStatus = phaseFilter === 'all' || c.status === phaseFilter;
+      return matchesSearch && matchesStatus;
     });
   }, [campaigns, searchTerm, phaseFilter]);
 
@@ -49,13 +49,12 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
       await api.post('/campaigns', {
         title: formData.get('title') as string,
         description: formData.get('description') as string,
-        phase: formData.get('phase') as CampaignPhase,
-        targetProvince: formData.get('targetProvince') as string,
-        targetDistrict: formData.get('targetDistrict') as string,
-        targetLocalLevel: formData.get('targetLocalLevel') as string,
+        status: formData.get('status') as 'ACTIVE' | 'PAUSED' | 'COMPLETED',
+        goalAmount: Number(formData.get('goalAmount')),
+        currentAmount: 0,
+        donationsCount: 0,
         startDate: new Date(formData.get('startDate') as string).toISOString(),
         endDate: formData.get('endDate') ? new Date(formData.get('endDate') as string).toISOString() : null,
-        budget: Number(formData.get('budget')),
       });
       setIsModalOpen(false);
     } catch (error) {
@@ -84,7 +83,7 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
           <div>
             <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
             <p className="text-2xl font-bold text-slate-800">
-              {campaigns.filter(c => c.phase === 'active').length}
+              {campaigns.filter(c => c.status === 'ACTIVE').length}
             </p>
           </div>
         </Card>
@@ -93,9 +92,9 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
             <Calendar size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">In Planning</p>
+            <p className="text-sm font-medium text-slate-500">Paused</p>
             <p className="text-2xl font-bold text-slate-800">
-              {campaigns.filter(c => c.phase === 'planning').length}
+              {campaigns.filter(c => c.status === 'PAUSED').length}
             </p>
           </div>
         </Card>
@@ -106,7 +105,7 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
           <div>
             <p className="text-sm font-medium text-slate-500">Completed</p>
             <p className="text-2xl font-bold text-slate-800">
-              {campaigns.filter(c => c.phase === 'completed').length}
+              {campaigns.filter(c => c.status === 'COMPLETED').length}
             </p>
           </div>
         </Card>
@@ -129,11 +128,10 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
             onChange={(e) => setPhaseFilter(e.target.value)}
             className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"
           >
-            <option value="all">All Phases</option>
-            <option value="planning">Planning</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-            <option value="paused">Paused</option>
+            <option value="all">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="PAUSED">Paused</option>
+            <option value="COMPLETED">Completed</option>
           </select>
         </div>
 
@@ -145,27 +143,25 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
                   <Flag size={20} />
                 </div>
                 <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                  ${campaign.phase === 'active' ? 'bg-emerald-100 text-emerald-700' :
-                    campaign.phase === 'planning' ? 'bg-blue-100 text-blue-700' :
-                    campaign.phase === 'completed' ? 'bg-slate-100 text-slate-700' :
-                    'bg-orange-100 text-orange-700'
+                  ${campaign.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
+                    campaign.status === 'PAUSED' ? 'bg-orange-100 text-orange-700' :
+                    'bg-slate-100 text-slate-700'
                   }`}
                 >
-                  {campaign.phase}
+                  {campaign.status}
                 </span>
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-2">{campaign.title}</h3>
               <p className="text-sm text-slate-500 mb-4 line-clamp-2">{campaign.description}</p>
               
               <div className="space-y-2 text-sm text-slate-600">
-                <div className="flex items-center gap-2">
-                  <Target size={14} className="text-slate-400" />
-                  {campaign.targetLocalLevel || campaign.targetDistrict || campaign.targetProvince || 'National'}
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Raised:</span>
+                  <span className="font-bold">NPR {campaign.currentAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar size={14} className="text-slate-400" />
-                  {new Date(campaign.startDate).toLocaleDateString()}
-                  {campaign.endDate && ` - ${new Date(campaign.endDate).toLocaleDateString()}`}
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Goal:</span>
+                  <span className="font-bold">NPR {campaign.goalAmount.toLocaleString()}</span>
                 </div>
               </div>
             </Card>
@@ -205,17 +201,16 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Phase</label>
-                    <select name="phase" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
-                      <option value="planning">Planning</option>
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
-                      <option value="paused">Paused</option>
+                    <label className="text-sm font-semibold text-slate-700">Status</label>
+                    <select name="status" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                      <option value="ACTIVE">Active</option>
+                      <option value="PAUSED">Paused</option>
+                      <option value="COMPLETED">Completed</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Budget (NPR)</label>
-                    <input type="number" name="budget" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                    <label className="text-sm font-semibold text-slate-700">Goal Amount (NPR)</label>
+                    <input type="number" name="goalAmount" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-semibold text-slate-700">Start Date</label>
@@ -224,20 +219,6 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
                   <div className="space-y-1">
                     <label className="text-sm font-semibold text-slate-700">End Date (Optional)</label>
                     <input type="date" name="endDate" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Target Province</label>
-                    <input name="targetProvince" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Target District</label>
-                    <input name="targetDistrict" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Target Local Level</label>
-                    <input name="targetLocalLevel" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">

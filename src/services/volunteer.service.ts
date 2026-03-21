@@ -97,6 +97,74 @@ export class VolunteerService extends BaseService {
       }
     });
   }
+
+  /**
+   * Apply for volunteering
+   */
+  async apply(data: { fullName: string; email: string; phone: string; skills: string; availability: string }) {
+    const application = await this.db.volunteerApplication.create({ data });
+    await auditService.log({
+      action: 'VOLUNTEER_APPLICATION_SUBMITTED',
+      entityType: 'VolunteerApplication',
+      entityId: application.id,
+      details: { fullName: data.fullName }
+    });
+    return application;
+  }
+
+  /**
+   * Approve volunteer application
+   */
+  async approveApplication(applicationId: string) {
+    const app = await this.db.volunteerApplication.update({
+      where: { id: applicationId },
+      data: { status: 'APPROVED' }
+    });
+    const volunteer = await this.db.volunteer.create({
+      data: {
+        fullName: app.fullName,
+        email: app.email,
+        phone: app.phone,
+        skills: app.skills,
+        availability: app.availability
+      }
+    });
+    await auditService.log({
+      action: 'VOLUNTEER_APPLICATION_APPROVED',
+      entityType: 'Volunteer',
+      entityId: volunteer.id,
+      details: { applicationId }
+    });
+    return volunteer;
+  }
+
+  /**
+   * Evaluate volunteer performance
+   */
+  async evaluatePerformance(data: { volunteerId: string; rating: number; feedback: string }) {
+    const performance = await this.db.volunteerPerformance.create({ data });
+    await auditService.log({
+      action: 'VOLUNTEER_EVALUATED',
+      entityType: 'VolunteerPerformance',
+      entityId: performance.id,
+      details: { volunteerId: data.volunteerId, rating: data.rating }
+    });
+    return performance;
+  }
+
+  /**
+   * Recognize a volunteer
+   */
+  async recognize(data: { volunteerId: string; title: string; description: string }) {
+    const recognition = await this.db.volunteerRecognition.create({ data });
+    await auditService.log({
+      action: 'VOLUNTEER_RECOGNIZED',
+      entityType: 'VolunteerRecognition',
+      entityId: recognition.id,
+      details: { volunteerId: data.volunteerId, title: data.title }
+    });
+    return recognition;
+  }
 }
 
 export const volunteerService = new VolunteerService();

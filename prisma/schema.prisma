@@ -261,6 +261,19 @@ model AuditLog {
   @@index([entityType, entityId])
 }
 
+model MembershipType {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "General", "Life", "Honorary"
+  description String?
+  fee         Float
+  durationMonths Int
+  
+  members     Member[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Member {
   id              String    @id @default(uuid())
   userId          String?   @unique
@@ -294,6 +307,12 @@ model Member {
   expiryDate      DateTime?
   
   status          String    @default("PENDING") // PENDING, VERIFIED, APPROVED, ACTIVE, SUSPENDED, TERMINATED
+  
+  membershipTypeId String?
+  membershipType   MembershipType? @relation(fields: [membershipTypeId], references: [id])
+  
+  suspensionHistory String?   // JSON string
+  terminationHistory String?  // JSON string
   
   verifiedById    String?
   verifiedBy      User?     @relation("MemberVerifier", fields: [verifiedById], references: [id])
@@ -330,6 +349,62 @@ model Volunteer {
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model VolunteerApplication {
+  id              String    @id @default(uuid())
+  fullName        String
+  email           String
+  phone           String
+  skills          String
+  availability    String
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model VolunteerSkill {
+  id              String    @id @default(uuid())
+  volunteerId     String
+  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
+  skill           String
+  createdAt       DateTime  @default(now())
+}
+
+model VolunteerAvailability {
+  id              String    @id @default(uuid())
+  volunteerId     String
+  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
+  dayOfWeek       String
+  startTime       String
+  endTime         String
+  createdAt       DateTime  @default(now())
+}
+
+model VolunteerRecognition {
+  id              String    @id @default(uuid())
+  volunteerId     String
+  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
+  title           String
+  description     String
+  date            DateTime  @default(now())
+}
+
+model VolunteerPerformance {
+  id              String    @id @default(uuid())
+  volunteerId     String
+  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
+  rating          Int
+  feedback        String
+  createdAt       DateTime  @default(now())
+}
+
+model VolunteerStatusHistory {
+  id              String    @id @default(uuid())
+  volunteerId     String
+  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
+  status          String
+  changedAt       DateTime  @default(now())
 }
 
 model VolunteerAssignment {
