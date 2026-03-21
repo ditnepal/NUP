@@ -15,11 +15,15 @@ import {
   Share2,
   CheckCircle2,
   Clock,
-  Loader2
+  Loader2,
+  AlertCircle,
+  ListTodo
 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface MemberDashboardProps {
   user: UserProfile;
+  onViewEvent: (id: string) => void;
 }
 
 interface MemberProfile {
@@ -37,10 +41,13 @@ interface MemberProfile {
     totalDonated: number;
     eventsAttended: number;
     volunteerHours: number;
+    activeGrievances: number;
+    pendingTasks: number;
+    upcomingEvents: number;
   };
 }
 
-export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
+export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEvent }) => {
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [news, setNews] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
@@ -84,13 +91,19 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
     );
   }
 
+  const chartData = [
+    { name: 'Donated', value: profile.stats.totalDonated / 1000 }, // Simplified for chart
+    { name: 'Events', value: profile.stats.eventsAttended },
+    { name: 'Hours', value: profile.stats.volunteerHours },
+  ];
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+    <div className="max-w-7xl mx-auto space-y-8 pb-12">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-800">Member Portal</h1>
-          <p className="text-slate-500">Welcome back, {user.displayName}. Thank you for your continued support.</p>
+          <p className="text-slate-500">Welcome back, {user.displayName}. Here's your activity overview.</p>
         </div>
         <div className="flex gap-3">
           <button className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl font-bold text-sm hover:bg-emerald-200 transition-all flex items-center gap-2">
@@ -103,39 +116,30 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* Key Statistics Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0">
-            <Heart size={24} />
+      {/* Bento Grid Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: 'Total Donated', value: `NPR ${profile.stats.totalDonated.toLocaleString()}`, icon: Heart, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Events Attended', value: profile.stats.eventsAttended, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Volunteer Hours', value: `${profile.stats.volunteerHours} hrs`, icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Active Grievances', value: profile.stats.activeGrievances, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
+          { label: 'Pending Tasks', value: profile.stats.pendingTasks, icon: ListTodo, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Upcoming Events', value: profile.stats.upcomingEvents, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+            <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center shrink-0`}>
+              <stat.icon size={24} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.label}</p>
+              <p className="text-xl font-black text-slate-800">{stat.value}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Donated</p>
-            <p className="text-2xl font-black text-slate-800">NPR {profile.stats.totalDonated.toLocaleString()}</p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0">
-            <Calendar size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Events Attended</p>
-            <p className="text-2xl font-black text-slate-800">{profile.stats.eventsAttended}</p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shrink-0">
-            <Clock size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Volunteer Hours</p>
-            <p className="text-2xl font-black text-slate-800">{profile.stats.volunteerHours} hrs</p>
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: ID Card */}
+        {/* Left Column: ID Card & Chart */}
         <div className="space-y-8">
           {/* Digital ID Card */}
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden group">
@@ -177,6 +181,25 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
                   <p className="text-sm font-bold">{profile.province}</p>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          {/* Activity Chart */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Activity Overview</h3>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip cursor={{fill: 'transparent'}} />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : index === 1 ? '#3b82f6' : '#a855f7'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
@@ -233,7 +256,10 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
                       <p className="text-xs text-slate-500">{event.location} • {event.type}</p>
                     </div>
                   </div>
-                  <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                  <button 
+                    onClick={() => onViewEvent(event.id)}
+                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                  >
                     <ChevronRight size={20} />
                   </button>
                 </div>
@@ -243,28 +269,6 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <button className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all text-center group">
-              <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <MessageSquare size={20} />
-              </div>
-              <span className="text-sm font-bold text-slate-700">Submit Grievance</span>
-            </button>
-            <button className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all text-center group">
-              <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <Download size={20} />
-              </div>
-              <span className="text-sm font-bold text-slate-700">Downloads</span>
-            </button>
-            <button className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all text-center group">
-              <div className="w-10 h-10 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <CreditCard size={20} />
-              </div>
-              <span className="text-sm font-bold text-slate-700">Pay Dues</span>
-            </button>
           </div>
         </div>
       </div>

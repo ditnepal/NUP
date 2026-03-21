@@ -24,16 +24,18 @@ import { PublicPortal } from './components/PublicPortal';
 import { WarRoomDashboard } from './components/WarRoomDashboard';
 import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { MemberDashboard } from './components/MemberDashboard';
+import { EventDetailView } from './components/EventDetailView';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail';
 
 export default function App() {
   const { t, i18n } = useTranslation();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -308,6 +310,7 @@ export default function App() {
         {currentView === 'membership' && <MembershipAdmin />}
         {currentView === 'volunteers' && <VolunteerAdmin />}
         {currentView === 'cms' && <CmsAdmin />}
+        {currentView === 'documents' && <DocumentsView />}
         {currentView === 'communication' && <CommunicationAdmin />}
         {currentView === 'training' && <TrainingPortal />}
         {currentView === 'events' && <EventsAdmin />}
@@ -320,7 +323,21 @@ export default function App() {
         {currentView === 'warroom' && <WarRoomDashboard />}
         {currentView === 'donations' && <DonationPortal />}
         {currentView === 'profile' && <UserProfileDashboard user={user} onLogout={handleLogout} />}
-        {currentView === 'member-dashboard' && <MemberDashboard user={user} />}
+        {currentView === 'member-dashboard' && (
+          <MemberDashboard 
+            user={user} 
+            onViewEvent={(id) => {
+              setSelectedEventId(id);
+              setCurrentView('event-detail');
+            }}
+          />
+        )}
+        {currentView === 'event-detail' && selectedEventId && (
+          <EventDetailView 
+            eventId={selectedEventId} 
+            onBack={() => setCurrentView('member-dashboard')} 
+          />
+        )}
       </main>
     </div>
   );

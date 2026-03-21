@@ -47,6 +47,18 @@ export const api = {
     return handleResponse(response);
   },
 
+  postFormData: async (endpoint: string, formData: FormData) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
+
   put: async (endpoint: string, data: any) => {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}${endpoint}`, {

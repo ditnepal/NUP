@@ -76,7 +76,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Fetch some stats for the dashboard
-    const [donorProfile, eventsAttended, volunteerStats] = await Promise.all([
+    const [donorProfile, eventsAttended, volunteerStats, activeGrievances, pendingTasks, upcomingEvents] = await Promise.all([
       prisma.donorProfile.findUnique({
         where: { userId: req.user?.id }
       }),
@@ -92,6 +92,21 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
           }
         },
         _sum: { hoursSpent: true }
+      }),
+      prisma.grievance.count({
+        where: { reporterId: req.user?.id, status: { not: 'RESOLVED' } }
+      }),
+      prisma.volunteerAssignment.count({
+        where: {
+          volunteer: { userId: req.user?.id },
+          status: 'PENDING'
+        }
+      }),
+      prisma.eventRegistration.count({
+        where: {
+          userId: req.user?.id,
+          event: { startDate: { gte: new Date() } }
+        }
       })
     ]);
 
@@ -100,7 +115,10 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
       stats: {
         totalDonated: donorProfile?.totalDonated || 0,
         eventsAttended,
-        volunteerHours: volunteerStats._sum.hoursSpent || 0
+        volunteerHours: volunteerStats._sum.hoursSpent || 0,
+        activeGrievances,
+        pendingTasks,
+        upcomingEvents
       }
     });
   } catch (error) {
