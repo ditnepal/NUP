@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { grievanceService } from '../services/grievance.service';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import prisma from '../lib/prisma';
 
 const router = Router();
 
@@ -105,10 +106,10 @@ router.post('/:id/responses', authenticate, async (req: AuthRequest, res) => {
     
     // Confidentiality: Check if user is allowed to respond
     // (Admin, Staff, or the original reporter)
-    const grievance = await grievanceService.getGrievances({ id: req.params.id } as any);
-    if (grievance.length === 0) return res.status(404).json({ error: 'Grievance not found' });
+    const grievance = await prisma.grievance.findUnique({ where: { id: req.params.id } });
+    if (!grievance) return res.status(404).json({ error: 'Grievance not found' });
     
-    const isReporter = grievance[0].reporterId === req.user?.id;
+    const isReporter = grievance.reporterId === req.user?.id;
     const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'STAFF';
     
     if (!isReporter && !isStaff) {
