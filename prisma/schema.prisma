@@ -346,6 +346,11 @@ model Volunteer {
   status          String    @default("ACTIVE") // ACTIVE, INACTIVE
   
   assignments     VolunteerAssignment[]
+  skillsList      VolunteerSkill[]
+  availabilityList VolunteerAvailability[]
+  recognitions    VolunteerRecognition[]
+  performance     VolunteerPerformance[]
+  statusHistory   VolunteerStatusHistory[]
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

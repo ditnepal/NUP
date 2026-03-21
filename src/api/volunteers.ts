@@ -80,7 +80,12 @@ router.post('/assign', authenticate, authorize(['ADMIN', 'STAFF', 'FIELD_COORDIN
 router.post('/apply', async (req, res) => {
   try {
     const data = volunteerSchema.pick({ fullName: true, email: true, phone: true, skills: true, availability: true }).parse(req.body);
-    const application = await volunteerService.apply(data);
+    const application = await volunteerService.apply({
+      ...data,
+      email: data.email || '',
+      phone: data.phone || '',
+      availability: data.availability || ''
+    });
     res.status(201).json(application);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
