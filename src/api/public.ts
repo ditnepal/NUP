@@ -1,77 +1,118 @@
 import express from 'express';
+import { cmsService } from '../services/cms.service';
+import { membershipService } from '../services/membership.service';
+import { volunteerService } from '../services/volunteer.service';
 import prisma from '../lib/prisma';
 import { z } from 'zod';
 
 const router = express.Router();
 
-const issueSchema = z.object({
-  title: z.string().min(5),
-  description: z.string().min(10),
-  category: z.string(),
-  province: z.string().optional(),
-  district: z.string().optional(),
-  localLevel: z.string().optional(),
-  contactInfo: z.string().optional(),
-});
-
 // @route   GET /api/v1/public/pages/:slug
-// @desc    Get published page by slug
+// @desc    Get a page by slug
 // @access  Public
 router.get('/pages/:slug', async (req, res) => {
   try {
-    const page = await prisma.cmsPage.findUnique({
-      where: { slug: req.params.slug },
-      select: { title: true, content: true, seoTitle: true, seoDescription: true, status: true, updatedAt: true }
-    });
-
-    if (!page || page.status !== 'PUBLISHED') {
-      return res.status(404).json({ error: 'Page not found' });
-    }
-
+    const { slug } = req.params;
+    const { lang } = req.query;
+    const page = await cmsService.getPageBySlug(slug, lang as string);
+    if (!page) return res.status(404).json({ error: 'Page not found' });
     res.json(page);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// @route   GET /api/v1/public/events
-// @desc    Get upcoming public events
+// @route   GET /api/v1/public/posts
+// @desc    Get all posts by type
 // @access  Public
-router.get('/events', async (req, res) => {
+router.get('/posts', async (req, res) => {
   try {
-    const events = await prisma.event.findMany({
-      where: { type: 'PUBLIC', date: { gte: new Date() } },
-      orderBy: { date: 'asc' },
-      take: 10,
-      select: { id: true, title: true, description: true, date: true, location: true }
-    });
-    res.json(events);
+    const { type, lang } = req.query;
+    const posts = await cmsService.getPosts(type as string, lang as string);
+    res.json(posts);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// @route   POST /api/v1/public/issues
-// @desc    Submit a public issue/grievance
+// @route   GET /api/v1/public/posts/:slug
+// @desc    Get a post by slug
 // @access  Public
-router.post('/issues', async (req, res) => {
+router.get('/posts/:slug', async (req, res) => {
   try {
-    const data = issueSchema.parse(req.body);
+    const { slug } = req.params;
+    const { lang } = req.query;
+    const post = await cmsService.getPostBySlug(slug, lang as string);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
+// @route   GET /api/v1/public/downloads
+// @desc    Get all downloads
+// @access  Public
+router.get('/downloads', async (req, res) => {
+  try {
+    const { category } = req.query;
+    const downloads = await cmsService.getDownloads(category as string);
+    res.json(downloads);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   POST /api/v1/public/join
+// @desc    Join membership (Public)
+// @access  Public
+router.post('/join', async (req, res) => {
+  try {
+    const member = await membershipService.apply(req.body);
+    res.status(201).json({ 
+      message: 'Application submitted successfully', 
+      trackingCode: member.trackingCode 
+    });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/public/volunteer
+// @desc    Volunteer (Public)
+// @access  Public
+router.post('/volunteer', async (req, res) => {
+  try {
+    const volunteer = await volunteerService.register(req.body);
+    res.status(201).json({ message: 'Volunteer registration successful' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/public/complaint
+// @desc    Submit a complaint (Public)
+// @access  Public
+router.post('/complaint', async (req, res) => {
+  try {
+    const { title, description, category, contactInfo, province, district, localLevel, ward } = req.body;
     const issue = await prisma.issue.create({
       data: {
-        ...data,
+        title,
+        description,
+        category,
+        contactInfo,
+        province,
+        district,
+        localLevel,
+        ward,
         status: 'OPEN',
-        priority: 'MEDIUM',
+        priority: 'MEDIUM'
       }
     });
-
-    res.status(201).json({ message: 'Issue submitted successfully', issueId: issue.id });
+    res.status(201).json({ message: 'Complaint submitted successfully', issueId: issue.id });
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: (error as any).errors });
-    }
-    res.status(500).json({ error: 'Server error' });
+    res.status(400).json({ error: error.message });
   }
 });
 

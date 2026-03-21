@@ -1,0 +1,170 @@
+import express from 'express';
+import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { trainingService } from '../services/training.service';
+import prisma from '../lib/prisma';
+import { z } from 'zod';
+
+const router = express.Router();
+
+const programSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().optional(),
+  category: z.enum(['INTERNAL', 'PUBLIC']),
+});
+
+const courseSchema = z.object({
+  programId: z.string().uuid(),
+  title: z.string().min(2),
+  description: z.string().optional(),
+  thumbnail: z.string().optional(),
+  level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+});
+
+const lessonSchema = z.object({
+  courseId: z.string().uuid(),
+  title: z.string().min(2),
+  content: z.string().min(10),
+  videoUrl: z.string().optional(),
+  order: z.number().int(),
+});
+
+const quizSchema = z.object({
+  lessonId: z.string().uuid(),
+  title: z.string().min(2),
+  passingScore: z.number().int().min(0).max(100),
+});
+
+const questionSchema = z.object({
+  quizId: z.string().uuid(),
+  question: z.string().min(5),
+  options: z.string(), // JSON string
+  correctOption: z.number().int(),
+});
+
+// @route   GET /api/v1/training/programs
+// @desc    Get all training programs
+// @access  Public (filtered by category if not admin)
+router.get('/programs', async (req, res) => {
+  try {
+    const programs = await prisma.trainingProgram.findMany({
+      include: { courses: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(programs);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   POST /api/v1/training/programs
+// @desc    Create a training program
+// @access  Private (Admin/Staff)
+router.post('/programs', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = programSchema.parse(req.body);
+    const program = await prisma.trainingProgram.create({ data });
+    res.status(201).json(program);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/training/courses/:id
+// @desc    Get course details
+// @access  Public/Private
+router.get('/courses/:id', async (req, res) => {
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: req.params.id },
+      include: {
+        program: true,
+        lessons: {
+          orderBy: { order: 'asc' },
+          include: { quizzes: true },
+        },
+      },
+    });
+    if (!course) return res.status(404).json({ error: 'Course not found' });
+    res.json(course);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   POST /api/v1/training/courses
+// @desc    Create a course
+// @access  Private (Admin/Staff)
+router.post('/courses', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = courseSchema.parse(req.body);
+    const course = await prisma.course.create({ data });
+    res.status(201).json(course);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/training/courses/:id/enroll
+// @desc    Enroll in a course
+// @access  Private
+router.post('/courses/:id/enroll', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const enrollment = await trainingService.enrollUser(req.params.id, req.user?.id!);
+    res.json(enrollment);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/training/lessons
+// @desc    Create a lesson
+// @access  Private (Admin/Staff)
+router.post('/lessons', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = lessonSchema.parse(req.body);
+    const lesson = await prisma.lesson.create({ data });
+    res.status(201).json(lesson);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/training/quizzes
+// @desc    Create a quiz
+// @access  Private (Admin/Staff)
+router.post('/quizzes', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = quizSchema.parse(req.body);
+    const quiz = await prisma.quiz.create({ data });
+    res.status(201).json(quiz);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/training/quizzes/:id/submit
+// @desc    Submit quiz attempt
+// @access  Private
+router.post('/quizzes/:id/submit', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { answers } = req.body;
+    const attempt = await trainingService.submitQuiz(req.params.id, req.user?.id!, answers);
+    res.json(attempt);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/training/progress
+// @desc    Get learner progress
+// @access  Private
+router.get('/progress', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const progress = await trainingService.getLearnerProgress(req.user?.id!);
+    res.json(progress);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+export default router;

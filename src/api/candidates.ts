@@ -39,9 +39,11 @@ router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRe
   try {
     const data = candidateSchema.parse(req.body);
 
+    const { constituency, ...rest } = data;
+
     const candidate = await prisma.candidate.create({
       data: {
-        ...data,
+        ...rest,
         status: data.status || 'NOMINATED',
       }
     });

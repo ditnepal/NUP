@@ -1,27 +1,47 @@
 import express from 'express';
-import prisma from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
 import { z } from 'zod';
+import { cmsAdminService } from '../services/cms-admin.service';
+import prisma from '../lib/prisma';
 
 const router = express.Router();
 
 const pageSchema = z.object({
-  title: z.string().min(2),
+  id: z.string().optional(),
   slug: z.string().min(2),
-  content: z.string(),
-  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
+  title: z.string().min(2),
+  content: z.string().min(10),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
+  seoKeywords: z.string().optional(),
+  language: z.enum(['en', 'ne']).optional(),
+  isSystem: z.boolean().optional(),
+});
+
+const postSchema = z.object({
+  id: z.string().optional(),
+  slug: z.string().min(2),
+  title: z.string().min(2),
+  excerpt: z.string().optional(),
+  content: z.string().min(10),
+  type: z.enum(['NEWS', 'PRESS_RELEASE', 'STATEMENT', 'SPEECH']),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
+  categoryId: z.string().optional(),
+  featuredImage: z.string().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  language: z.enum(['en', 'ne']).optional(),
+  publishedAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
 });
 
 // @route   GET /api/v1/cms/pages
-// @desc    Get all pages (Admin/Staff)
-// @access  Private
-router.get('/pages', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+// @desc    Get all pages (Admin)
+// @access  Private (Admin/Staff)
+router.get('/pages', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
   try {
     const pages = await prisma.cmsPage.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { author: { select: { displayName: true, email: true } } }
+      orderBy: { updatedAt: 'desc' }
     });
     res.json(pages);
   } catch (error) {
@@ -30,86 +50,73 @@ router.get('/pages', authenticate, authorize(['ADMIN', 'STAFF']), async (req: Au
 });
 
 // @route   POST /api/v1/cms/pages
-// @desc    Create a new page
+// @desc    Upsert a page
 // @access  Private (Admin/Staff)
 router.post('/pages', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
   try {
     const data = pageSchema.parse(req.body);
-    const authorId = req.user?.id;
-
-    if (!authorId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const existingPage = await prisma.cmsPage.findUnique({ where: { slug: data.slug } });
-    if (existingPage) {
-      return res.status(400).json({ error: 'Slug already exists' });
-    }
-
-    const page = await prisma.cmsPage.create({
-      data: {
-        ...data,
-        authorId,
-        status: data.status || 'DRAFT',
-      }
-    });
-
-    res.status(201).json(page);
+    const page = await cmsAdminService.upsertPage({ ...data, authorId: req.user?.id! });
+    res.json(page);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// @route   PUT /api/v1/cms/pages/:id
-// @desc    Update a page
+// @route   GET /api/v1/cms/posts
+// @desc    Get all posts (Admin)
 // @access  Private (Admin/Staff)
-router.put('/pages/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.get('/posts', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
   try {
-    const data = pageSchema.partial().parse(req.body);
-
-    const page = await prisma.cmsPage.findUnique({ where: { id: req.params.id } });
-    if (!page) {
-      return res.status(404).json({ error: 'Page not found' });
-    }
-
-    if (data.slug && data.slug !== page.slug) {
-      const existingPage = await prisma.cmsPage.findUnique({ where: { slug: data.slug } });
-      if (existingPage) {
-        return res.status(400).json({ error: 'Slug already exists' });
-      }
-    }
-
-    const updatedPage = await prisma.cmsPage.update({
-      where: { id: req.params.id },
-      data
+    const posts = await prisma.cmsPost.findMany({
+      include: { category: true },
+      orderBy: { updatedAt: 'desc' }
     });
-
-    res.json(updatedPage);
-  } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: (error as any).errors });
-    }
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// @route   DELETE /api/v1/cms/pages/:id
-// @desc    Delete a page
-// @access  Private (Admin)
-router.delete('/pages/:id', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
-  try {
-    const page = await prisma.cmsPage.findUnique({ where: { id: req.params.id } });
-    if (!page) {
-      return res.status(404).json({ error: 'Page not found' });
-    }
-
-    await prisma.cmsPage.delete({ where: { id: req.params.id } });
-    res.json({ message: 'Page deleted successfully' });
+    res.json(posts);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   POST /api/v1/cms/posts
+// @desc    Upsert a post
+// @access  Private (Admin/Staff)
+router.post('/posts', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const data = postSchema.parse(req.body);
+    const post = await cmsAdminService.upsertPost({ ...data, authorId: req.user?.id! });
+    res.json(post);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: (error as any).errors });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/cms/categories
+// @desc    Get all categories
+// @access  Private (Admin/Staff)
+router.get('/categories', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const categories = await prisma.cmsCategory.findMany();
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   POST /api/v1/cms/categories
+// @desc    Create a category
+// @access  Private (Admin/Staff)
+router.post('/categories', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const category = await cmsAdminService.createCategory(req.body);
+    res.json(category);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

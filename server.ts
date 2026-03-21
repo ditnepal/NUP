@@ -20,11 +20,18 @@ import candidatesRouter from './src/api/candidates';
 import committeesRouter from './src/api/committees';
 import documentsRouter from './src/api/documents';
 import eventsRouter from './src/api/events';
-import grievancesRouter from './src/api/grievances';
+import grievancesRouter from './src/api/grievance';
+import surveyRouter from './src/api/survey';
+import pgisRouter from './src/api/pgis';
 import transactionsRouter from './src/api/transactions';
 import hierarchyRouter from './src/api/hierarchy';
 import officesRouter from './src/api/offices';
 import volunteersRouter from './src/api/volunteers';
+import communicationRouter from './src/api/communication';
+import trainingRouter from './src/api/training';
+import notificationsRouter from './src/api/notifications';
+import financeRouter from './src/api/finance';
+import electionRouter from './src/api/election';
 
 dotenv.config();
 
@@ -57,10 +64,17 @@ async function startServer() {
   app.use('/api/v1/documents', documentsRouter);
   app.use('/api/v1/events', eventsRouter);
   app.use('/api/v1/grievances', grievancesRouter);
+  app.use('/api/v1/surveys', surveyRouter);
+  app.use('/api/v1/pgis', pgisRouter);
   app.use('/api/v1/transactions', transactionsRouter);
   app.use('/api/v1/hierarchy', hierarchyRouter);
   app.use('/api/v1/offices', officesRouter);
   app.use('/api/v1/volunteers', volunteersRouter);
+  app.use('/api/v1/communication', communicationRouter);
+  app.use('/api/v1/training', trainingRouter);
+  app.use('/api/v1/notifications', notificationsRouter);
+  app.use('/api/v1/finance', financeRouter);
+  app.use('/api/v1/election', electionRouter);
 
   // Health check
   app.get('/api/health', (req, res) => {

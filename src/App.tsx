@@ -7,11 +7,24 @@ import { BoothsView } from './components/BoothsView';
 import { HierarchyAdmin } from './components/HierarchyAdmin';
 import { MembershipAdmin } from './components/MembershipAdmin';
 import { VolunteerAdmin } from './components/VolunteerAdmin';
+import { CmsAdmin } from './components/CmsAdmin';
+import { CommunicationAdmin } from './components/CommunicationAdmin';
+import { TrainingPortal } from './components/TrainingPortal';
+import { NotificationCenter } from './components/NotificationCenter';
+import { EventsAdmin } from './components/EventsAdmin';
+import { FinanceAdmin } from './components/FinanceAdmin';
+import { DonationPortal } from './components/DonationPortal';
+import { ElectionAdmin } from './components/ElectionAdmin';
+import { CandidateDashboard } from './components/CandidateDashboard';
+import { GrievancePortal } from './components/GrievancePortal';
+import { SurveyPolls } from './components/SurveyPolls';
+import { PgisDashboard } from './components/PgisDashboard';
+import { PublicPortal } from './components/PublicPortal';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'grievances' | 'surveys' | 'pgis';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -92,7 +105,32 @@ export default function App() {
     { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph },
     { id: 'membership', label: 'Membership', icon: UserPlus },
     { id: 'volunteers', label: 'Volunteers', icon: Heart },
+    { id: 'cms', label: 'CMS', icon: Layout },
+    { id: 'communication', label: 'Communication', icon: MessageSquare },
+    { id: 'training', label: 'Training', icon: GraduationCap },
+    { id: 'events', label: 'Events', icon: Calendar },
+    { id: 'finance', label: 'Finance', icon: DollarSign },
+    { id: 'election', label: 'Election', icon: Vote },
+    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck },
+    { id: 'grievances', label: 'Grievances', icon: ShieldAlert },
+    { id: 'surveys', label: 'Surveys', icon: ClipboardList },
+    { id: 'pgis', label: 'PGIS', icon: Shield },
   ];
+
+  if (currentView === 'public') {
+    return (
+      <div className="relative">
+        <PublicPortal />
+        <button 
+          onClick={() => setCurrentView('dashboard')}
+          className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl z-50 flex items-center gap-2 hover:scale-105 transition-all"
+        >
+          <LayoutDashboard size={20} />
+          Back to Admin
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -126,6 +164,20 @@ export default function App() {
 
         <div className="p-4 border-t border-slate-100 space-y-2">
           <button 
+            onClick={() => setCurrentView('donations')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
+          >
+            <Heart size={20} />
+            Donation Portal
+          </button>
+          <button 
+            onClick={() => setCurrentView('public')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
+          >
+            <ExternalLink size={20} />
+            View Public Portal
+          </button>
+          <button 
             onClick={toggleLanguage}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
           >
@@ -154,6 +206,7 @@ export default function App() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <NotificationCenter />
             <div className="text-right">
               <p className="text-sm font-bold text-slate-800">{user.displayName}</p>
               <p className="text-xs text-slate-500">{user.email}</p>
@@ -199,6 +252,17 @@ export default function App() {
         {currentView === 'hierarchy' && <HierarchyAdmin />}
         {currentView === 'membership' && <MembershipAdmin />}
         {currentView === 'volunteers' && <VolunteerAdmin />}
+        {currentView === 'cms' && <CmsAdmin />}
+        {currentView === 'communication' && <CommunicationAdmin />}
+        {currentView === 'training' && <TrainingPortal />}
+        {currentView === 'events' && <EventsAdmin />}
+        {currentView === 'finance' && <FinanceAdmin />}
+        {currentView === 'election' && <ElectionAdmin />}
+        {currentView === 'candidate-dashboard' && <CandidateDashboard />}
+        {currentView === 'grievances' && <GrievancePortal />}
+        {currentView === 'surveys' && <SurveyPolls />}
+        {currentView === 'pgis' && <PgisDashboard />}
+        {currentView === 'donations' && <DonationPortal />}
       </main>
     </div>
   );
