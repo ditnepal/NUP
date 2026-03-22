@@ -9,7 +9,11 @@ const handleResponse = async (response: Response) => {
       errorMessage = error.error || errorMessage;
     } catch (e) {
       console.error('API Error (non-JSON):', text.substring(0, 100));
-      errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      if (response.status === 429) {
+        errorMessage = 'Rate limit exceeded. Please wait a moment before trying again.';
+      } else {
+        errorMessage = `API Error: ${response.status} ${response.statusText}`;
+      }
     }
     throw new Error(errorMessage);
   }

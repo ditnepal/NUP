@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-const MembershipPublicVideo: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: string) => void }> = ({ onBack, onSuccess }) => {
   const { register, handleSubmit } = useForm();
   const [units, setUnits] = useState<any[]>([]);
 
@@ -37,7 +37,18 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void }> = ({ onBack }) => 
     }
   };
 
-  if (success) return <div className="p-6 bg-green-100 text-green-800 rounded-xl">Video application submitted! Tracking Code: {success}</div>;
+  if (success) {
+    return (
+      <div className="p-8 bg-emerald-50 border-2 border-emerald-100 rounded-3xl text-center">
+        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Video Application Submitted!</h2>
+        <p className="text-slate-600 mb-8">Tracking Code: <span className="font-mono font-bold text-emerald-600">{success}</span></p>
+        <div className="flex flex-col gap-3">
+          <button onClick={() => onSuccess?.(success)} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold">Check Status Now</button>
+          <button onClick={onBack} className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold">Back to Portal</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">

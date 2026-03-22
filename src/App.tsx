@@ -27,17 +27,19 @@ import { WarRoomDashboard } from './components/WarRoomDashboard';
 import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { MemberDashboard } from './components/MemberDashboard';
 import { EventDetailView } from './components/EventDetailView';
+import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
 
 export default function App() {
   const { t, i18n } = useTranslation();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [initialTrackingCode, setInitialTrackingCode] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -116,6 +118,70 @@ export default function App() {
     );
   }
 
+  if (currentView === 'public') {
+    return (
+      <div className="relative">
+        <PublicPortal 
+          user={user} 
+          onPortalClick={() => {
+            if (!user) {
+              setCurrentView('dashboard'); // This will trigger Login if user is null
+            } else {
+              setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard');
+            }
+          }} 
+          onDocumentsClick={() => setCurrentView('public-documents')} 
+          onJoinClick={() => setCurrentView('membership-public')}
+          onStatusClick={() => setCurrentView('applicant-status')}
+        />
+        {user && (
+          <button 
+            onClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')}
+            className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl z-50 flex items-center gap-2 hover:scale-105 transition-all"
+          >
+            <LayoutDashboard size={20} />
+            Back to Portal
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (currentView === 'applicant-status') {
+    return (
+      <ApplicantStatusPortal 
+        onBack={() => setCurrentView('public')} 
+        onLoginClick={() => {
+          setCurrentView('dashboard'); // Triggers login
+        }}
+        initialTrackingCode={initialTrackingCode}
+      />
+    );
+  }
+
+  if (currentView === 'membership-public') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-6">
+        <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
+        <MembershipPublic onStatusClick={(code) => {
+          setInitialTrackingCode(code || '');
+          setCurrentView('applicant-status');
+        }} />
+      </div>
+    );
+  }
+
+  if (currentView === 'public-documents') {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="max-w-7xl mx-auto p-6">
+          <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
+          <PublicDocumentsView />
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return <Login onLoginSuccess={handleLoginSuccess} t={t} />;
   }
@@ -144,30 +210,6 @@ export default function App() {
   ];
 
   const filteredNavItems = navItems.filter(item => !item.roles || item.roles.includes(user.role));
-
-  if (currentView === 'public') {
-    return (
-      <div className="relative">
-        <PublicPortal user={user} onPortalClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')} onDocumentsClick={() => setCurrentView('public-documents')} onJoinClick={() => setCurrentView('membership-public')} />
-        <button 
-          onClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')}
-          className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl z-50 flex items-center gap-2 hover:scale-105 transition-all"
-        >
-          <LayoutDashboard size={20} />
-          Back to Portal
-        </button>
-      </div>
-    );
-  }
-
-  if (currentView === 'membership-public') {
-    return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
-        <MembershipPublic />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
@@ -322,7 +364,6 @@ export default function App() {
         {currentView === 'volunteers' && <VolunteerAdmin />}
         {currentView === 'cms' && <CmsAdmin />}
         {currentView === 'documents' && <DocumentsView />}
-        {currentView === 'public-documents' && <PublicDocumentsView />}
         {currentView === 'communication' && <CommunicationAdmin />}
         {currentView === 'training' && <TrainingPortal />}
         {currentView === 'events' && <EventsAdmin />}

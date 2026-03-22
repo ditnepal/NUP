@@ -3,7 +3,11 @@ import MembershipPublicForm from './MembershipPublicForm';
 import MembershipPublicVideo from './MembershipPublicVideo';
 import MembershipPublicAssisted from './MembershipPublicAssisted';
 
-const MembershipPublic: React.FC = () => {
+interface MembershipPublicProps {
+  onStatusClick?: (trackingCode?: string) => void;
+}
+
+const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick }) => {
   const [mode, setMode] = useState<'FORM' | 'VIDEO' | 'ASSISTED' | null>(null);
 
   return (
@@ -14,11 +18,12 @@ const MembershipPublic: React.FC = () => {
           <button onClick={() => setMode('FORM')} className="p-6 bg-blue-600 text-white rounded-xl text-xl">Apply by Form</button>
           <button onClick={() => setMode('VIDEO')} className="p-6 bg-green-600 text-white rounded-xl text-xl">Apply by Video</button>
           <button onClick={() => setMode('ASSISTED')} className="p-6 bg-purple-600 text-white rounded-xl text-xl">Apply with Help</button>
+          <button onClick={() => onStatusClick?.()} className="p-4 bg-slate-200 text-slate-700 rounded-xl font-bold mt-4">Already Applied? Check Status</button>
         </div>
       )}
-      {mode === 'FORM' && <MembershipPublicForm onBack={() => setMode(null)} />}
-      {mode === 'VIDEO' && <MembershipPublicVideo onBack={() => setMode(null)} />}
-      {mode === 'ASSISTED' && <MembershipPublicAssisted onBack={() => setMode(null)} />}
+      {mode === 'FORM' && <MembershipPublicForm onBack={() => setMode(null)} onSuccess={(code) => onStatusClick?.(code)} />}
+      {mode === 'VIDEO' && <MembershipPublicVideo onBack={() => setMode(null)} onSuccess={(code) => onStatusClick?.(code)} />}
+      {mode === 'ASSISTED' && <MembershipPublicAssisted onBack={() => setMode(null)} onSuccess={(code) => onStatusClick?.(code)} />}
     </div>
   );
 };

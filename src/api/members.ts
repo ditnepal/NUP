@@ -9,37 +9,6 @@ import { hierarchyService } from '../services/hierarchy.service';
 const router = express.Router();
 console.log('Members router loaded');
 
-const memberApplySchema = z.object({
-  fullName: z.string().min(2),
-  email: z.string().email().optional(),
-  mobile: z.string().optional(),
-  citizenshipNumber: z.string().min(5).optional(),
-  dateOfBirth: z.string().min(1).transform(str => new Date(str)).optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-  fatherName: z.string().optional(),
-  motherName: z.string().optional(),
-  citizenshipDistrict: z.string().optional(),
-  citizenshipIssueDate: z.string().optional().transform(str => str ? new Date(str) : undefined),
-  province: z.string().optional(),
-  district: z.string().optional(),
-  localLevel: z.string().optional(),
-  ward: z.number().optional(),
-  tole: z.string().optional(),
-  alternateContactName: z.string().optional(),
-  alternateContactMobile: z.string().optional(),
-  occupation: z.string().optional(),
-  applicationMode: z.enum(['FORM', 'VIDEO', 'ASSISTED']).default('FORM'),
-  videoUrl: z.string().optional(),
-  identityDocumentUrl: z.string().optional(),
-  identityDocumentType: z.string().optional(),
-  profilePhotoUrl: z.string().optional(),
-  helperName: z.string().optional(),
-  helperPhone: z.string().optional(),
-  helperRole: z.string().optional(),
-  declaration: z.preprocess((val) => val === 'true' || val === true, z.boolean().optional()),
-  orgUnitId: z.string().min(1),
-});
-
 // @route   GET /api/v1/members/:id
 // @desc    Get member details
 // @access  Private (Admin/Staff)
@@ -48,7 +17,7 @@ router.get('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: Auth
     const { id } = req.params;
     const member = await prisma.member.findUnique({
       where: { id },
-      include: { orgUnit: true, user: { select: { email: true, displayName: true } } }
+      include: { orgUnit: true, user: { select: { email: true, displayName: true, phoneNumber: true } } }
     });
     if (!member) return res.status(404).json({ error: 'Member not found' });
     res.json(member);
@@ -85,7 +54,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
       where: query,
       include: {
         orgUnit: { select: { name: true, level: true } },
-        user: { select: { email: true, displayName: true } }
+        user: { select: { email: true, displayName: true, phoneNumber: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -105,7 +74,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
       where: { userId: req.user?.id },
       include: { 
         orgUnit: true,
-        user: { select: { email: true, displayName: true } }
+        user: { select: { email: true, displayName: true, phoneNumber: true } }
       }
     });
 
@@ -169,48 +138,93 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
 // @desc    Submit membership application
 // @access  Public (or Staff)
 import multer from 'multer';
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/webp', 
+      'video/mp4', 'video/quicktime', 'video/x-msvideo',
+      'application/pdf'
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images, videos, and PDFs are allowed.'));
+    }
+  }
+});
+
+const memberApplySchema = z.object({
+  fullName: z.string().min(2, "Full name is required"),
+  email: z.string().email().optional().or(z.literal('')),
+  mobile: z.string().optional().or(z.literal('')),
+  citizenshipNumber: z.string().min(5).optional().or(z.literal('')),
+  dateOfBirth: z.preprocess((val) => val ? new Date(val as string) : undefined, z.date().optional()),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  fatherName: z.string().optional().or(z.literal('')),
+  motherName: z.string().optional().or(z.literal('')),
+  citizenshipDistrict: z.string().optional().or(z.literal('')),
+  citizenshipIssueDate: z.preprocess((val) => val ? new Date(val as string) : undefined, z.date().optional()),
+  province: z.string().optional().or(z.literal('')),
+  district: z.string().optional().or(z.literal('')),
+  localLevel: z.string().optional().or(z.literal('')),
+  ward: z.preprocess((val) => val ? parseInt(val as string) : undefined, z.number().optional()),
+  tole: z.string().optional().or(z.literal('')),
+  alternateContactName: z.string().optional().or(z.literal('')),
+  alternateContactMobile: z.string().optional().or(z.literal('')),
+  occupation: z.string().optional().or(z.literal('')),
+  applicationMode: z.enum(['FORM', 'VIDEO', 'ASSISTED']).default('FORM'),
+  orgUnitId: z.string().min(1, "Organization Unit is required"),
+  identityDocumentType: z.string().optional().or(z.literal('')),
+  helperName: z.string().optional().or(z.literal('')),
+  helperPhone: z.string().optional().or(z.literal('')),
+  helperRole: z.string().optional().or(z.literal('')),
+  declaration: z.preprocess((val) => val === 'true' || val === true, z.boolean().optional()),
+});
 
 // @route   POST /api/v1/members/apply
 // @desc    Submit membership application
 // @access  Public (or Staff)
-router.post('/apply', upload.any(), async (req, res) => {
+router.post('/apply', upload.fields([
+  { name: 'identityDocument', maxCount: 1 },
+  { name: 'profilePhoto', maxCount: 1 },
+  { name: 'video', maxCount: 1 }
+]), async (req, res) => {
   try {
-    const data = req.body;
-    console.log('Req headers:', req.headers);
-    const files = req.files as Express.Multer.File[];
+    // 1. Validate fields with Zod
+    const validatedData = memberApplySchema.parse(req.body);
     
-    // Map files to the data object
-    const identityDocument = files.find(f => f.fieldname === 'identityDocument');
-    const profilePhoto = files.find(f => f.fieldname === 'profilePhoto');
-    const video = files.find(f => f.fieldname === 'video');
+    // 2. Extract files
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } || {};
+    const identityDocument = files['identityDocument']?.[0];
+    const profilePhoto = files['profilePhoto']?.[0];
+    const video = files['video']?.[0];
     
-    const applicationMode = data.applicationMode || 'FORM';
-    console.log('Application Mode:', applicationMode);
-    console.log('Raw req.body:', JSON.stringify(data));
-    
+    // 3. Mode-specific file validation
+    if (validatedData.applicationMode === 'FORM') {
+      if (!identityDocument) return res.status(400).json({ error: 'Identity document is required for FORM applications' });
+      if (!profilePhoto) return res.status(400).json({ error: 'Profile photo is required for FORM applications' });
+    } else if (validatedData.applicationMode === 'VIDEO') {
+      if (!video) return res.status(400).json({ error: 'Video submission is required for VIDEO applications' });
+    } else if (validatedData.applicationMode === 'ASSISTED') {
+      if (!identityDocument) return res.status(400).json({ error: 'Identity document is required for ASSISTED applications' });
+    }
+
+    // 4. Merge data for service
     const applicationData = {
-      fullName: data.fullName || `Applicant ${Date.now()}`,
-      email: data.email,
-      phone: data.mobile,
-      citizenshipNumber: data.citizenshipNumber,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
-      gender: data.gender,
-      province: data.province,
-      district: data.district,
-      localLevel: data.localLevel,
-      ward: data.ward ? parseInt(data.ward) : undefined,
-      orgUnitId: data.orgUnitId,
-      applicationMode: applicationMode,
-      identityDocumentUrl: identityDocument ? identityDocument.path : undefined,
-      profilePhotoUrl: profilePhoto ? profilePhoto.path : undefined,
-      videoUrl: video ? video.path : undefined,
+      ...validatedData,
+      identityDocumentUrl: identityDocument?.path,
+      profilePhotoUrl: profilePhoto?.path,
+      videoUrl: video?.path,
     };
-    console.log('Application Data:', JSON.stringify(applicationData));
 
     const member = await membershipService.apply(applicationData as any);
     res.status(201).json({ trackingCode: member.trackingCode });
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation failed', details: error.issues });
+    }
     res.status(400).json({ error: error.message });
   }
 });

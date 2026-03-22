@@ -14,7 +14,7 @@ function getAiClient() {
 }
 
 export const aiService = {
-  async generateStrategicSummary(data: any) {
+  async generateStrategicSummary(data: any, retryCount = 0): Promise<string> {
     try {
       const ai = getAiClient();
       const prompt = `
@@ -38,13 +38,18 @@ export const aiService = {
       });
 
       return response.text;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message?.includes('429') && retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.generateStrategicSummary(data, retryCount + 1);
+      }
       console.error('AI Strategic Summary Error:', error);
-      return "Unable to generate strategic summary at this time.";
+      return "Unable to generate strategic summary at this time. (Rate limit reached or service unavailable)";
     }
   },
 
-  async analyzeSentiment(reports: any[]) {
+  async analyzeSentiment(reports: any[], retryCount = 0): Promise<any> {
     try {
       const ai = getAiClient();
       const prompt = `
@@ -63,9 +68,14 @@ export const aiService = {
       });
 
       return JSON.parse(response.text || '{}');
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message?.includes('429') && retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.analyzeSentiment(reports, retryCount + 1);
+      }
       console.error('AI Sentiment Analysis Error:', error);
-      return { score: 50, analysis: "Sentiment analysis unavailable." };
+      return { score: 50, analysis: "Sentiment analysis unavailable due to rate limits." };
     }
   }
 };

@@ -9,7 +9,7 @@ export const NotificationCenter: React.FC = () => {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000); // Refresh every minute
+    const interval = setInterval(fetchNotifications, 300000); // Refresh every 5 minutes
     return () => clearInterval(interval);
   }, []);
 

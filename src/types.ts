@@ -13,6 +13,7 @@ export interface UserProfile {
   displayName: string;
   email: string;
   role: UserRole;
+  phoneNumber?: string;
   partyRole?: string;
   committeeId?: string;
   orgUnitId?: string;
@@ -134,6 +135,7 @@ export interface Member {
   identityDocumentUrl?: string;
   videoUrl?: string;
   orgUnitId?: string;
+  orgUnit?: OrganizationUnit;
   committeeId?: string;
   status: 'PENDING' | 'VERIFIED' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED' | 'REJECTED';
   joinedDate?: string;
@@ -233,19 +235,15 @@ export interface PartyDocument {
   id: string;
   title: string;
   description: string | null;
-  category: 'POLICY' | 'MANIFESTO' | 'FORMS' | 'REPORTS' | 'OTHER';
-  categoryId: string;
+  category: string;
   fileUrl: string;
   fileName: string;
   fileType: string;
   size: number;
-  uploadedBy: {
-    id: string;
-    displayName: string;
-  };
+  uploadedBy: string;
+  isPublished: boolean;
   createdAt: string;
-  version: number;
-  tags: string[];
+  updatedAt: string;
 }
 
 export interface Supporter {

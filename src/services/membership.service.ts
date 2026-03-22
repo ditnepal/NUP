@@ -9,16 +9,22 @@ export class MembershipService extends BaseService {
   async apply(data: {
     fullName: string;
     email?: string;
-    phone?: string;
+    mobile?: string;
     citizenshipNumber?: string;
     dateOfBirth?: Date;
     gender?: string;
-    bloodGroup?: string;
+    fatherName?: string;
+    motherName?: string;
+    citizenshipDistrict?: string;
+    citizenshipIssueDate?: Date;
     province?: string;
     district?: string;
     localLevel?: string;
     ward?: number;
-    orgUnitId: string;
+    tole?: string;
+    alternateContactName?: string;
+    alternateContactMobile?: string;
+    occupation?: string;
     applicationMode: 'FORM' | 'VIDEO' | 'ASSISTED';
     videoUrl?: string;
     identityDocumentUrl?: string;
@@ -27,6 +33,8 @@ export class MembershipService extends BaseService {
     helperName?: string;
     helperPhone?: string;
     helperRole?: string;
+    declaration?: boolean;
+    orgUnitId: string;
   }) {
     // 1. Duplicate Detection (only if citizenshipNumber or email provided)
     if (data.citizenshipNumber || data.email) {
@@ -34,7 +42,7 @@ export class MembershipService extends BaseService {
         where: {
           OR: [
             data.citizenshipNumber ? { citizenshipNumber: data.citizenshipNumber } : {},
-            data.email ? { user: { email: data.email } } : {},
+            data.email ? { email: data.email } : {},
           ].filter(Boolean) as any
         }
       });
@@ -44,13 +52,6 @@ export class MembershipService extends BaseService {
       }
     }
 
-    // 2. Conditional Validation
-    if (data.applicationMode === 'FORM') {
-      if (!data.province || !data.district || !data.localLevel || !data.ward) {
-        throw new Error('All address fields are required for form applications.');
-      }
-    }
-    
     // 2. Eligibility Check (ECN: Age >= 18) - only if DOB provided
     if (data.dateOfBirth) {
       const age = this.calculateAge(data.dateOfBirth);
@@ -63,36 +64,37 @@ export class MembershipService extends BaseService {
     const trackingCode = `T-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     // 4. Create Member (Pending)
-    console.log('Creating member with data:', JSON.stringify({
-      fullName: data.fullName || `Applicant ${Date.now()}`,
-      citizenshipNumber: data.citizenshipNumber,
-      province: data.province,
-      district: data.district,
-      localLevel: data.localLevel,
-      ward: data.ward,
-      orgUnitId: data.orgUnitId,
-      applicationMode: data.applicationMode,
-      videoUrl: data.videoUrl,
-      identityDocumentUrl: data.identityDocumentUrl,
-      profilePhotoUrl: data.profilePhotoUrl,
-      trackingCode,
-      status: 'PENDING',
-    }));
     const member = await this.db.member.create({
       data: {
-        fullName: data.fullName || `Applicant ${Date.now()}`,
+        fullName: data.fullName,
+        email: data.email,
+        mobile: data.mobile,
         citizenshipNumber: data.citizenshipNumber,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        fatherName: data.fatherName,
+        motherName: data.motherName,
+        citizenshipDistrict: data.citizenshipDistrict,
+        citizenshipIssueDate: data.citizenshipIssueDate,
         province: data.province,
         district: data.district,
         localLevel: data.localLevel,
         ward: data.ward,
-        orgUnitId: data.orgUnitId,
+        tole: data.tole,
+        alternateContactName: data.alternateContactName,
+        alternateContactMobile: data.alternateContactMobile,
+        occupation: data.occupation,
         applicationMode: data.applicationMode,
         videoUrl: data.videoUrl,
         identityDocumentUrl: data.identityDocumentUrl,
+        identityDocumentType: data.identityDocumentType,
         profilePhotoUrl: data.profilePhotoUrl,
+        helperName: data.helperName,
+        helperPhone: data.helperPhone,
+        helperRole: data.helperRole,
         trackingCode,
         status: 'PENDING',
+        orgUnitId: data.orgUnitId,
       }
     });
 
@@ -133,34 +135,66 @@ export class MembershipService extends BaseService {
    */
   async approve(memberId: string, approverId: string) {
     const year = new Date().getFullYear();
-    const count = await this.db.member.count({
-      where: { status: 'ACTIVE', membershipId: { startsWith: `NUP-${year}` } }
-    });
     
-    const membershipId = `NUP-${year}-${(count + 1).toString().padStart(4, '0')}`;
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year renewal cycle
+    // Safer ID generation: Find the highest current ID for this year and increment
+    let membershipId = '';
+    let attempts = 0;
+    const maxAttempts = 5;
 
-    const member = await this.db.member.update({
-      where: { id: memberId },
-      data: {
-        status: 'ACTIVE',
-        membershipId,
-        approvedById: approverId,
-        joinedDate: new Date(),
-        expiryDate
+    while (attempts < maxAttempts) {
+      const lastMember = await this.db.member.findFirst({
+        where: { membershipId: { startsWith: `NUP-${year}-` } },
+        orderBy: { membershipId: 'desc' },
+        select: { membershipId: true }
+      });
+
+      let nextNum = 1;
+      if (lastMember && lastMember.membershipId) {
+        const parts = lastMember.membershipId.split('-');
+        const lastNum = parseInt(parts[parts.length - 1]);
+        if (!isNaN(lastNum)) {
+          nextNum = lastNum + 1;
+        }
       }
-    });
 
-    await auditService.log({
-      action: 'MEMBERSHIP_APPROVED',
-      userId: approverId,
-      entityType: 'Member',
-      entityId: member.id,
-      details: { membershipId }
-    });
+      membershipId = `NUP-${year}-${nextNum.toString().padStart(4, '0')}`;
 
-    return member;
+      try {
+        const expiryDate = new Date();
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+        const member = await this.db.member.update({
+          where: { id: memberId },
+          data: {
+            status: 'ACTIVE',
+            membershipId,
+            approvedById: approverId,
+            joinedDate: new Date(),
+            expiryDate,
+            qrCodeData: `QR-${Math.random().toString(36).substring(2, 12).toUpperCase()}` // Auto-generate on approval
+          }
+        });
+
+        await auditService.log({
+          action: 'MEMBERSHIP_APPROVED',
+          userId: approverId,
+          entityType: 'Member',
+          entityId: member.id,
+          details: { membershipId }
+        });
+
+        return member;
+      } catch (error: any) {
+        // If unique constraint violation, retry with next number
+        if (error.code === 'P2002') {
+          attempts++;
+          continue;
+        }
+        throw error;
+      }
+    }
+    
+    throw new Error('Failed to generate a unique Membership ID after multiple attempts');
   }
 
   /**
@@ -208,7 +242,8 @@ export class MembershipService extends BaseService {
    */
   async suspend(memberId: string, reason: string) {
     const member = await this.db.member.findUnique({ where: { id: memberId } });
-    const history = JSON.parse(member?.suspensionHistory || '[]');
+    if (!member) throw new Error('Member not found');
+    const history = JSON.parse(member.suspensionHistory || '[]');
     history.push({ reason, date: new Date() });
 
     return await this.db.member.update({
@@ -225,7 +260,8 @@ export class MembershipService extends BaseService {
    */
   async terminate(memberId: string, reason: string) {
     const member = await this.db.member.findUnique({ where: { id: memberId } });
-    const history = JSON.parse(member?.terminationHistory || '[]');
+    if (!member) throw new Error('Member not found');
+    const history = JSON.parse(member.terminationHistory || '[]');
     history.push({ reason, date: new Date() });
 
     return await this.db.member.update({

@@ -4,6 +4,7 @@ import { Plus, Search, Loader2, Upload, FileText, Trash2, X } from 'lucide-react
 import { PartyDocument } from '../types';
 import { DocumentCard } from './ui/DocumentCard';
 import { DocumentTable } from './ui/DocumentTable';
+import { ConfirmationModal } from './ConfirmationModal';
 
 export const DocumentsView: React.FC = () => {
   const [documents, setDocuments] = useState<PartyDocument[]>([]);
@@ -12,6 +13,8 @@ export const DocumentsView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -28,14 +31,21 @@ export const DocumentsView: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this document?')) {
-      try {
-        await api.delete(`/documents/${id}`);
-        fetchDocuments();
-      } catch (error) {
-        console.error('Error deleting document:', error);
-      }
+  const handleDelete = (id: string) => {
+    setDocumentToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!documentToDelete) return;
+    try {
+      await api.delete(`/documents/${documentToDelete}`);
+      fetchDocuments();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    } finally {
+      setDocumentToDelete(null);
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -126,6 +136,14 @@ export const DocumentsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Document"
+        message="Are you sure you want to delete this document? This action cannot be undone."
+      />
     </div>
   );
 };

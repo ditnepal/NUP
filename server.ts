@@ -50,7 +50,7 @@ export async function createApp() {
   // Rate Limiting
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    max: 200, // Increased from 100
     message: { error: 'Too many login attempts, please try again later' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -58,7 +58,7 @@ export async function createApp() {
 
   const publicLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 500,
+    max: 1000, // Increased from 500
     message: { error: 'Too many requests from this IP, please try again later' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -70,6 +70,9 @@ export async function createApp() {
   // API Routes
   app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
   app.get('/test', (req, res) => res.send('Server is running!'));
+
+  // Move notifications higher to ensure it's matched
+  app.use('/api/v1/notifications', notificationsRouter);
 
   // Serve uploaded documents
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -96,10 +99,14 @@ export async function createApp() {
   app.use('/api/v1/volunteers', volunteersRouter);
   app.use('/api/v1/communication', communicationRouter);
   app.use('/api/v1/training', trainingRouter);
-  app.use('/api/v1/notifications', notificationsRouter);
   app.use('/api/v1/finance', financeRouter);
   app.use('/api/v1/election', electionRouter);
   app.use('/api/v1/warroom', warroomRouter);
+
+  // Catch-all for API routes to return 404 JSON instead of HTML
+  app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: `API route not found: ${req.method} ${req.url}` });
+  });
 
   console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}`);
   const isProd = process.env.NODE_ENV === 'production';

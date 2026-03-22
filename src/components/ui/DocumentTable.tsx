@@ -50,7 +50,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onDelet
               </td>
               <td className="px-6 py-4">
                 <p className="text-xs font-bold text-slate-700">{doc.fileName}</p>
-                <p className="text-[10px] text-slate-400 uppercase">{doc.fileType.split('/')[1] || doc.fileType} • {formatSize(doc.size)} • v{doc.version}</p>
+                <p className="text-[10px] text-slate-400 uppercase">{doc.fileType.split('/')[1] || doc.fileType} • {formatSize(doc.size)}</p>
               </td>
               <td className="px-6 py-4 text-xs text-slate-500">
                 {format(new Date(doc.createdAt), 'MMM d, yyyy')}

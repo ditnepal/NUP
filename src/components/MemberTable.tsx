@@ -40,16 +40,18 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 <td className="px-6 py-4">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold mr-3">
-                      {member.fullName.charAt(0)}
+                      {(member.fullName || 'M').charAt(0)}
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">{member.fullName}</div>
-                      <div className="text-xs text-gray-500">{member.email || member.phone}</div>
+                      <div className="font-medium text-gray-900">{member.fullName || 'Unknown Member'}</div>
+                      <div className="text-xs text-gray-500">{member.email || member.mobile || 'No contact info'}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{member.orgUnitId}</div>
+                  <div className="text-sm text-gray-900">
+                    {member.orgUnit?.name || member.orgUnitId}
+                  </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-900 font-mono">{member.citizenshipNumber}</td>
                 <td className="px-6 py-4">

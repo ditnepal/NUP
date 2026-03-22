@@ -49,7 +49,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ document, onDelete }
           {document.category}
         </span>
         <span className="text-xs text-slate-400 font-medium">
-          {formatSize(document.size)} • v{document.version}
+          {formatSize(document.size)}
         </span>
       </div>
     </div>

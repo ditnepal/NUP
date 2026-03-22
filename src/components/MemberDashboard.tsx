@@ -15,6 +15,7 @@ import {
   Share2,
   CheckCircle2,
   Clock,
+  XCircle,
   Loader2,
   AlertCircle,
   ListTodo,
@@ -33,13 +34,16 @@ interface MemberProfile {
   id: string;
   fullName: string;
   membershipId: string;
+  trackingCode: string;
   status: string;
   province: string;
   joinedDate: string;
+  terminationHistory?: string;
   cardStatus?: 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
   issueDate?: string;
   expiryDate?: string;
   qrCodeUrl?: string;
+  profilePhotoUrl?: string;
   orgUnit: {
     name: string;
     level: string;
@@ -91,9 +95,107 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
 
   if (!profile) {
     return (
-      <div className="bg-amber-50 border border-amber-200 p-6 rounded-3xl text-amber-800">
-        <h2 className="text-xl font-bold mb-2">Profile Not Found</h2>
-        <p>We couldn't find your membership profile. Please contact support if you believe this is an error.</p>
+      <div className="bg-amber-50 border border-amber-200 p-8 rounded-3xl text-amber-800 text-center max-w-2xl mx-auto mt-12">
+        <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <AlertCircle size={32} className="text-amber-600" />
+        </div>
+        <h2 className="text-2xl font-black uppercase tracking-tight mb-4">Profile Not Found</h2>
+        <p className="text-amber-700 mb-8">We couldn't find your membership profile. If you have already applied, please check your application status using your tracking code.</p>
+        <button 
+          onClick={() => window.location.reload()} // Or navigate to status portal if possible
+          className="px-8 py-3 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-all"
+        >
+          Refresh Profile
+        </button>
+      </div>
+    );
+  }
+
+  if (profile.status !== 'ACTIVE') {
+    const getStatusIcon = (status: string) => {
+      switch (status) {
+        case 'REJECTED': 
+        case 'TERMINATED':
+        case 'SUSPENDED':
+          return <XCircle className="text-rose-500" size={48} />;
+        default: return <Clock className="text-amber-500" size={48} />;
+      }
+    };
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'REJECTED': 
+        case 'TERMINATED':
+        case 'SUSPENDED':
+          return 'bg-rose-100 text-rose-700 border-rose-200';
+        default: return 'bg-amber-100 text-amber-700 border-amber-200';
+      }
+    };
+
+    return (
+      <div className="max-w-2xl mx-auto mt-12">
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 p-8 md:p-12">
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-6 p-4 bg-slate-50 rounded-full">
+              {getStatusIcon(profile.status)}
+            </div>
+            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-2">Application Status</h1>
+            <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border mb-8 ${getStatusColor(profile.status)}`}>
+              {profile.status}
+            </div>
+            
+            <p className="text-slate-600 mb-10">
+              {profile.status === 'PENDING' || profile.status === 'VERIFIED' 
+                ? "Your membership application is currently being reviewed by our administrative team. We'll notify you once a decision is made."
+                : profile.status === 'REJECTED'
+                ? "Unfortunately, your membership application has been rejected. Please see the reason below."
+                : profile.status === 'SUSPENDED'
+                ? "Your membership is currently suspended. Please contact the administrator for more information."
+                : profile.status === 'TERMINATED'
+                ? "Your membership has been terminated. Please contact the administrator for more information."
+                : "Your application is in progress."}
+            </p>
+
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-10">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</p>
+                <p className="font-bold text-slate-700">{profile.fullName}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tracking Code</p>
+                <p className="font-mono font-bold text-slate-700">{profile.trackingCode || 'N/A'}</p>
+              </div>
+            </div>
+
+            {(profile.status === 'REJECTED' || profile.status === 'TERMINATED' || profile.status === 'SUSPENDED') && (
+              <div className="w-full p-6 bg-rose-50 border border-rose-100 rounded-3xl text-left mb-10">
+                <p className="text-xs font-black text-rose-400 uppercase tracking-widest mb-2">Reason</p>
+                <p className="text-rose-700 font-medium">
+                  {(() => {
+                    if (profile.terminationHistory) {
+                      try {
+                        const history = JSON.parse(profile.terminationHistory);
+                        if (Array.isArray(history) && history.length > 0) {
+                          return history[history.length - 1].reason;
+                        }
+                      } catch (e) {
+                        console.error('Error parsing termination history:', e);
+                      }
+                    }
+                    return 'Please contact the administrator for more details.';
+                  })()}
+                </p>
+              </div>
+            )}
+
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
+            >
+              Refresh Status
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -168,11 +270,28 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
               
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-16 h-16 bg-white/20 rounded-2xl border border-white/30 overflow-hidden">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} alt="Avatar" referrerPolicy="no-referrer" />
+                  <img 
+                    src={profile.profilePhotoUrl ? (profile.profilePhotoUrl.startsWith('http') ? profile.profilePhotoUrl : (profile.profilePhotoUrl.startsWith('/') ? profile.profilePhotoUrl : `/${profile.profilePhotoUrl}`)) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
+                    alt="Avatar" 
+                    referrerPolicy="no-referrer" 
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
                 <div>
-                  <p className="text-lg font-bold">{profile.fullName}</p>
+                  <p className="text-lg font-bold leading-tight">{profile.fullName}</p>
                   <p className="text-xs text-slate-400 font-mono">ID: {profile.membershipId || 'PENDING'}</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{profile.orgUnit?.name || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Mobile</p>
+                  <p className="text-xs font-bold">{user.phoneNumber || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Email</p>
+                  <p className="text-xs font-bold truncate max-w-[120px]">{user.email}</p>
                 </div>
               </div>
 
@@ -185,18 +304,18 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Province</p>
-                  <p className="text-sm font-bold">{profile.province}</p>
+                  <p className="text-sm font-bold">{profile.province || 'N/A'}</p>
                 </div>
               </div>
-              {profile.cardStatus && (
+              {profile.joinedDate && (
                 <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-[10px] text-slate-400 uppercase font-bold">Issue Date</p>
-                    <p className="text-xs font-bold">{profile.issueDate ? format(new Date(profile.issueDate), 'MMM d, yyyy') : 'N/A'}</p>
+                    <p className="text-xs font-bold">{format(new Date(profile.joinedDate), 'MMM d, yyyy')}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400 uppercase font-bold">Expiry Date</p>
-                    <p className="text-xs font-bold">{profile.expiryDate ? format(new Date(profile.expiryDate), 'MMM d, yyyy') : 'N/A'}</p>
+                    <p className="text-xs font-bold">{profile.expiryDate ? format(new Date(profile.expiryDate), 'MMM d, yyyy') : 'Lifetime'}</p>
                   </div>
                 </div>
               )}

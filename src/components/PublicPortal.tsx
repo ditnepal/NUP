@@ -8,9 +8,10 @@ interface PublicPortalProps {
   onPortalClick?: () => void;
   onDocumentsClick?: () => void;
   onJoinClick?: () => void;
+  onStatusClick?: () => void;
 }
 
-export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onJoinClick }) => {
+export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onJoinClick, onStatusClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +47,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             <div className="hidden md:flex items-center gap-8">
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Manifesto</a>
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">News</a>
-              <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Leadership</a>
+              <button onClick={onStatusClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Check Status</button>
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Contact</a>
               {user ? (
                 <button 
@@ -76,7 +77,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
           <div className="flex flex-col gap-6">
             <a href="#" className="text-2xl font-bold text-slate-800">Manifesto</a>
             <a href="#" className="text-2xl font-bold text-slate-800">News</a>
-            <a href="#" className="text-2xl font-bold text-slate-800">Leadership</a>
+            <button onClick={onStatusClick} className="text-2xl font-bold text-slate-800 text-left">Check Status</button>
             <a href="#" className="text-2xl font-bold text-slate-800">Contact</a>
             {user ? (
               <button 
@@ -112,8 +113,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               <button onClick={onJoinClick} className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2">
                 Become a Member <ChevronRight size={20} />
               </button>
-              <button className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                Read Manifesto
+              <button onClick={onStatusClick} className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                Check Application Status
               </button>
             </div>
           </div>

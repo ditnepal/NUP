@@ -140,4 +140,33 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
   }
 });
 
+router.delete('/:id', authenticate, authorize(['ADMIN', 'NATIONAL_ADMIN', 'DISTRICT_COORDINATOR']), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const document = await prisma.document.findUnique({
+      where: { id },
+    });
+
+    if (!document) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // Delete physical file
+    const filePath = path.join(process.cwd(), document.fileUrl);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    await prisma.document.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Document deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting document:', error);
+    res.status(500).json({ error: 'Failed to delete document' });
+  }
+});
+
 export default router;
