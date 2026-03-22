@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 export class SurveyService {
   async createSurvey(data: { title: string; description?: string; questions: any[] }) {

@@ -76,6 +76,15 @@ export const MembershipAdmin: React.FC = () => {
     }
   };
 
+  const handleReject = async (id: string, reason?: string) => {
+    try {
+      await api.post(`/members/${id}/reject`, { reason });
+      await fetchMembers();
+    } catch (error) {
+      console.error('Error rejecting member:', error);
+    }
+  };
+
   const handleRenew = (member: Member) => {
     setSelectedMember(member);
     setConfirmationAction({ type: 'RENEW', id: member.id });
@@ -147,7 +156,7 @@ export const MembershipAdmin: React.FC = () => {
           <p className="text-gray-500">Verify and approve new membership applications.</p>
         </div>
         <div className="flex flex-wrap bg-gray-100 p-1 rounded-lg gap-1">
-          {['PENDING', 'VERIFIED', 'ACTIVE', 'SUSPENDED', 'TERMINATED'].map((status) => (
+          {['PENDING', 'VERIFIED', 'ACTIVE', 'REJECTED', 'SUSPENDED', 'TERMINATED'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -167,6 +176,7 @@ export const MembershipAdmin: React.FC = () => {
           onClose={() => setShowDetailModal(false)}
           onVerify={handleVerify}
           onApprove={handleApprove}
+          onReject={handleReject}
         />
       )}
 

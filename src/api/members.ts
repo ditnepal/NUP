@@ -215,6 +215,20 @@ router.post('/apply', upload.any(), async (req, res) => {
   }
 });
 
+// @route   POST /api/v1/members/:id/reject
+// @desc    Reject membership application
+// @access  Private (Admin/Staff)
+router.post('/:id/reject', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const member = await membershipService.reject(id, reason);
+    res.json(member);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // @route   POST /api/v1/members/:id/verify
 // @desc    Verify membership (Local Unit)
 // @access  Private (Staff/Admin)
@@ -282,6 +296,19 @@ router.post('/:id/renew', authenticate, authorize(['ADMIN', 'STAFF']), async (re
   try {
     const { id } = req.params;
     const member = await membershipService.renew(id);
+    res.json(member);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/members/:id/generate-card
+// @desc    Generate membership card
+// @access  Private (Admin/Staff)
+router.post('/:id/generate-card', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const member = await membershipService.generateCard(id);
     res.json(member);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

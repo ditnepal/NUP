@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from './src/lib/prisma';
 import bcrypt from 'bcryptjs';
 import 'dotenv/config';
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');

@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { auditService } from './audit.service';
-
-const prisma = new PrismaClient();
 
 export class PgisService {
   // --- Ground Intelligence Reports ---

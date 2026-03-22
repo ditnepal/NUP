@@ -1,11 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: "file:./dev.db",
-    },
-  },
-});
+import prisma from './src/lib/prisma';
 
 async function main() {
   const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });

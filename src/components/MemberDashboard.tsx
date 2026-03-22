@@ -200,9 +200,14 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                   </div>
                 </div>
               )}
-              {profile.qrCodeUrl && (
+              {profile.status === 'ACTIVE' && (
                 <div className="mt-4 flex justify-center">
-                  <img src={profile.qrCodeUrl} alt="QR Code" className="w-20 h-20 bg-white p-1 rounded-lg" referrerPolicy="no-referrer" />
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${profile.membershipId || profile.id}`} 
+                    alt="QR Code" 
+                    className="w-24 h-24 bg-white p-2 rounded-xl shadow-inner" 
+                    referrerPolicy="no-referrer" 
+                  />
                 </div>
               )}
             </div>

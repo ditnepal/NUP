@@ -237,6 +237,19 @@ export class MembershipService extends BaseService {
     });
   }
 
+  /**
+   * Reject Membership Application
+   */
+  async reject(memberId: string, reason?: string) {
+    return await this.db.member.update({
+      where: { id: memberId },
+      data: {
+        status: 'REJECTED',
+        terminationHistory: reason ? JSON.stringify([{ reason, date: new Date() }]) : undefined
+      }
+    });
+  }
+
   private calculateAge(dob: Date): number {
     const diff = Date.now() - dob.getTime();
     const ageDate = new Date(diff);

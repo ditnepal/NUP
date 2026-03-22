@@ -122,28 +122,43 @@ export interface AuditLogEntry {
 
 export interface Member {
   id: string;
-  membershipId: string;
+  membershipId?: string;
+  trackingCode: string;
   fullName: string;
-  email: string;
-  phone: string;
-  citizenshipNumber: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  citizenshipNumber?: string;
   photoUrl?: string;
-  orgUnitId: string;
+  profilePhotoUrl?: string;
+  identityDocumentUrl?: string;
+  videoUrl?: string;
+  orgUnitId?: string;
   committeeId?: string;
-  status: 'PENDING' | 'VERIFIED' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
-  verificationStatus: {
+  status: 'PENDING' | 'VERIFIED' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED' | 'REJECTED';
+  joinedDate?: string;
+  expiryDate?: string;
+  applicationMode: 'FORM' | 'VIDEO' | 'ASSISTED';
+  province?: string;
+  district?: string;
+  localLevel?: string;
+  ward?: number;
+  fatherName?: string;
+  motherName?: string;
+  occupation?: string;
+  qrCodeData?: string;
+  createdAt: string;
+  updatedAt: string;
+  verificationStatus?: {
     verifiedAt: string;
     verifiedBy: string;
     verificationNotes?: string;
   };
   cardStatus?: 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
   issueDate?: string;
-  expiryDate?: string;
   qrCodeUrl?: string;
-  customAttributes: Record<string, any>;
-  auditTrail: AuditLogEntry[];
-  createdAt: string;
-  updatedAt: string;
+  customAttributes?: Record<string, any>;
+  auditTrail?: AuditLogEntry[];
   skills?: string[];
   availability?: string[];
   assignedTasks?: any[];
