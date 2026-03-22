@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 
 const isProd = process.env.NODE_ENV === 'production';
-const dbUrl = isProd ? 'file:/tmp/dev.db' : 'file:./prisma/dev.db';
+const dbUrl = process.env.DATABASE_URL || 'file:/app/applet/prisma/dev.db';
 process.env.DATABASE_URL = dbUrl;
 
 console.log(`[START] Using DATABASE_URL: ${dbUrl}`);
@@ -9,12 +9,6 @@ console.log(`[START] Using DATABASE_URL: ${dbUrl}`);
 try {
   console.log('[START] Running prisma generate...');
   execSync('npx prisma generate', { stdio: 'inherit' });
-  
-  console.log('[START] Running prisma db push...');
-  execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
-  
-  console.log('[START] Running seed.ts...');
-  execSync('npx tsx seed.ts', { stdio: 'inherit' });
   
   console.log('[START] Starting server...');
   import('./server.ts').catch(err => {

@@ -16,3 +16,22 @@
     background-color: #94a3b8;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #member-id-card-modal, #member-id-card-modal *,
+  #member-id-card-dashboard, #member-id-card-dashboard * {
+    visibility: visible;
+  }
+  #member-id-card-modal, #member-id-card-dashboard {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}

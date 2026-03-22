@@ -21,8 +21,10 @@ import {
   ListTodo,
   Mail,
   Phone,
-  Globe
+  Globe,
+  Printer
 } from 'lucide-react';
+import MemberIdCard from './MemberIdCard';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface MemberDashboardProps {
@@ -252,84 +254,36 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
         {/* Left Column: ID Card & Chart */}
         <div className="space-y-8">
           {/* Digital ID Card */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Award size={120} />
-            </div>
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-8">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-                    <Award size={20} />
-                  </div>
-                  <span className="font-black tracking-tight">NUP MEMBER</span>
-                </div>
-                <span className="text-[10px] font-mono bg-white/10 px-2 py-1 rounded uppercase tracking-widest">
-                  {profile.status}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl border border-white/30 overflow-hidden">
-                  <img 
-                    src={profile.profilePhotoUrl ? (profile.profilePhotoUrl.startsWith('http') ? profile.profilePhotoUrl : (profile.profilePhotoUrl.startsWith('/') ? profile.profilePhotoUrl : `/${profile.profilePhotoUrl}`)) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
-                    alt="Avatar" 
-                    referrerPolicy="no-referrer" 
-                    className="w-full h-full object-cover" 
-                  />
-                </div>
-                <div>
-                  <p className="text-lg font-bold leading-tight">{profile.fullName}</p>
-                  <p className="text-xs text-slate-400 font-mono">ID: {profile.membershipId || 'PENDING'}</p>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{profile.orgUnit?.name || 'N/A'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Mobile</p>
-                  <p className="text-xs font-bold">{user.phoneNumber || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Email</p>
-                  <p className="text-xs font-bold truncate max-w-[120px]">{user.email}</p>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Member Since</p>
-                  <p className="text-sm font-bold">
-                    {profile.joinedDate ? format(new Date(profile.joinedDate), 'MMMM yyyy') : 'N/A'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Province</p>
-                  <p className="text-sm font-bold">{profile.province || 'N/A'}</p>
-                </div>
-              </div>
-              {profile.joinedDate && (
-                <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase font-bold">Issue Date</p>
-                    <p className="text-xs font-bold">{format(new Date(profile.joinedDate), 'MMM d, yyyy')}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase font-bold">Expiry Date</p>
-                    <p className="text-xs font-bold">{profile.expiryDate ? format(new Date(profile.expiryDate), 'MMM d, yyyy') : 'Lifetime'}</p>
-                  </div>
-                </div>
-              )}
-              {profile.status === 'ACTIVE' && (
-                <div className="mt-4 flex justify-center">
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${profile.membershipId || profile.id}`} 
-                    alt="QR Code" 
-                    className="w-24 h-24 bg-white p-2 rounded-xl shadow-inner" 
-                    referrerPolicy="no-referrer" 
-                  />
-                </div>
-              )}
+          <div className="space-y-4">
+            <MemberIdCard member={profile as any} id="member-id-card-dashboard" />
+            <div className="flex gap-3">
+              <button 
+                onClick={() => window.print()}
+                className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-50 transition-all shadow-sm"
+              >
+                <Printer size={14} />
+                Print Card
+              </button>
+              <button 
+                className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100"
+                onClick={async () => {
+                  const cardElement = document.getElementById('member-id-card-dashboard');
+                  if (!cardElement) return;
+                  try {
+                    const html2canvas = (await import('html2canvas')).default;
+                    const canvas = await html2canvas(cardElement, { scale: 3, useCORS: true });
+                    const link = document.createElement('a');
+                    link.download = `NUP-Member-Card.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+              >
+                <Download size={14} />
+                Download
+              </button>
             </div>
           </div>
           

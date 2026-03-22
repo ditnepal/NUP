@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "prisma generate && tsx server.ts",
     "start": "tsx start.ts",
-    "build": "DATABASE_URL=file:./prisma/dev.db prisma generate && DATABASE_URL=file:./prisma/dev.db prisma db push --accept-data-loss && vite build",
+    "build": "prisma generate && vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "prisma generate && tsc --noEmit",
@@ -27,6 +27,7 @@
     "dotenv": "^17.3.1",
     "express": "^4.22.1",
     "express-rate-limit": "^8.3.1",
+    "html2canvas": "^1.4.1",
     "i18next": "^25.8.20",
     "i18next-browser-languagedetector": "^8.2.1",
     "jsonwebtoken": "^9.0.3",

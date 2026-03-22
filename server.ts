@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:./prisma/dev.db';
+  process.env.DATABASE_URL = 'file:/app/applet/prisma/dev.db';
 }
 console.log('[DEBUG] DATABASE_URL:', process.env.DATABASE_URL);
 import { createServer as createViteServer } from 'vite';
