@@ -67,6 +67,7 @@ model User {
   pollVotes       PollVote[]
   fieldReports    GroundIntelligenceReport[]
   intelligenceAlerts IntelligenceAlert[]
+  notices         Notice[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -344,8 +345,27 @@ model Member {
   // Volunteer link
   volunteer       Volunteer?
   
+  // Renewal requests
+  renewalRequests RenewalRequest[]
+  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model RenewalRequest {
+  id            String   @id @default(uuid())
+  memberId      String
+  member        Member   @relation(fields: [memberId], references: [id])
+  
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  memberNote    String?
+  adminNote     String?
+  
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Volunteer {
@@ -1609,6 +1629,27 @@ model AreaStrengthScore {
 // -----------------------------------------------------------------------------
 // 10. COMMUNICATION SYSTEM (New Models)
 // -----------------------------------------------------------------------------
+
+model Notice {
+  id             String    @id @default(uuid())
+  title          String
+  content        String
+  audience       String    @default("PUBLIC") // PUBLIC, MEMBERS
+  status         String    @default("DRAFT")  // DRAFT, PUBLISHED
+  isPinned       Boolean   @default(false)
+  publishAt      DateTime?
+  expireAt       DateTime?
+  attachmentUrl  String?
+  externalUrl    String?
+  
+  authorId       String
+  author         User      @relation(fields: [authorId], references: [id])
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status, audience])
+}
 
 model Contact {
   id              String    @id @default(uuid())

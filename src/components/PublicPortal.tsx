@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User } from 'lucide-react';
+import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface PublicPortalProps {
@@ -14,6 +14,7 @@ interface PublicPortalProps {
 export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onJoinClick, onStatusClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
+  const [notices, setNotices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,8 +23,12 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
 
   const fetchPublicData = async () => {
     try {
-      const newsData = await api.get('/public/posts?type=NEWS&lang=en');
+      const [newsData, noticesData] = await Promise.all([
+        api.get('/public/posts?type=NEWS&lang=en'),
+        api.get('/communication/notices/public')
+      ]);
       setNews(newsData);
+      setNotices(noticesData);
     } catch (error) {
       console.error('Error fetching public data:', error);
     } finally {
@@ -165,57 +170,71 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
         </div>
       </section>
 
-      {/* Latest News */}
+      {/* Latest News & Notices */}
       <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-end mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            
+            {/* News */}
             <div>
-              <h2 className="text-4xl font-black tracking-tight mb-4 uppercase">Latest News</h2>
-              <p className="text-slate-500">Stay updated with our latest activities and statements.</p>
-            </div>
-            <a href="#" className="hidden md:flex items-center gap-2 text-emerald-600 font-bold hover:gap-3 transition-all">
-              View All News <ChevronRight size={20} />
-            </a>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {news.map((item) => (
-              <div key={item.id} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all">
-                <div className="aspect-video bg-slate-200 relative">
-                  {item.featuredImage ? (
-                    <img src={item.featuredImage} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400">
-                      <FileText size={48} />
+              <div className="flex justify-between items-end mb-12">
+                <h2 className="text-4xl font-black tracking-tight uppercase">Latest News</h2>
+                <a href="#" className="hidden md:flex items-center gap-2 text-emerald-600 font-bold hover:gap-3 transition-all">
+                  View All <ChevronRight size={20} />
+                </a>
+              </div>
+              <div className="grid gap-8">
+                {news.map((item) => (
+                  <div key={item.id} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all p-8 flex gap-6">
+                    <div className="w-24 h-24 bg-slate-200 rounded-2xl flex-shrink-0 overflow-hidden">
+                      {item.featuredImage ? (
+                        <img src={item.featuredImage} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400">
+                          <FileText size={24} />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                      {item.type}
-                    </span>
+                    <div>
+                      <div className="text-xs font-medium text-slate-400 mb-2 uppercase tracking-widest">
+                        {new Date(item.publishedAt || item.createdAt).toLocaleDateString()}
+                      </div>
+                      <h3 className="text-lg font-bold mb-2 line-clamp-2 hover:text-emerald-600 cursor-pointer">{item.title}</h3>
+                    </div>
                   </div>
-                </div>
-                <div className="p-8">
-                  <div className="text-xs font-medium text-slate-400 mb-3 uppercase tracking-widest">
-                    {new Date(item.publishedAt || item.createdAt).toLocaleDateString()}
+                ))}
+              </div>
+            </div>
+
+            {/* Notices */}
+            <div>
+              <div className="flex justify-between items-end mb-12">
+                <h2 className="text-4xl font-black tracking-tight uppercase">Notices</h2>
+              </div>
+              <div className="grid gap-6">
+                {notices.map((notice) => (
+                  <div key={notice.id} className={`bg-white rounded-3xl border ${notice.isPinned ? 'border-emerald-200 shadow-emerald-50' : 'border-slate-100'} shadow-sm p-8`}>
+                    {notice.isPinned && (
+                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4">
+                        Pinned
+                      </span>
+                    )}
+                    <h3 className="text-xl font-bold mb-2">{notice.title}</h3>
+                    <p className="text-slate-600 text-sm mb-4">{notice.content}</p>
+                    {notice.externalUrl && (
+                      <a href={notice.externalUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">
+                        View Details <ExternalLink size={16} />
+                      </a>
+                    )}
                   </div>
-                  <h3 className="text-xl font-bold mb-4 line-clamp-2 hover:text-emerald-600 transition-colors cursor-pointer">
-                    {item.title}
-                  </h3>
-                  <p className="text-slate-500 text-sm line-clamp-3 mb-6">
-                    {item.excerpt || item.content.substring(0, 150) + '...'}
-                  </p>
-                  <a href="#" className="text-slate-900 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">
-                    Read More <ChevronRight size={16} />
-                  </a>
-                </div>
+                ))}
+                {notices.length === 0 && !loading && (
+                  <div className="py-10 text-center text-slate-400 italic">
+                    No notices published at this time.
+                  </div>
+                )}
               </div>
-            ))}
-            {news.length === 0 && !loading && (
-              <div className="col-span-full py-20 text-center text-slate-400 italic">
-                No news articles published yet.
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </section>

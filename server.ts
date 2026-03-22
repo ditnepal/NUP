@@ -16,6 +16,7 @@ import rateLimit from 'express-rate-limit';
 // Import routers
 import authRouter from './src/api/auth';
 import membersRouter from './src/api/members';
+import renewalsRouter from './src/api/renewals';
 import supportersRouter from './src/api/supporters';
 import cmsRouter from './src/api/cms';
 import publicRouter from './src/api/public';
@@ -85,7 +86,7 @@ export async function createApp() {
   app.use('/api/v1/user-alerts', notificationsRouter);
 
   // Serve uploaded documents
-  const uploadsDir = process.env.NODE_ENV === 'production' ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
+  const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
@@ -93,6 +94,7 @@ export async function createApp() {
 
   app.use('/api/v1/auth', authLimiter, authRouter);
   app.use('/api/v1/members', membersRouter);
+  app.use('/api/v1/renewals', renewalsRouter);
   app.use('/api/v1/supporters', supportersRouter);
   app.use('/api/v1/cms', cmsRouter);
   app.use('/api/v1/public', publicLimiter, publicRouter);

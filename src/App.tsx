@@ -6,6 +6,7 @@ import { SupportersView } from './components/SupportersView';
 import { BoothsView } from './components/BoothsView';
 import { HierarchyAdmin } from './components/HierarchyAdmin';
 import { MembershipAdmin } from './components/MembershipAdmin';
+import RenewalsManagement from './pages/admin/RenewalsManagement';
 import { VolunteerAdmin } from './components/VolunteerAdmin';
 import { DocumentsView } from './components/DocumentsView';
 import { CmsAdmin } from './components/CmsAdmin';
@@ -30,9 +31,9 @@ import { EventDetailView } from './components/EventDetailView';
 import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -206,6 +207,7 @@ export default function App() {
     { id: 'booths', label: 'Booths', icon: MapPin, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR'] },
     { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph, roles: ['ADMIN'] },
     { id: 'membership', label: 'Membership', icon: UserPlus, roles: ['ADMIN', 'STAFF'] },
+    { id: 'renewals', label: 'Renewals', icon: Clock, roles: ['ADMIN', 'STAFF'] },
     { id: 'volunteers', label: 'Volunteers', icon: Heart, roles: ['ADMIN', 'STAFF'] },
     { id: 'cms', label: 'CMS', icon: Layout, roles: ['ADMIN', 'STAFF'] },
     { id: 'documents', label: 'Documents', icon: FileText, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
@@ -372,6 +374,7 @@ export default function App() {
         {currentView === 'booths' && <BoothsView booths={booths} />}
         {currentView === 'hierarchy' && <HierarchyAdmin />}
         {currentView === 'membership' && <MembershipAdmin />}
+        {currentView === 'renewals' && <RenewalsManagement />}
         {currentView === 'volunteers' && <VolunteerAdmin />}
         {currentView === 'cms' && <CmsAdmin />}
         {currentView === 'documents' && <DocumentsView />}

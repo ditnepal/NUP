@@ -12,8 +12,7 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Ensure uploads directory exists
-const isProd = process.env.NODE_ENV === 'production';
-const uploadsDir = isProd ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
+const uploadsDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }

@@ -137,4 +137,122 @@ router.get('/delivery-logs', authenticate, authorize(['ADMIN', 'STAFF']), async 
   }
 });
 
+const noticeSchema = z.object({
+  title: z.string().min(2),
+  content: z.string().min(5),
+  audience: z.enum(['PUBLIC', 'MEMBERS']),
+  status: z.enum(['DRAFT', 'PUBLISHED']),
+  isPinned: z.boolean().optional(),
+  publishAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
+  expireAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
+  attachmentUrl: z.string().optional(),
+  externalUrl: z.string().optional(),
+});
+
+// @route   GET /api/v1/communication/notices
+// @desc    Get all notices
+// @access  Private (Admin/Staff)
+router.get('/notices', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const notices = await prisma.notice.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(notices);
+  } catch (error: any) {
+    console.error('[API ERROR] /notices:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// @route   POST /api/v1/communication/notices
+// @desc    Create a notice
+// @access  Private (Admin/Staff)
+router.post('/notices', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const data = noticeSchema.parse(req.body);
+    const notice = await prisma.notice.create({ 
+      data: { ...data, authorId: req.user!.id } 
+    });
+    res.status(201).json(notice);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   PUT /api/v1/communication/notices/:id
+// @desc    Update a notice
+// @access  Private (Admin/Staff)
+router.put('/notices/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const data = noticeSchema.partial().parse(req.body);
+    const notice = await prisma.notice.update({
+      where: { id: req.params.id },
+      data,
+    });
+    res.json(notice);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/communication/notices/public
+// @desc    Get all public notices
+// @access  Public
+router.get('/notices/public', async (req, res) => {
+  try {
+    const notices = await prisma.notice.findMany({
+      where: {
+        status: 'PUBLISHED',
+        audience: 'PUBLIC',
+        publishAt: { lte: new Date() },
+        OR: [
+          { expireAt: null },
+          { expireAt: { gte: new Date() } }
+        ]
+      },
+      orderBy: [{ isPinned: 'desc' }, { publishAt: 'desc' }],
+    });
+    res.json(notices);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/communication/notices/members
+// @desc    Get all member notices
+// @access  Private (Member/Admin/Staff)
+router.get('/notices/members', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const notices = await prisma.notice.findMany({
+      where: {
+        status: 'PUBLISHED',
+        audience: 'MEMBERS',
+        publishAt: { lte: new Date() },
+        OR: [
+          { expireAt: null },
+          { expireAt: { gte: new Date() } }
+        ]
+      },
+      orderBy: [{ isPinned: 'desc' }, { publishAt: 'desc' }],
+    });
+    res.json(notices);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/v1/communication/notices/:id
+// @desc    Delete a notice
+// @access  Private (Admin/Staff)
+router.delete('/notices/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    await prisma.notice.delete({
+      where: { id: req.params.id },
+    });
+    res.json({ message: 'Notice deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

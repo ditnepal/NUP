@@ -281,6 +281,22 @@ export interface FinanceAnalytics {
   campaigns: Campaign[];
 }
 
+export interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  audience: 'PUBLIC' | 'MEMBERS';
+  status: 'DRAFT' | 'PUBLISHED';
+  isPinned: boolean;
+  publishAt?: string;
+  expireAt?: string;
+  attachmentUrl?: string;
+  externalUrl?: string;
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Booth {
   id?: string;
   name: string;

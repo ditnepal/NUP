@@ -141,13 +141,24 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-const uploadsDir = process.env.NODE_ENV === 'production' ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
+const uploadsDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+
 const upload = multer({ 
-  dest: uploadsDir,
+  storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
@@ -191,6 +202,177 @@ const memberApplySchema = z.object({
   declaration: z.preprocess((val) => val === 'true' || val === true, z.boolean().optional()),
 });
 
+// @route   POST /api/v1/members/me/photo
+// @desc    Update current user's profile photo
+// @access  Private
+router.post('/me/photo', authenticate, upload.single('photo'), async (req: AuthRequest, res) => {
+  try {
+    const member = await prisma.member.findUnique({
+      where: { userId: req.user?.id }
+    });
+
+    if (!member) {
+      return res.status(404).json({ error: 'Member profile not found' });
+    }
+
+    if (member.status !== 'ACTIVE') {
+      return res.status(403).json({ error: 'Only active members can update their profile photo' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No photo uploaded' });
+    }
+
+    // Update member record
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const updatedMember = await prisma.member.update({
+      where: { id: member.id },
+      data: { profilePhotoUrl: fileUrl }
+    });
+
+    res.json(updatedMember);
+  } catch (error: any) {
+    console.error('Error updating profile photo:', error);
+    res.status(500).json({ error: 'Failed to update profile photo' });
+  }
+});
+
+// @route   PUT /api/v1/members/me
+// @desc    Update current user's member profile (safe fields only)
+// @access  Private
+router.put('/me', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const member = await prisma.member.findUnique({
+      where: { userId: req.user?.id }
+    });
+
+    if (!member) {
+      return res.status(404).json({ error: 'Member profile not found' });
+    }
+
+    if (member.status !== 'ACTIVE') {
+      return res.status(403).json({ error: 'Only active members can update their profile' });
+    }
+
+    const {
+      email,
+      mobile,
+      alternateContactName,
+      alternateContactMobile,
+      province,
+      district,
+      localLevel,
+      ward,
+      tole,
+      occupation
+    } = req.body;
+
+    // Update user record if email or mobile changed
+    if (email || mobile) {
+      await prisma.user.update({
+        where: { id: req.user?.id },
+        data: {
+          ...(email && { email }),
+          ...(mobile && { phoneNumber: mobile })
+        }
+      });
+    }
+
+    // Update member record
+    const updatedMember = await prisma.member.update({
+      where: { id: member.id },
+      data: {
+        email: email || null,
+        mobile: mobile || null,
+        alternateContactName: alternateContactName || null,
+        alternateContactMobile: alternateContactMobile || null,
+        province: province || null,
+        district: district || null,
+        localLevel: localLevel || null,
+        ward: ward ? parseInt(ward) : null,
+        tole: tole || null,
+        occupation: occupation || null
+      }
+    });
+
+    res.json(updatedMember);
+  } catch (error: any) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// @route   GET /api/v1/members/me/renewals
+// @desc    Get current member's renewal requests
+// @access  Private
+router.get('/me/renewals', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const member = await prisma.member.findUnique({
+      where: { userId: req.user?.id }
+    });
+
+    if (!member) {
+      return res.status(404).json({ error: 'Member profile not found' });
+    }
+
+    const renewals = await prisma.renewalRequest.findMany({
+      where: { memberId: member.id },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(renewals);
+  } catch (error: any) {
+    console.error('Error fetching renewals:', error);
+    res.status(500).json({ error: 'Server error fetching renewals' });
+  }
+});
+
+// @route   POST /api/v1/members/me/renewals
+// @desc    Submit a renewal request
+// @access  Private (ACTIVE members only)
+router.post('/me/renewals', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const member = await prisma.member.findUnique({
+      where: { userId: req.user?.id }
+    });
+
+    if (!member) {
+      return res.status(404).json({ error: 'Member profile not found' });
+    }
+
+    if (member.status !== 'ACTIVE') {
+      return res.status(403).json({ error: 'Only ACTIVE members can submit renewal requests' });
+    }
+
+    // Check for existing pending request
+    const existingPending = await prisma.renewalRequest.findFirst({
+      where: {
+        memberId: member.id,
+        status: 'PENDING'
+      }
+    });
+
+    if (existingPending) {
+      return res.status(400).json({ error: 'You already have a pending renewal request' });
+    }
+
+    const { memberNote } = req.body;
+
+    const renewal = await prisma.renewalRequest.create({
+      data: {
+        memberId: member.id,
+        memberNote: memberNote || null,
+        status: 'PENDING'
+      }
+    });
+
+    res.status(201).json(renewal);
+  } catch (error: any) {
+    console.error('Error submitting renewal request:', error);
+    res.status(500).json({ error: 'Server error submitting renewal request' });
+  }
+});
+
 // @route   POST /api/v1/members/apply
 // @desc    Submit membership application
 // @access  Public (or Staff)
@@ -222,9 +404,9 @@ router.post('/apply', upload.fields([
     // 4. Merge data for service
     const applicationData = {
       ...validatedData,
-      identityDocumentUrl: identityDocument?.path,
-      profilePhotoUrl: profilePhoto?.path,
-      videoUrl: video?.path,
+      identityDocumentUrl: identityDocument ? `/uploads/${identityDocument.filename}` : undefined,
+      profilePhotoUrl: profilePhoto ? `/uploads/${profilePhoto.filename}` : undefined,
+      videoUrl: video ? `/uploads/${video.filename}` : undefined,
     };
 
     const member = await membershipService.apply(applicationData as any);

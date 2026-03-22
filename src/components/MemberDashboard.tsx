@@ -22,9 +22,13 @@ import {
   Mail,
   Phone,
   Globe,
-  Printer
+  Printer,
+  Settings,
+  X,
+  CheckCircle
 } from 'lucide-react';
 import MemberIdCard from './MemberIdCard';
+import { MemberProfileSettings } from './MemberProfileSettings';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface MemberDashboardProps {
@@ -64,20 +68,39 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [news, setNews] = useState<any[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [renewals, setRenewals] = useState<any[]>([]);
+  const [notices, setNotices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isRenewing, setIsRenewing] = useState(false);
+  const [renewalNote, setRenewalNote] = useState('');
+  const [renewalError, setRenewalError] = useState('');
+  const [renewalSuccess, setRenewalSuccess] = useState('');
+
+  const fetchRenewals = async () => {
+    try {
+      const renewalsData = await api.get('/members/me/renewals');
+      setRenewals(renewalsData);
+    } catch (error) {
+      console.error('Error fetching renewals:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const profileData = await api.get('/members/me');
-        await new Promise(resolve => setTimeout(resolve, 300));
-        const newsData = await api.get('/public/posts?type=NEWS&limit=2');
-        await new Promise(resolve => setTimeout(resolve, 300));
-        const eventsData = await api.get('/events');
+        const [profileData, newsData, eventsData, noticesData] = await Promise.all([
+          api.get('/members/me'),
+          api.get('/public/posts?type=NEWS&limit=2'),
+          api.get('/events'),
+          api.get('/communication/notices/members')
+        ]);
         
         setProfile(profileData);
         setNews(newsData.slice(0, 2));
         setEvents(eventsData.slice(0, 2));
+        setNotices(noticesData);
+        await fetchRenewals();
       } catch (error) {
         console.error('Error fetching member data:', error);
       } finally {
@@ -87,6 +110,21 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
 
     fetchData();
   }, []);
+
+  const handleRenewalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRenewalError('');
+    setRenewalSuccess('');
+    try {
+      await api.post('/members/me/renewals', { memberNote: renewalNote });
+      setRenewalSuccess('Renewal request submitted successfully.');
+      setRenewalNote('');
+      setIsRenewing(false);
+      await fetchRenewals();
+    } catch (err: any) {
+      setRenewalError(err.message || 'Failed to submit renewal request.');
+    }
+  };
 
   if (loading) {
     return (
@@ -209,6 +247,23 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
     { name: 'Hours', value: profile.stats.volunteerHours },
   ];
 
+  if (isEditingProfile) {
+    return (
+      <MemberProfileSettings 
+        profile={profile} 
+        onBack={() => setIsEditingProfile(false)} 
+        onUpdate={async () => {
+          try {
+            const profileData = await api.get('/members/me');
+            setProfile(profileData);
+          } catch (error) {
+            console.error('Error refreshing profile:', error);
+          }
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
       {/* Welcome Section */}
@@ -218,15 +273,104 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
           <p className="text-slate-500">Welcome back, {user.displayName}. Here's your activity overview.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl font-bold text-sm hover:bg-emerald-200 transition-all flex items-center gap-2">
+          <button 
+            onClick={() => setIsEditingProfile(true)}
+            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <Settings size={16} />
+            Profile Settings
+          </button>
+          <button className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl font-bold text-sm hover:bg-emerald-200 transition-all flex items-center gap-2 hidden sm:flex">
             <Share2 size={16} />
             Refer a Friend
           </button>
-          <button className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
-            Renew Membership
-          </button>
+          
+          <div className="flex flex-col items-end gap-1">
+            <div className="text-xs text-slate-500 font-medium">
+              Expires: {profile.expiryDate ? new Date(profile.expiryDate).toLocaleDateString() : 'N/A'}
+            </div>
+            {renewals.some(r => r.status === 'PENDING') ? (
+              <button disabled className="px-4 py-2 bg-amber-100 text-amber-700 rounded-xl font-bold text-sm cursor-not-allowed flex items-center gap-2">
+                <Clock size={16} />
+                Renewal Pending
+              </button>
+            ) : (
+              <div className="flex flex-col items-end">
+                <button onClick={() => setIsRenewing(true)} className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
+                  Renew
+                </button>
+                {renewals.length > 0 && renewals[0].status === 'REJECTED' && (
+                  <div className="mt-2 text-[10px] text-red-600 font-medium flex items-center gap-1 max-w-[200px] text-right">
+                    <AlertCircle size={10} className="shrink-0" />
+                    Last request rejected: {renewals[0].adminNote || 'No reason provided'}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {renewalSuccess && (
+        <div className="mb-6 p-4 bg-emerald-50 text-emerald-700 rounded-xl flex items-center gap-3">
+          <CheckCircle size={20} />
+          <p className="font-medium">{renewalSuccess}</p>
+        </div>
+      )}
+
+      {isRenewing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-slate-900">Request Renewal</h3>
+              <button onClick={() => setIsRenewing(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <p className="text-slate-600 mb-6 text-sm">
+              Submit a request to renew your membership. An administrator will review your request and extend your membership expiry date.
+            </p>
+
+            <form onSubmit={handleRenewalSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Additional Note (Optional)
+                </label>
+                <textarea
+                  value={renewalNote}
+                  onChange={(e) => setRenewalNote(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all resize-none h-24"
+                  placeholder="Any message for the admin..."
+                />
+              </div>
+
+              {renewalError && (
+                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  {renewalError}
+                </div>
+              )}
+
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsRenewing(false)}
+                  className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Bento Grid Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -250,6 +394,14 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
         ))}
       </div>
 
+      {/* Hidden fixed-size card for export only - positioned off-screen but NOT invisible */}
+      <div 
+        className="fixed top-0 pointer-events-none" 
+        style={{ left: '-9999px', width: '632px', height: '400px', backgroundColor: '#ffffff' }}
+      >
+        <MemberIdCard member={profile as any} id="member-id-card-export-target-dashboard" isExporting={true} />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: ID Card & Chart */}
         <div className="space-y-8">
@@ -267,11 +419,62 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
               <button 
                 className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100"
                 onClick={async () => {
-                  const cardElement = document.getElementById('member-id-card-dashboard');
+                  const cardElement = document.getElementById('member-id-card-export-target-dashboard');
                   if (!cardElement) return;
                   try {
                     const html2canvas = (await import('html2canvas')).default;
-                    const canvas = await html2canvas(cardElement, { scale: 3, useCORS: true });
+                    
+                    // Wait for fonts to be ready
+                    if (document.fonts) {
+                      await document.fonts.ready;
+                    }
+
+                    // Ensure all images are fully loaded and decoded before capture
+                    const images = cardElement.getElementsByTagName('img');
+                    const loadPromises = Array.from(images).map(async (img) => {
+                      if (!img.complete) {
+                        await new Promise((resolve) => {
+                          img.onload = resolve;
+                          img.onerror = resolve;
+                        });
+                      }
+                      // Try to decode the image to ensure it's actually ready to be painted
+                      try {
+                        if ('decode' in img) {
+                          await img.decode();
+                        }
+                      } catch (e) {
+                        console.warn('Image decode failed, proceeding anyway', e);
+                      }
+                    });
+                    
+                    await Promise.all(loadPromises);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    const canvas = await html2canvas(cardElement, { 
+                      scale: 2, 
+                      useCORS: true,
+                      backgroundColor: '#ffffff',
+                      logging: false,
+                      width: 632,
+                      height: 400,
+                      x: 0,
+                      y: 0,
+                      scrollX: 0,
+                      scrollY: 0,
+                      windowWidth: 632,
+                      windowHeight: 400,
+                      onclone: (clonedDoc) => {
+                        const clonedElement = clonedDoc.getElementById('member-id-card-export-target-dashboard');
+                        if (clonedElement) {
+                          clonedElement.style.visibility = 'visible';
+                          clonedElement.style.position = 'static';
+                          clonedElement.style.left = 'auto';
+                          clonedElement.style.top = 'auto';
+                        }
+                      }
+                    });
+                    
                     const link = document.createElement('a');
                     link.download = `NUP-Member-Card.png`;
                     link.href = canvas.toDataURL('image/png');
@@ -309,6 +512,29 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
 
         {/* Middle Column: News & Events */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Notices Feed */}
+          {notices.length > 0 && (
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  <Megaphone size={20} className="text-emerald-500" />
+                  Important Notices
+                </h3>
+              </div>
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {notices.map((notice) => (
+                  <div key={notice.id} className={`p-4 rounded-2xl border ${notice.isPinned ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
+                    <h4 className="font-bold text-slate-800 mb-1">{notice.title}</h4>
+                    <p className="text-xs text-slate-600 mb-2">{notice.content}</p>
+                    {notice.externalUrl && (
+                      <a href={notice.externalUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-600 font-bold text-xs hover:underline">View Details</a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* News Feed */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">

@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* 
+  Global reset for html2canvas compatibility with Tailwind v4.
+  Tailwind v4 uses oklch() for default colors, which html2canvas 1.4.1 cannot parse.
+*/
+*, ::before, ::after {
+  border-color: #e5e7eb;
+  outline-color: #e5e7eb;
+  text-decoration-color: #e5e7eb;
+  caret-color: #e5e7eb;
+}
+
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
