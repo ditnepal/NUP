@@ -7,11 +7,12 @@ interface ApplicantStatusPortalProps {
   onBack: () => void;
   onLoginClick: () => void;
   initialTrackingCode?: string;
+  initialMobile?: string;
 }
 
-export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ onBack, onLoginClick, initialTrackingCode = '' }) => {
+export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ onBack, onLoginClick, initialTrackingCode = '', initialMobile = '' }) => {
   const [trackingCode, setTrackingCode] = useState(initialTrackingCode);
-  const [mobile, setMobile] = useState('');
+  const [mobile, setMobile] = useState(initialMobile);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusData, setStatusData] = useState<any | null>(null);
@@ -20,8 +21,13 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
   const [claiming, setClaiming] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
 
-  const handleLookup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLookup = async (e?: React.FormEvent, manualTrackingCode?: string, manualMobile?: string) => {
+    e?.preventDefault();
+    const targetTrackingCode = manualTrackingCode || trackingCode;
+    const targetMobile = manualMobile || mobile;
+
+    if (!targetTrackingCode || !targetMobile) return;
+
     setLoading(true);
     setError(null);
     setStatusData(null);
@@ -29,13 +35,13 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
     setClaimEmail('');
 
     try {
-      console.log('[DEBUG] Frontend Lookup:', { trackingCode, mobileNumber: mobile });
+      console.log('[DEBUG] Frontend Lookup:', { trackingCode: targetTrackingCode, mobileNumber: targetMobile });
       const response = await fetch('/api/public/membership-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          trackingCode,
-          mobileNumber: mobile
+          trackingCode: targetTrackingCode,
+          mobileNumber: targetMobile
         })
       });
       
@@ -57,6 +63,25 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
       setLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    // 1. Check URL parameters first
+    const params = new URLSearchParams(window.location.search);
+    const urlTrackingCode = params.get('trackingCode');
+    const urlMobile = params.get('mobile');
+
+    if (urlTrackingCode || urlMobile) {
+      if (urlTrackingCode) setTrackingCode(urlTrackingCode);
+      if (urlMobile) setMobile(urlMobile);
+      handleLookup(undefined, urlTrackingCode || trackingCode, urlMobile || mobile);
+      return;
+    }
+
+    // 2. If no URL params, check props (from successful submission)
+    if (initialTrackingCode && initialMobile) {
+      handleLookup(undefined, initialTrackingCode, initialMobile);
+    }
+  }, [initialTrackingCode, initialMobile]);
 
   const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,9 +220,18 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                     {statusData.fullName}
                   </h2>
                   <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${getStatusColor(statusData.status)}`}>
-                    {statusData.status}
+                    {statusData.status === 'ACTIVE' ? 'APPROVED / ACTIVE' : statusData.status}
                   </div>
                 </div>
+
+                {statusData.status === 'PENDING' && (
+                  <div className="p-6 bg-amber-50 border border-amber-100 rounded-3xl text-center animate-in fade-in duration-500">
+                    <p className="text-amber-800 font-bold">
+                      Your application is currently under review by our administrative team. 
+                      We will notify you once a decision has been made.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-1">

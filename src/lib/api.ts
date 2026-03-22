@@ -28,6 +28,9 @@ const handleResponse = async (response: Response) => {
     try {
       const error = text ? JSON.parse(text) : {};
       errorMessage = error.error || errorMessage;
+      if (error.details && Array.isArray(error.details)) {
+        errorMessage += ': ' + error.details.map((d: any) => `${d.path.join('.')}: ${d.message}`).join(', ');
+      }
     } catch (e) {
       console.error('API Error (non-JSON):', text.substring(0, 100));
       if (response.status === 429) {

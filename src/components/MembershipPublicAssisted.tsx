@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api } from '../lib/api';
 
-const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code: string) => void }> = ({ onBack, onSuccess }) => {
-  const { register, handleSubmit } = useForm();
+const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
+  const { register, handleSubmit, getValues } = useForm();
   const [units, setUnits] = useState<any[]>([]);
 
   React.useEffect(() => {
@@ -34,7 +34,7 @@ const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code
         <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Assisted Application Submitted!</h2>
         <p className="text-slate-600 mb-8">Tracking Code: <span className="font-mono font-bold text-emerald-600">{success}</span></p>
         <div className="flex flex-col gap-3">
-          <button onClick={() => onSuccess?.(success)} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold">Check Status Now</button>
+          <button onClick={() => onSuccess?.(success, getValues('mobile'))} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold">Check Status Now</button>
           <button onClick={onBack} className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold">Back to Portal</button>
         </div>
       </div>

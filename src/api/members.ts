@@ -194,17 +194,12 @@ const memberApplySchema = z.object({
 // @route   POST /api/v1/members/apply
 // @desc    Submit membership application
 // @access  Public (or Staff)
-router.post('/apply', (req, res, next) => {
-  console.log('[DEBUG] POST /apply called');
-  next();
-}, upload.fields([
+router.post('/apply', upload.fields([
   { name: 'identityDocument', maxCount: 1 },
   { name: 'profilePhoto', maxCount: 1 },
   { name: 'video', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    console.log('[DEBUG] Files:', req.files);
-    console.log('[DEBUG] Body:', req.body);
     // 1. Validate fields with Zod
     const validatedData = memberApplySchema.parse(req.body);
     
@@ -235,7 +230,6 @@ router.post('/apply', (req, res, next) => {
     const member = await membershipService.apply(applicationData as any);
     res.status(201).json({ trackingCode: member.trackingCode });
   } catch (error: any) {
-    console.error('[DEBUG] Error in /apply:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.issues });
     }

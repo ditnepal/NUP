@@ -75,6 +75,12 @@ export async function createApp() {
   app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
   app.get('/test', (req, res) => res.send('Server is running!'));
 
+  // Global Error Handler
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[GLOBAL ERROR HANDLER]', err);
+    res.status(500).json({ error: 'Internal Server Error', message: err.message });
+  });
+
   // Move user-alerts higher to ensure it's matched
   app.use('/api/v1/user-alerts', notificationsRouter);
 

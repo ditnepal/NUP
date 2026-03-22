@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api } from '../lib/api';
 
-const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (trackingCode: string) => void }> = ({ onBack, onSuccess }) => {
-  const { register, handleSubmit } = useForm();
+const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (trackingCode: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
+  const { register, handleSubmit, getValues } = useForm();
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [units, setUnits] = useState<any[]>([]);
@@ -50,7 +50,7 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
 
         <div className="flex flex-col gap-3">
           <button 
-            onClick={() => onSuccess?.(success)}
+            onClick={() => onSuccess?.(success, getValues('mobile'))}
             className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100"
           >
             Check Status Now

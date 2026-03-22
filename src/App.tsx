@@ -42,6 +42,7 @@ export default function App() {
   );
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [initialTrackingCode, setInitialTrackingCode] = useState<string>('');
+  const [initialMobile, setInitialMobile] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -136,7 +137,11 @@ export default function App() {
           }} 
           onDocumentsClick={() => setCurrentView('public-documents')} 
           onJoinClick={() => setCurrentView('membership-public')}
-          onStatusClick={() => setCurrentView('applicant-status')}
+          onStatusClick={() => {
+            setInitialTrackingCode('');
+            setInitialMobile('');
+            setCurrentView('applicant-status');
+          }}
         />
         {user && (
           <button 
@@ -159,6 +164,7 @@ export default function App() {
           setCurrentView('dashboard'); // Triggers login
         }}
         initialTrackingCode={initialTrackingCode}
+        initialMobile={initialMobile}
       />
     );
   }
@@ -167,8 +173,9 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
         <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
-        <MembershipPublic onStatusClick={(code) => {
+        <MembershipPublic onStatusClick={(code, mobile) => {
           setInitialTrackingCode(code || '');
+          setInitialMobile(mobile || '');
           setCurrentView('applicant-status');
         }} />
       </div>

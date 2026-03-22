@@ -4,7 +4,7 @@ import MembershipPublicVideo from './MembershipPublicVideo';
 import MembershipPublicAssisted from './MembershipPublicAssisted';
 
 interface MembershipPublicProps {
-  onStatusClick?: (trackingCode?: string) => void;
+  onStatusClick?: (trackingCode?: string, mobile?: string) => void;
 }
 
 const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick }) => {
@@ -21,9 +21,9 @@ const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick }) =>
           <button onClick={() => onStatusClick?.()} className="p-4 bg-slate-200 text-slate-700 rounded-xl font-bold mt-4">Already Applied? Check Status</button>
         </div>
       )}
-      {mode === 'FORM' && <MembershipPublicForm onBack={() => setMode(null)} onSuccess={(code) => onStatusClick?.(code)} />}
-      {mode === 'VIDEO' && <MembershipPublicVideo onBack={() => setMode(null)} onSuccess={(code) => onStatusClick?.(code)} />}
-      {mode === 'ASSISTED' && <MembershipPublicAssisted onBack={() => setMode(null)} onSuccess={(code) => onStatusClick?.(code)} />}
+      {mode === 'FORM' && <MembershipPublicForm onBack={() => setMode(null)} onSuccess={(code, mobile) => onStatusClick?.(code, mobile)} />}
+      {mode === 'VIDEO' && <MembershipPublicVideo onBack={() => setMode(null)} onSuccess={(code, mobile) => onStatusClick?.(code, mobile)} />}
+      {mode === 'ASSISTED' && <MembershipPublicAssisted onBack={() => setMode(null)} onSuccess={(code, mobile) => onStatusClick?.(code, mobile)} />}
     </div>
   );
 };
