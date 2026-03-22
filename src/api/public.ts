@@ -63,6 +63,20 @@ router.get('/downloads', async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/public/units
+// @desc    Get all organization units
+// @access  Public
+router.get('/units', async (req, res) => {
+  try {
+    const units = await prisma.organizationUnit.findMany({
+      select: { id: true, name: true, level: true }
+    });
+    res.json(units);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   POST /api/v1/public/join
 // @desc    Join membership (Public)
 // @access  Public

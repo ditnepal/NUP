@@ -21,6 +21,8 @@ import { GrievancePortal } from './components/GrievancePortal';
 import { SurveyPolls } from './components/SurveyPolls';
 import { PgisDashboard } from './components/PgisDashboard';
 import { PublicPortal } from './components/PublicPortal';
+import MembershipPublic from './components/MembershipPublic';
+import { PublicDocumentsView } from './components/PublicDocumentsView';
 import { WarRoomDashboard } from './components/WarRoomDashboard';
 import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { MemberDashboard } from './components/MemberDashboard';
@@ -29,7 +31,7 @@ import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -146,7 +148,7 @@ export default function App() {
   if (currentView === 'public') {
     return (
       <div className="relative">
-        <PublicPortal user={user} onPortalClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')} />
+        <PublicPortal user={user} onPortalClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')} onDocumentsClick={() => setCurrentView('public-documents')} onJoinClick={() => setCurrentView('membership-public')} />
         <button 
           onClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')}
           className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl z-50 flex items-center gap-2 hover:scale-105 transition-all"
@@ -154,6 +156,15 @@ export default function App() {
           <LayoutDashboard size={20} />
           Back to Portal
         </button>
+      </div>
+    );
+  }
+
+  if (currentView === 'membership-public') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-6">
+        <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
+        <MembershipPublic />
       </div>
     );
   }
@@ -311,6 +322,7 @@ export default function App() {
         {currentView === 'volunteers' && <VolunteerAdmin />}
         {currentView === 'cms' && <CmsAdmin />}
         {currentView === 'documents' && <DocumentsView />}
+        {currentView === 'public-documents' && <PublicDocumentsView />}
         {currentView === 'communication' && <CommunicationAdmin />}
         {currentView === 'training' && <TrainingPortal />}
         {currentView === 'events' && <EventsAdmin />}

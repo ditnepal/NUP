@@ -36,6 +36,10 @@ interface MemberProfile {
   status: string;
   province: string;
   joinedDate: string;
+  cardStatus?: 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
+  issueDate?: string;
+  expiryDate?: string;
+  qrCodeUrl?: string;
   orgUnit: {
     name: string;
     level: string;
@@ -184,6 +188,23 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                   <p className="text-sm font-bold">{profile.province}</p>
                 </div>
               </div>
+              {profile.cardStatus && (
+                <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">Issue Date</p>
+                    <p className="text-xs font-bold">{profile.issueDate ? format(new Date(profile.issueDate), 'MMM d, yyyy') : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">Expiry Date</p>
+                    <p className="text-xs font-bold">{profile.expiryDate ? format(new Date(profile.expiryDate), 'MMM d, yyyy') : 'N/A'}</p>
+                  </div>
+                </div>
+              )}
+              {profile.qrCodeUrl && (
+                <div className="mt-4 flex justify-center">
+                  <img src={profile.qrCodeUrl} alt="QR Code" className="w-20 h-20 bg-white p-1 rounded-lg" referrerPolicy="no-referrer" />
+                </div>
+              )}
             </div>
           </div>
           

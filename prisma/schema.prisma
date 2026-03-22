@@ -289,10 +289,10 @@ model Member {
   citizenshipNumber String? @unique // ECN requirement
   
   // Geo-location (Nepal Context)
-  province        String
-  district        String
-  localLevel      String    // Municipality / Rural Municipality
-  ward            Int
+  province        String?
+  district        String?
+  localLevel      String?    // Municipality / Rural Municipality
+  ward            Int?
   boothId         String?
   booth           Booth?    @relation(fields: [boothId], references: [id])
   
@@ -308,6 +308,26 @@ model Member {
   
   status          String    @default("PENDING") // PENDING, VERIFIED, APPROVED, ACTIVE, SUSPENDED, TERMINATED
   
+  // Application fields
+  fatherName           String?
+  motherName           String?
+  citizenshipDistrict  String?
+  citizenshipIssueDate DateTime?
+  tole                 String?
+  mobile               String?
+  email                String?
+  alternateContactName String?
+  alternateContactMobile String?
+  occupation           String?
+  applicationMode      String    @default("FORM") // FORM, VIDEO, ASSISTED
+  videoUrl             String?
+  identityDocumentUrl  String?
+  identityDocumentType String?
+  profilePhotoUrl      String?
+  helperName           String?
+  helperPhone          String?
+  helperRole           String?
+
   membershipTypeId String?
   membershipType   MembershipType? @relation(fields: [membershipTypeId], references: [id])
   
@@ -916,6 +936,7 @@ model Document {
   fileType        String
   size            Int
   uploadedBy      String    // User ID
+  isPublished     Boolean   @default(false)
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -1581,5 +1602,42 @@ model AreaStrengthScore {
   oppositionStrength Int    @default(0) // 0-100
   swingVoters     Int       @default(0) // 0-100
   
+
   lastUpdated     DateTime  @updatedAt
 }
+
+// -----------------------------------------------------------------------------
+// 10. COMMUNICATION SYSTEM (New Models)
+// -----------------------------------------------------------------------------
+
+model Contact {
+  id              String    @id @default(uuid())
+  fullName        String
+  email           String?
+  phone           String?
+  source          String    // MEMBER, VOLUNTEER, DONOR, MANUAL
+  sourceId        String?
+  tags            String    // Serialized JSON
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model InternalNotice {
+  id              String    @id @default(uuid())
+  title           String
+  content         String
+  targetRoles     String    // Serialized JSON
+  createdAt       DateTime  @default(now())
+}
+
+model RetryQueue {
+  id              String    @id @default(uuid())
+  messageId       String
+  provider        String
+  payload         String
+  attempt         Int       @default(0)
+  status          String    // PENDING, RETRYING, FAILED, COMPLETED
+  nextRetryAt     DateTime
+  createdAt       DateTime  @default(now())
+}
+

@@ -6,9 +6,11 @@ import { UserProfile } from '../types';
 interface PublicPortalProps {
   user?: UserProfile | null;
   onPortalClick?: () => void;
+  onDocumentsClick?: () => void;
+  onJoinClick?: () => void;
 }
 
-export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick }) => {
+export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onJoinClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +109,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick 
               Join the movement for transparency, accountability, and sustainable development. Together, we can build a stronger Nepal for everyone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2">
+              <button onClick={onJoinClick} className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2">
                 Become a Member <ChevronRight size={20} />
               </button>
               <button className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
@@ -157,7 +159,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick 
             </div>
             <h3 className="text-xl font-bold mb-3">Downloads</h3>
             <p className="text-slate-500 mb-6">Access our manifesto, policy documents, and membership forms.</p>
-            <a href="#" className="text-rose-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Browse Files <ChevronRight size={16} /></a>
+            <button onClick={onDocumentsClick} className="text-rose-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Browse Files <ChevronRight size={16} /></button>
           </div>
         </div>
       </section>

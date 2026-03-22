@@ -54,7 +54,12 @@ router.post('/login', async (req, res) => {
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.passwordHash) {
+    if (!user) {
+      console.log('User not found for email:', email);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    if (!user.passwordHash) {
+      console.log('User found but no password hash:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 

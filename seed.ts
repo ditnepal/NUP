@@ -170,6 +170,25 @@ async function main() {
     },
   });
 
+  // Create Sample Members
+  const testMembers = [
+    { fullName: 'Pending Member 1', trackingCode: 'T-PENDING001', status: 'PENDING', province: 'Bagmati', district: 'Kathmandu', localLevel: 'KMC', ward: 1 },
+    { fullName: 'Verified Member 1', trackingCode: 'T-VERIFIED001', status: 'VERIFIED', province: 'Bagmati', district: 'Kathmandu', localLevel: 'KMC', ward: 2 },
+    { fullName: 'Active Member 1', trackingCode: 'T-ACTIVE001', status: 'ACTIVE', province: 'Bagmati', district: 'Kathmandu', localLevel: 'KMC', ward: 3 },
+  ];
+
+  for (const memberData of testMembers) {
+    await prisma.member.upsert({
+      where: { trackingCode: memberData.trackingCode },
+      update: { status: memberData.status },
+      create: {
+        ...memberData,
+        membershipId: `NUP-${memberData.trackingCode}`,
+        orgUnitId: nationalUnit.id,
+      },
+    });
+  }
+
   console.log('Seeding completed.');
   console.log('Admin User:', adminUser.email);
   console.log('Admin Password: admin123');

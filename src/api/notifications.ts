@@ -8,14 +8,17 @@ const router = express.Router();
 // @desc    Get all notifications for current user
 // @access  Private
 router.get('/', authenticate, async (req: AuthRequest, res) => {
+  console.log('[DEBUG] GET /api/v1/notifications called by user:', req.user?.id);
   try {
     const notifications = await prisma.notification.findMany({
       where: { userId: req.user?.id },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
+    console.log('[DEBUG] Notifications found:', notifications.length);
     res.json(notifications);
   } catch (error) {
+    console.error('[DEBUG] Error in GET /api/v1/notifications:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -106,7 +106,26 @@ export const DocumentsView: React.FC = () => {
         )}
       </div>
       
-      {/* Upload Modal would be here */}
+      {/* Upload Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Upload Document</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={24} />
+              </button>
+            </div>
+            <DocumentUploadForm 
+              onSuccess={() => {
+                setIsModalOpen(false);
+                fetchDocuments();
+              }} 
+              onCancel={() => setIsModalOpen(false)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -121,6 +140,7 @@ const DocumentUploadForm: React.FC<{ onSuccess: () => void, onCancel: () => void
     title: '',
     description: '',
     category: 'POLICY',
+    isPublished: false,
   });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -181,6 +201,7 @@ const DocumentUploadForm: React.FC<{ onSuccess: () => void, onCancel: () => void
       uploadData.append('file', file);
       uploadData.append('title', formData.title);
       uploadData.append('category', formData.category);
+      uploadData.append('isPublished', String(formData.isPublished));
       if (formData.description) {
         uploadData.append('description', formData.description);
       }
@@ -286,6 +307,17 @@ const DocumentUploadForm: React.FC<{ onSuccess: () => void, onCancel: () => void
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-24 resize-none"
             placeholder="Brief description of the document..."
           />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input 
+            type="checkbox"
+            id="isPublished"
+            checked={formData.isPublished}
+            onChange={(e) => setFormData({...formData, isPublished: e.target.checked})}
+            className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+          />
+          <label htmlFor="isPublished" className="text-sm font-bold text-slate-700">Publish to public portal</label>
         </div>
       </div>
 

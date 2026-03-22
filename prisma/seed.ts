@@ -53,6 +53,20 @@ async function main() {
     }
   }
 
+  // 3. Create some test members
+  const members = [
+    { fullName: 'John Doe', trackingCode: 'T-001', province: 'Bagmati', district: 'Kathmandu', localLevel: 'KMC', ward: 1, status: 'PENDING' },
+    { fullName: 'Jane Smith', trackingCode: 'T-002', province: 'Gandaki', district: 'Kaski', localLevel: 'Pokhara', ward: 5, status: 'VERIFIED' },
+    { fullName: 'Ram Bahadur', trackingCode: 'T-003', province: 'Lumbini', district: 'Rupandehi', localLevel: 'Butwal', ward: 10, status: 'ACTIVE' },
+  ];
+
+  for (const member of members) {
+    const existing = await prisma.member.findFirst({ where: { trackingCode: member.trackingCode } });
+    if (!existing) {
+      await prisma.member.create({ data: member });
+    }
+  }
+
   console.log('Seeding complete.');
 }
 

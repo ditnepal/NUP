@@ -130,12 +130,16 @@ export interface Member {
   photoUrl?: string;
   orgUnitId: string;
   committeeId?: string;
-  status: 'PENDING' | 'VERIFIED' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED';
+  status: 'PENDING' | 'VERIFIED' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
   verificationStatus: {
     verifiedAt: string;
     verifiedBy: string;
     verificationNotes?: string;
   };
+  cardStatus?: 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
+  issueDate?: string;
+  expiryDate?: string;
+  qrCodeUrl?: string;
   customAttributes: Record<string, any>;
   auditTrail: AuditLogEntry[];
   createdAt: string;

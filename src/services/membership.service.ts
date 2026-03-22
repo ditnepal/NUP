@@ -10,34 +10,54 @@ export class MembershipService extends BaseService {
     fullName: string;
     email?: string;
     phone?: string;
-    citizenshipNumber: string;
-    dateOfBirth: Date;
-    gender: string;
+    citizenshipNumber?: string;
+    dateOfBirth?: Date;
+    gender?: string;
     bloodGroup?: string;
-    province: string;
-    district: string;
-    localLevel: string;
-    ward: number;
+    province?: string;
+    district?: string;
+    localLevel?: string;
+    ward?: number;
     orgUnitId: string;
+    applicationMode: 'FORM' | 'VIDEO' | 'ASSISTED';
+    videoUrl?: string;
+    identityDocumentUrl?: string;
+    identityDocumentType?: string;
+    profilePhotoUrl?: string;
+    helperName?: string;
+    helperPhone?: string;
+    helperRole?: string;
+    declaration?: boolean;
   }) {
-    // 1. Duplicate Detection
-    const existing = await this.db.member.findFirst({
-      where: {
-        OR: [
-          { citizenshipNumber: data.citizenshipNumber },
-          data.email ? { user: { email: data.email } } : {},
-        ].filter(Boolean) as any
-      }
-    });
+    // 1. Duplicate Detection (only if citizenshipNumber or email provided)
+    if (data.citizenshipNumber || data.email) {
+      const existing = await this.db.member.findFirst({
+        where: {
+          OR: [
+            data.citizenshipNumber ? { citizenshipNumber: data.citizenshipNumber } : {},
+            data.email ? { user: { email: data.email } } : {},
+          ].filter(Boolean) as any
+        }
+      });
 
-    if (existing) {
-      throw new Error('Duplicate application detected: Citizenship or Email already registered.');
+      if (existing) {
+        throw new Error('Duplicate application detected: Citizenship or Email already registered.');
+      }
     }
 
-    // 2. Eligibility Check (ECN: Age >= 18)
-    const age = this.calculateAge(data.dateOfBirth);
-    if (age < 18) {
-      throw new Error('Ineligible: Applicant must be at least 18 years old.');
+    // 2. Conditional Validation
+    if (data.applicationMode === 'FORM') {
+      if (!data.province || !data.district || !data.localLevel || !data.ward || !data.declaration) {
+        throw new Error('All address fields and declaration are required for form applications.');
+      }
+    }
+    
+    // 2. Eligibility Check (ECN: Age >= 18) - only if DOB provided
+    if (data.dateOfBirth) {
+      const age = this.calculateAge(data.dateOfBirth);
+      if (age < 18) {
+        throw new Error('Ineligible: Applicant must be at least 18 years old.');
+      }
     }
 
     // 3. Generate Tracking Code
@@ -117,6 +137,20 @@ export class MembershipService extends BaseService {
     });
 
     return member;
+  }
+
+  /**
+   * Generate/Regenerate Member Card (QR Code)
+   */
+  async generateCard(memberId: string) {
+    // In a real app, this would generate a QR code.
+    // For now, we simulate it with a random string.
+    const qrCodeData = `QR-${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
+    
+    return await this.db.member.update({
+      where: { id: memberId },
+      data: { qrCodeData }
+    });
   }
 
   /**

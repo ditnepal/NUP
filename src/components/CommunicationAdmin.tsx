@@ -34,12 +34,14 @@ export const CommunicationAdmin: React.FC = () => {
   };
 
   const handleBroadcast = async (id: string) => {
-    if (!confirm('Are you sure you want to broadcast this campaign now?')) return;
+    if (!window.confirm('Are you sure you want to broadcast this campaign now?')) return;
     try {
       await api.post(`/communication/campaigns/${id}/broadcast`, {});
+      // In a real app, use a toast notification here
       alert('Broadcast started successfully');
       fetchData();
     } catch (error: any) {
+      console.error('Broadcast failed:', error);
       alert(`Broadcast failed: ${error.message}`);
     }
   };

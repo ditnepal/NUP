@@ -1,5 +1,8 @@
 import prisma from '../lib/prisma';
 import { auditService } from './audit.service';
+import { messagingEngine } from './messaging.engine';
+import { retryService } from './retry.service';
+import { analyticsService } from './analytics.service';
 
 export class CommunicationService {
   /**
@@ -38,7 +41,7 @@ export class CommunicationService {
   }
 
   /**
-   * Broadcast a campaign to a segment
+   * Broadcast a campaign to a segment (Async/Batched)
    */
   async broadcastCampaign(campaignId: string) {
     const campaign = await prisma.communicationCampaign.findUnique({
@@ -50,6 +53,7 @@ export class CommunicationService {
       throw new Error('Campaign or segment not found');
     }
 
+    // Update status to SENDING
     await prisma.communicationCampaign.update({
       where: { id: campaignId },
       data: { status: 'SENDING' },
@@ -62,16 +66,42 @@ export class CommunicationService {
       where: {
         role: criteria.role,
         isActive: true,
-        // Add more criteria matching as needed
       },
     });
 
-    let successCount = 0;
-    let failureCount = 0;
+    // Batching logic
+    const BATCH_SIZE = 50;
+    const promises = [];
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+      const batch = users.slice(i, i + BATCH_SIZE);
+      
+      // Dispatch batch and wait for it
+      promises.push(this.dispatchBatch(batch, campaign));
+    }
 
+    try {
+      await Promise.all(promises);
+      await prisma.communicationCampaign.update({
+        where: { id: campaignId },
+        data: { 
+          status: 'COMPLETED',
+          sentAt: new Date(),
+        },
+      });
+    } catch (error) {
+      await prisma.communicationCampaign.update({
+        where: { id: campaignId },
+        data: { status: 'FAILED' },
+      });
+      throw error;
+    }
+
+    return { status: 'COMPLETED' };
+  }
+
+  private async dispatchBatch(users: any[], campaign: any) {
     for (const user of users) {
       try {
-        // Render template
         const renderedBody = campaign.template.body.replace('{{fullName}}', user.displayName);
         
         if (campaign.template.type === 'IN_APP') {
@@ -81,59 +111,48 @@ export class CommunicationService {
             message: renderedBody,
             type: 'INFO',
           });
+        } else {
+          const result = await messagingEngine.send(
+            campaign.template.type as 'SMS' | 'EMAIL' | 'PUSH',
+            user.email || user.phoneNumber,
+            campaign.template.subject || campaign.name,
+            renderedBody
+          );
+
+          if (!result.success) {
+            throw new Error(result.error);
+          }
         }
-        
-        // Log delivery
+
         await prisma.deliveryLog.create({
           data: {
-            campaignId,
+            campaignId: campaign.id,
             userId: user.id,
-            recipient: user.email,
+            recipient: user.email || user.phoneNumber,
             status: 'SENT',
             provider: campaign.template.type,
           },
         });
-        
-        successCount++;
       } catch (error: any) {
-        failureCount++;
         await prisma.deliveryLog.create({
           data: {
-            campaignId,
+            campaignId: campaign.id,
             userId: user.id,
-            recipient: user.email,
+            recipient: user.email || user.phoneNumber,
             status: 'FAILED',
             error: error.message,
             provider: campaign.template.type,
           },
         });
+        await retryService.enqueue(campaign.id, campaign.template.type, user.id);
       }
     }
-
-    await prisma.communicationCampaign.update({
-      where: { id: campaignId },
-      data: { 
-        status: 'COMPLETED',
-        sentAt: new Date(),
-      },
-    });
-
-    await auditService.log({
-      action: 'CAMPAIGN_BROADCAST',
-      entityType: 'CommunicationCampaign',
-      entityId: campaignId,
-      details: { successCount, failureCount },
-    });
-
-    return { successCount, failureCount };
   }
 
   /**
    * Create a public alert (Banner/Notice)
    */
   async createPublicAlert(data: { title: string; content: string; priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' }) {
-    // Public alerts can be stored as a special type of CmsPost or a dedicated model
-    // For now, let's use CmsPost with type 'ALERT'
     const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
     if (!admin) throw new Error('Admin user not found');
 
