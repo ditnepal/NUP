@@ -1,5 +1,26 @@
 const API_URL = '/api/v1';
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, backoff = 2000): Promise<Response> => {
+  try {
+    const response = await fetch(url, options);
+    if (response.status === 429 && retries > 0) {
+      console.warn(`Rate limit hit for ${url}. Retrying in ${backoff}ms...`);
+      await sleep(backoff);
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Fetch error for ${url}. Retrying in ${backoff}ms...`, error);
+      await sleep(backoff);
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    throw error;
+  }
+};
+
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
     let errorMessage = 'API Error';
@@ -30,7 +51,7 @@ const handleResponse = async (response: Response) => {
 export const api = {
   get: async (endpoint: string) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -40,7 +61,7 @@ export const api = {
 
   post: async (endpoint: string, data: any) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +74,7 @@ export const api = {
 
   postFormData: async (endpoint: string, formData: FormData) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -65,7 +86,7 @@ export const api = {
 
   put: async (endpoint: string, data: any) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -78,7 +99,7 @@ export const api = {
 
   patch: async (endpoint: string, data: any) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -91,7 +112,7 @@ export const api = {
 
   delete: async (endpoint: string) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,

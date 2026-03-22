@@ -36,10 +36,11 @@ export const GrievancePortal: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [gData, cData] = await Promise.all([
-        api.get('/grievances'),
-        api.get('/grievances/categories')
-      ]);
+      // Stagger API calls
+      const gData = await api.get('/grievances');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const cData = await api.get('/grievances/categories');
+      
       setGrievances(gData);
       setCategories(cData);
     } catch (error) {

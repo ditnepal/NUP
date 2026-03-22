@@ -3,7 +3,7 @@ import { ShieldCheck, Globe } from 'lucide-react';
 import { motion } from 'motion/react';
 import { api } from '../lib/api';
 
-export const Login = ({ onLoginSuccess, t }: { onLoginSuccess: (user: any) => void, t: any }) => {
+export const Login = ({ onLoginSuccess, onGoToPublic, t }: { onLoginSuccess: (user: any) => void, onGoToPublic: () => void, t: any }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -74,6 +74,17 @@ export const Login = ({ onLoginSuccess, t }: { onLoginSuccess: (user: any) => vo
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+        
+        <div className="pt-4 border-t border-slate-100">
+          <button 
+            type="button"
+            onClick={onGoToPublic}
+            className="w-full py-3 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
+          >
+            <Globe size={18} />
+            Go to Public Portal
+          </button>
+        </div>
         
         <p className="text-xs text-slate-400">Secure Internal Access Only</p>
       </div>

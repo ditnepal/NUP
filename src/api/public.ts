@@ -131,43 +131,37 @@ router.post('/complaint', async (req, res) => {
   }
 });
 
-// @route   GET /api/v1/public/membership-status
+const membershipStatusSchema = z.object({
+  trackingCode: z.string().min(1, "Tracking code is required"),
+  mobileNumber: z.string().min(1, "Mobile number is required")
+});
+
+// @route   POST /api/v1/public/membership-status
 // @desc    Check membership application status
 // @access  Public
-router.get('/membership-status', async (req, res) => {
-  const { trackingCode, mobile } = req.query;
-
-  if (!trackingCode || !mobile) {
-    return res.status(400).json({ message: 'Tracking code and mobile number are required' });
-  }
-
+router.post('/membership-status', async (req, res) => {
   try {
+    const input = membershipStatusSchema.parse(req.body);
+
+    console.log('[DEBUG] Membership Status Lookup:', {
+      trackingCode: input.trackingCode,
+      mobileNumber: input.mobileNumber
+    });
+
     const member = await prisma.member.findFirst({
       where: {
-        trackingCode: String(trackingCode),
-        mobile: String(mobile),
-      },
-      select: {
-        id: true,
-        fullName: true,
-        trackingCode: true,
-        status: true,
-        createdAt: true,
-        applicationMode: true,
-        terminationHistory: true,
-        membershipId: true,
-        userId: true,
-        email: true,
-        orgUnit: {
-          select: {
-            name: true
-          }
-        }
+        trackingCode: input.trackingCode,
+        mobile: input.mobileNumber,
       },
     });
 
+    console.log('[DEBUG] Query Result:', member ? `Found: ${member.id}` : 'Not found');
+
     if (!member) {
-      return res.status(404).json({ message: 'Application not found with provided details' });
+      return res.status(404).json({
+        success: false,
+        message: "Application not found"
+      });
     }
 
     let rejectionReason = null;
@@ -182,14 +176,22 @@ router.get('/membership-status', async (req, res) => {
       }
     }
 
-    res.json({
-      ...member,
-      rejectionReason,
+    return res.json({
+      success: true,
+      status: member.status,
+      fullName: member.fullName,
+      trackingCode: member.trackingCode,
+      applicationMode: member.applicationMode,
+      rejectionReason: rejectionReason || null,
+      email: member.email,
       hasAccount: !!member.userId
     });
   } catch (error) {
     console.error('Error checking membership status:', error);
-    res.status(500).json({ message: 'Failed to check status' });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ success: false, message: error.issues[0].message });
+    }
+    return res.status(500).json({ success: false, message: 'An error occurred while checking application status' });
   }
 });
 

@@ -29,7 +29,23 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
     setClaimEmail('');
 
     try {
-      const data = await api.get(`/public/membership-status?trackingCode=${trackingCode}&mobile=${mobile}`);
+      console.log('[DEBUG] Frontend Lookup:', { trackingCode, mobileNumber: mobile });
+      const response = await fetch('/api/public/membership-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trackingCode,
+          mobileNumber: mobile
+        })
+      });
+      
+      const data = await response.json();
+      console.log('[DEBUG] Frontend Lookup Result:', data);
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Application not found');
+      }
+      
       setStatusData(data);
       if (data.email) {
         setClaimEmail(data.email);

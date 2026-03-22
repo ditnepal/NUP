@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { api } from '../lib/api';
 
 const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: string) => void }> = ({ onBack, onSuccess }) => {
   const { register, handleSubmit } = useForm();
   const [units, setUnits] = useState<any[]>([]);
 
   React.useEffect(() => {
-    fetch('/api/v1/public/units').then(res => res.json()).then(setUnits);
+    api.get('/public/units').then(setUnits).catch(console.error);
   }, []);
 
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -14,26 +15,21 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: s
   const [success, setSuccess] = useState<string | null>(null);
 
   const onSubmit = async (data: any) => {
-    const formData = new FormData();
-    formData.append('fullName', data.fullName);
-    formData.append('mobile', data.mobile);
-    formData.append('orgUnitId', data.orgUnitId);
-    formData.append('identityDocumentType', data.identityDocumentType);
-    formData.append('applicationMode', 'VIDEO');
-    if (idDoc) formData.append('identityDocument', idDoc);
-    if (videoFile) formData.append('video', videoFile);
+    try {
+      const formData = new FormData();
+      formData.append('fullName', data.fullName);
+      formData.append('mobile', data.mobile);
+      formData.append('orgUnitId', data.orgUnitId);
+      formData.append('identityDocumentType', data.identityDocumentType);
+      formData.append('applicationMode', 'VIDEO');
+      if (idDoc) formData.append('identityDocument', idDoc);
+      if (videoFile) formData.append('video', videoFile);
 
-    const response = await fetch('/api/v1/members/apply', {
-      method: 'POST',
-      body: formData,
-    });
-    if (response.ok) {
-      const result = await response.json();
+      const result = await api.postFormData('/members/apply', formData);
       setSuccess(result.trackingCode);
-    }
-    else {
-      const error = await response.json();
-      alert(error.error);
+    } catch (err: any) {
+      console.error('Submission error:', err);
+      alert(err.message || 'An error occurred during submission');
     }
   };
 

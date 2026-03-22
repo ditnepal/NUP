@@ -67,11 +67,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [profileData, newsData, eventsData] = await Promise.all([
-          api.get('/members/me'),
-          api.get('/public/posts?type=NEWS&limit=2'),
-          api.get('/events')
-        ]);
+        const profileData = await api.get('/members/me');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const newsData = await api.get('/public/posts?type=NEWS&limit=2');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const eventsData = await api.get('/events');
+        
         setProfile(profileData);
         setNews(newsData.slice(0, 2));
         setEvents(eventsData.slice(0, 2));

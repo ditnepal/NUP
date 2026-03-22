@@ -12,9 +12,10 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), 'uploads');
+const isProd = process.env.NODE_ENV === 'production';
+const uploadsDir = isProd ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 const documentSchema = z.object({

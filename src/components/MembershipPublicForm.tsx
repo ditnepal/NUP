@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { api } from '../lib/api';
 
 const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (trackingCode: string) => void }> = ({ onBack, onSuccess }) => {
   const { register, handleSubmit } = useForm();
@@ -8,7 +9,7 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
   const [units, setUnits] = useState<any[]>([]);
 
   React.useEffect(() => {
-    fetch('/api/v1/public/units').then(res => res.json()).then(setUnits);
+    api.get('/public/units').then(setUnits).catch(console.error);
   }, []);
 
   const [idDoc, setIdDoc] = useState<File | null>(null);
@@ -23,21 +24,11 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
       if (idDoc) formData.append('identityDocument', idDoc);
       if (photo) formData.append('profilePhoto', photo);
 
-      const response = await fetch('/api/v1/members/apply', {
-        method: 'POST',
-        body: formData,
-      });
-      if (response.ok) {
-        const result = await response.json();
-        setSuccess(result.trackingCode);
-      }
-      else {
-        const error = await response.json();
-        alert(error.error || 'Failed to submit application');
-      }
-    } catch (err) {
+      const result = await api.postFormData('/members/apply', formData);
+      setSuccess(result.trackingCode);
+    } catch (err: any) {
       console.error('Submission error:', err);
-      alert('An error occurred during submission');
+      alert(err.message || 'An error occurred during submission');
     } finally {
       setLoading(false);
     }

@@ -37,7 +37,9 @@ type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 
 export default function App() {
   const { t, i18n } = useTranslation();
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [currentView, setCurrentView] = useState<View>(
+    window.location.search.includes('view=public') ? 'public' : 'dashboard'
+  );
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [initialTrackingCode, setInitialTrackingCode] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -63,8 +65,8 @@ export default function App() {
             setCurrentView('member-dashboard');
           } else {
             setCurrentView('dashboard');
+            fetchData();
           }
-          fetchData();
         } catch (error) {
           localStorage.removeItem('token');
         }
@@ -76,11 +78,13 @@ export default function App() {
 
   const fetchData = async () => {
     try {
-      const [campaignsData, supportersResponse, boothsData] = await Promise.all([
-        api.get('/campaigns'),
-        api.get('/supporters'),
-        api.get('/booths')
-      ]);
+      // Stagger API calls to avoid hitting rate limits
+      const campaignsData = await api.get('/campaigns');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const supportersResponse = await api.get('/supporters');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const boothsData = await api.get('/booths');
+      
       setCampaigns(campaignsData);
       setSupporters(supportersResponse.data || []);
       setBooths(boothsData);
@@ -95,8 +99,8 @@ export default function App() {
       setCurrentView('member-dashboard');
     } else {
       setCurrentView('dashboard');
+      fetchData();
     }
-    fetchData();
   };
 
   const handleLogout = () => {
@@ -183,7 +187,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <Login onLoginSuccess={handleLoginSuccess} t={t} />;
+    return <Login onLoginSuccess={handleLoginSuccess} onGoToPublic={() => setCurrentView('public')} t={t} />;
   }
 
   const navItems = [

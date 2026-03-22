@@ -50,10 +50,11 @@ export const PgisDashboard: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [rData, oData] = await Promise.all([
-        api.get('/pgis/reports'),
-        api.get('/pgis/overview')
-      ]);
+      // Stagger API calls
+      const rData = await api.get('/pgis/reports');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const oData = await api.get('/pgis/overview');
+      
       setReports(rData);
       setOverview(oData);
     } catch (error) {

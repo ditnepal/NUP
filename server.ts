@@ -2,6 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();
+
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'file:./prisma/dev.db';
+}
 console.log('[DEBUG] DATABASE_URL:', process.env.DATABASE_URL);
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
@@ -71,17 +75,22 @@ export async function createApp() {
   app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
   app.get('/test', (req, res) => res.send('Server is running!'));
 
-  // Move notifications higher to ensure it's matched
-  app.use('/api/v1/notifications', notificationsRouter);
+  // Move user-alerts higher to ensure it's matched
+  app.use('/api/v1/user-alerts', notificationsRouter);
 
   // Serve uploaded documents
-  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+  const uploadsDir = process.env.NODE_ENV === 'production' ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsDir));
 
   app.use('/api/v1/auth', authLimiter, authRouter);
   app.use('/api/v1/members', membersRouter);
   app.use('/api/v1/supporters', supportersRouter);
   app.use('/api/v1/cms', cmsRouter);
   app.use('/api/v1/public', publicLimiter, publicRouter);
+  app.use('/api/public', publicLimiter, publicRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/auditlogs', auditlogsRouter);
   app.use('/api/v1/booths', boothsRouter);
@@ -106,6 +115,19 @@ export async function createApp() {
   // Catch-all for API routes to return 404 JSON instead of HTML
   app.all('/api/*', (req, res) => {
     res.status(404).json({ error: `API route not found: ${req.method} ${req.url}` });
+  });
+
+  // Global error handler
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[SERVER ERROR]', err);
+    if (req.path.startsWith('/api/')) {
+      res.status(err.status || 500).json({
+        error: err.message || 'Internal Server Error',
+        details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
+    } else {
+      next(err);
+    }
   });
 
   console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}`);

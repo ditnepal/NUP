@@ -50,12 +50,15 @@ export function ElectionAdmin() {
   const fetchCycleData = async () => {
     setLoading(true);
     try {
-      const [candData, incData, resData, readData] = await Promise.all([
-        api.get(`/election/candidates?cycleId=${selectedCycle.id}`),
-        api.get(`/election/incidents?cycleId=${selectedCycle.id}`),
-        api.get(`/election/results?cycleId=${selectedCycle.id}`),
-        api.get('/election/booth-readiness')
-      ]);
+      // Stagger API calls
+      const candData = await api.get(`/election/candidates?cycleId=${selectedCycle.id}`);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const incData = await api.get(`/election/incidents?cycleId=${selectedCycle.id}`);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const resData = await api.get(`/election/results?cycleId=${selectedCycle.id}`);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const readData = await api.get('/election/booth-readiness');
+      
       setCandidates(candData);
       setIncidents(incData);
       setResults(resData);

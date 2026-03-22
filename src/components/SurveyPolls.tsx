@@ -44,10 +44,11 @@ export const SurveyPolls: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [sData, pData] = await Promise.all([
-        api.get('/surveys'),
-        api.get('/surveys/polls')
-      ]);
+      // Stagger API calls
+      const sData = await api.get('/surveys');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const pData = await api.get('/surveys/polls');
+      
       setSurveys(sData);
       setPolls(pData);
     } catch (error) {
