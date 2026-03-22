@@ -7,6 +7,7 @@ import { auditService } from '../services/audit.service';
 import { hierarchyService } from '../services/hierarchy.service';
 
 const router = express.Router();
+console.log('Members router loaded');
 
 const memberApplySchema = z.object({
   fullName: z.string().min(2),
@@ -36,7 +37,7 @@ const memberApplySchema = z.object({
   helperPhone: z.string().optional(),
   helperRole: z.string().optional(),
   declaration: z.preprocess((val) => val === 'true' || val === true, z.boolean().optional()),
-  orgUnitId: z.string(),
+  orgUnitId: z.string().min(1),
 });
 
 // @route   GET /api/v1/members/:id
@@ -163,32 +164,53 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+
+// @route   POST /api/v1/members/apply
+// @desc    Submit membership application
+// @access  Public (or Staff)
 import multer from 'multer';
 const upload = multer({ dest: 'uploads/' });
 
 // @route   POST /api/v1/members/apply
 // @desc    Submit membership application
 // @access  Public (or Staff)
-router.post('/apply', upload.fields([{ name: 'identityDocument' }, { name: 'profilePhoto' }, { name: 'video' }]), async (req, res) => {
+router.post('/apply', upload.any(), async (req, res) => {
   try {
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    const data = {
-      ...req.body,
-      ward: req.body.ward ? parseInt(req.body.ward) : undefined,
-      declaration: req.body.declaration,
-      identityDocumentUrl: files.identityDocument ? `/uploads/${files.identityDocument[0].filename}` : undefined,
-      profilePhotoUrl: files.profilePhoto ? `/uploads/${files.profilePhoto[0].filename}` : undefined,
-      videoUrl: files.video ? `/uploads/${files.video[0].filename}` : undefined,
-    };
+    const data = req.body;
+    console.log('Req headers:', req.headers);
+    const files = req.files as Express.Multer.File[];
     
-    // Validate with Zod, but we need to handle the fact that files are now paths
-    const validatedData = memberApplySchema.parse(data);
-    const member = await membershipService.apply(validatedData as any);
-    res.status(201).json(member);
+    // Map files to the data object
+    const identityDocument = files.find(f => f.fieldname === 'identityDocument');
+    const profilePhoto = files.find(f => f.fieldname === 'profilePhoto');
+    const video = files.find(f => f.fieldname === 'video');
+    
+    const applicationMode = data.applicationMode || 'FORM';
+    console.log('Application Mode:', applicationMode);
+    console.log('Raw req.body:', JSON.stringify(data));
+    
+    const applicationData = {
+      fullName: data.fullName || `Applicant ${Date.now()}`,
+      email: data.email,
+      phone: data.mobile,
+      citizenshipNumber: data.citizenshipNumber,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+      gender: data.gender,
+      province: data.province,
+      district: data.district,
+      localLevel: data.localLevel,
+      ward: data.ward ? parseInt(data.ward) : undefined,
+      orgUnitId: data.orgUnitId,
+      applicationMode: applicationMode,
+      identityDocumentUrl: identityDocument ? identityDocument.path : undefined,
+      profilePhotoUrl: profilePhoto ? profilePhoto.path : undefined,
+      videoUrl: video ? video.path : undefined,
+    };
+    console.log('Application Data:', JSON.stringify(applicationData));
+
+    const member = await membershipService.apply(applicationData as any);
+    res.status(201).json({ trackingCode: member.trackingCode });
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: (error as any).errors });
-    }
     res.status(400).json({ error: error.message });
   }
 });

@@ -27,7 +27,6 @@ export class MembershipService extends BaseService {
     helperName?: string;
     helperPhone?: string;
     helperRole?: string;
-    declaration?: boolean;
   }) {
     // 1. Duplicate Detection (only if citizenshipNumber or email provided)
     if (data.citizenshipNumber || data.email) {
@@ -47,8 +46,8 @@ export class MembershipService extends BaseService {
 
     // 2. Conditional Validation
     if (data.applicationMode === 'FORM') {
-      if (!data.province || !data.district || !data.localLevel || !data.ward || !data.declaration) {
-        throw new Error('All address fields and declaration are required for form applications.');
+      if (!data.province || !data.district || !data.localLevel || !data.ward) {
+        throw new Error('All address fields are required for form applications.');
       }
     }
     
@@ -64,9 +63,34 @@ export class MembershipService extends BaseService {
     const trackingCode = `T-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     // 4. Create Member (Pending)
+    console.log('Creating member with data:', JSON.stringify({
+      fullName: data.fullName || `Applicant ${Date.now()}`,
+      citizenshipNumber: data.citizenshipNumber,
+      province: data.province,
+      district: data.district,
+      localLevel: data.localLevel,
+      ward: data.ward,
+      orgUnitId: data.orgUnitId,
+      applicationMode: data.applicationMode,
+      videoUrl: data.videoUrl,
+      identityDocumentUrl: data.identityDocumentUrl,
+      profilePhotoUrl: data.profilePhotoUrl,
+      trackingCode,
+      status: 'PENDING',
+    }));
     const member = await this.db.member.create({
       data: {
-        ...data,
+        fullName: data.fullName || `Applicant ${Date.now()}`,
+        citizenshipNumber: data.citizenshipNumber,
+        province: data.province,
+        district: data.district,
+        localLevel: data.localLevel,
+        ward: data.ward,
+        orgUnitId: data.orgUnitId,
+        applicationMode: data.applicationMode,
+        videoUrl: data.videoUrl,
+        identityDocumentUrl: data.identityDocumentUrl,
+        profilePhotoUrl: data.profilePhotoUrl,
         trackingCode,
         status: 'PENDING',
       }

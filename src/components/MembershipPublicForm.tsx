@@ -14,6 +14,7 @@ const MembershipPublicForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [photo, setPhoto] = useState<File | null>(null);
 
   const onSubmit = async (data: any) => {
+    console.log('Form data:', data);
     const formData = new FormData();
     Object.keys(data).forEach(key => formData.append(key, data[key]));
     formData.append('applicationMode', 'FORM');

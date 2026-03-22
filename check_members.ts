@@ -1,11 +1,10 @@
-import prisma from './src/lib/prisma';
+import 'dotenv/config';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
-async function checkMembers() {
+async function main() {
   const members = await prisma.member.findMany();
-  console.log('Members count:', members.length);
-  if (members.length > 0) {
-    console.log('Sample member status:', members[0].status);
-  }
+  console.log('Members:', JSON.stringify(members, null, 2));
 }
 
-checkMembers().catch(console.error);
+main().catch(console.error);

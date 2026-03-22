@@ -15,7 +15,10 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void }> = ({ onBack }) => 
 
   const onSubmit = async (data: any) => {
     const formData = new FormData();
-    Object.keys(data).forEach(key => formData.append(key, data[key]));
+    formData.append('fullName', data.fullName);
+    formData.append('mobile', data.mobile);
+    formData.append('orgUnitId', data.orgUnitId);
+    formData.append('identityDocumentType', data.identityDocumentType);
     formData.append('applicationMode', 'VIDEO');
     if (idDoc) formData.append('identityDocument', idDoc);
     if (videoFile) formData.append('video', videoFile);
@@ -38,6 +41,7 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void }> = ({ onBack }) => 
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+      <input {...register('fullName')} placeholder="Full Name" className="p-3 border rounded-lg" required />
       <input {...register('mobile')} placeholder="Mobile Number" className="p-3 border rounded-lg" required />
       <select {...register('orgUnitId')} className="p-3 border rounded-lg" required>
         <option value="">Select Organization Unit</option>

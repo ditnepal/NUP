@@ -18,6 +18,29 @@ async function main() {
     },
   });
 
+  // Create Regional Units
+  const regionalUnit1 = await prisma.organizationUnit.upsert({
+    where: { code: 'REG-001' },
+    update: {},
+    create: {
+      name: 'Bagmati Regional Office',
+      level: 'PROVINCE',
+      code: 'REG-001',
+      parentId: nationalUnit.id,
+    },
+  });
+
+  const regionalUnit2 = await prisma.organizationUnit.upsert({
+    where: { code: 'REG-002' },
+    update: {},
+    create: {
+      name: 'Gandaki Regional Office',
+      level: 'PROVINCE',
+      code: 'REG-002',
+      parentId: nationalUnit.id,
+    },
+  });
+
   // Create Admin User
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash('admin123', salt);
