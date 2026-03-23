@@ -29,10 +29,18 @@ export class SurveyService {
   }
 
   async getSurvey(id: string) {
-    return prisma.survey.findUnique({
+    const survey = await prisma.survey.findUnique({
       where: { id },
       include: { questions: { orderBy: { order: 'asc' } } },
     });
+    if (!survey) return null;
+    return {
+      ...survey,
+      questions: survey.questions.map(q => ({
+        ...q,
+        options: q.options ? JSON.parse(q.options) : [],
+      })),
+    };
   }
 
   async submitResponse(data: { surveyId: string; userId?: string; answers: { questionId: string; value: string }[] }) {
@@ -51,6 +59,14 @@ export class SurveyService {
   }
 
   async getSurveyAnalytics(surveyId: string) {
+    const survey = await prisma.survey.findUnique({
+      where: { id: surveyId },
+    });
+
+    if (!survey) {
+      throw new Error('Survey not found');
+    }
+
     const responses = await prisma.surveyResponse.findMany({
       where: { surveyId },
       include: { answers: true },
@@ -61,7 +77,7 @@ export class SurveyService {
       orderBy: { order: 'asc' },
     });
 
-    const analytics = questions.map((q) => {
+    const analyticsQuestions = questions.map((q) => {
       const qAnswers = responses.flatMap((r) => r.answers.filter((a) => a.questionId === q.id));
       const counts: Record<string, number> = {};
       qAnswers.forEach((a) => {
@@ -69,19 +85,26 @@ export class SurveyService {
       });
 
       return {
-        questionId: q.id,
+        id: q.id,
         text: q.text,
         type: q.type,
-        totalResponses: qAnswers.length,
-        data: counts,
+        options: q.options ? JSON.parse(q.options) : [],
+        answers: counts,
       };
     });
 
     return {
-      surveyId,
+      survey,
       totalResponses: responses.length,
-      analytics,
+      questions: analyticsQuestions,
     };
+  }
+
+  async updateSurveyStatus(id: string, status: string) {
+    return prisma.survey.update({
+      where: { id },
+      data: { status },
+    });
   }
 
   // --- Polls ---
@@ -113,6 +136,13 @@ export class SurveyService {
   async votePoll(pollId: string, optionId: string, userId?: string) {
     return prisma.pollVote.create({
       data: { pollId, optionId, userId },
+    });
+  }
+
+  async updatePollStatus(id: string, status: string) {
+    return prisma.poll.update({
+      where: { id },
+      data: { status },
     });
   }
 }

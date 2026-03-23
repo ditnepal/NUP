@@ -51,6 +51,46 @@ router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) =
   }
 });
 
+// Polls
+router.get('/polls', authenticate, async (req, res) => {
+  try {
+    const polls = await surveyService.getPolls();
+    res.json(polls);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/polls', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = pollSchema.parse(req.body);
+    const poll = await surveyService.createPoll(data);
+    res.status(201).json(poll);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/polls/:id/vote', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { optionId } = z.object({ optionId: z.string().uuid() }).parse(req.body);
+    const vote = await surveyService.votePoll(req.params.id, optionId, req.user?.id);
+    res.status(201).json(vote);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.patch('/polls/:id/status', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { status } = z.object({ status: z.string() }).parse(req.body);
+    const poll = await surveyService.updatePollStatus(req.params.id, status);
+    res.json(poll);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const survey = await surveyService.getSurvey(req.params.id);
@@ -83,31 +123,11 @@ router.get('/:id/analytics', authenticate, authorize(['ADMIN', 'STAFF']), async 
   }
 });
 
-// Polls
-router.get('/polls', authenticate, async (req, res) => {
+router.patch('/:id/status', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
   try {
-    const polls = await surveyService.getPolls();
-    res.json(polls);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post('/polls', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
-  try {
-    const data = pollSchema.parse(req.body);
-    const poll = await surveyService.createPoll(data);
-    res.status(201).json(poll);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-router.post('/polls/:id/vote', authenticate, async (req: AuthRequest, res) => {
-  try {
-    const { optionId } = z.object({ optionId: z.string().uuid() }).parse(req.body);
-    const vote = await surveyService.votePoll(req.params.id, optionId, req.user?.id);
-    res.status(201).json(vote);
+    const { status } = z.object({ status: z.string() }).parse(req.body);
+    const survey = await surveyService.updateSurveyStatus(req.params.id, status);
+    res.json(survey);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

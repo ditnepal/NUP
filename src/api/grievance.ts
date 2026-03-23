@@ -76,7 +76,15 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
       filters.reporterId = req.user?.id;
     }
 
-    const grievances = await grievanceService.getGrievances(filters);
+    let grievances = await grievanceService.getGrievances(filters);
+    
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'STAFF') {
+      grievances = grievances.map(g => ({
+        ...g,
+        responses: g.responses?.filter(r => !r.isInternal)
+      }));
+    }
+
     res.json(grievances);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -149,7 +157,7 @@ router.post('/:id/resolve', authenticate, authorize(['ADMIN', 'STAFF']), async (
   }
 });
 
-router.post('/:id/escalate', authenticate, async (req: AuthRequest, res) => {
+router.post('/:id/escalate', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
   try {
     const grievance = await grievanceService.escalateGrievance(req.params.id, req.user?.id as string);
     res.json(grievance);

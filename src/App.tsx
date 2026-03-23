@@ -404,7 +404,7 @@ export default function App() {
             : <CandidateDashboard />
         )}
         {currentView === 'grievances' && <GrievancePortal user={user} />}
-        {currentView === 'surveys' && <SurveyPolls />}
+        {currentView === 'surveys' && <SurveyPolls user={user} />}
         {currentView === 'pgis' && <PgisDashboard />}
         {currentView === 'warroom' && <WarRoomDashboard />}
         {currentView === 'donations' && <DonationPortal />}

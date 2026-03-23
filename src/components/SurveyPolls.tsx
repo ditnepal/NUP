@@ -3,14 +3,14 @@ import { motion } from 'motion/react';
 import { 
   BarChart3, 
   ClipboardList, 
-  PieChart, 
   Plus, 
   Send, 
   CheckCircle2, 
   ChevronRight,
   Users,
   Calendar,
-  Vote
+  Vote,
+  X
 } from 'lucide-react';
 
 import { api } from '../lib/api';
@@ -32,11 +32,24 @@ interface Poll {
   _count: { votes: number };
 }
 
-export const SurveyPolls: React.FC = () => {
+export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'surveys' | 'polls'>('surveys');
+  const [showCreateSurvey, setShowCreateSurvey] = useState(false);
+  const [showCreatePoll, setShowCreatePoll] = useState(false);
+  const [showTakeSurvey, setShowTakeSurvey] = useState(false);
+  const [showSurveyResults, setShowSurveyResults] = useState(false);
+  const [currentSurvey, setCurrentSurvey] = useState<any>(null);
+  const [surveyAnalytics, setSurveyAnalytics] = useState<any>(null);
+  const [newSurvey, setNewSurvey] = useState<any>({ title: '', description: '', questions: [] });
+  const [newPoll, setNewPoll] = useState<any>({ question: '', options: ['', ''] });
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  const isAdminOrStaff = user?.role === 'ADMIN' || user?.role === 'STAFF';
 
   useEffect(() => {
     fetchData();
@@ -49,8 +62,13 @@ export const SurveyPolls: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 300));
       const pData = await api.get('/surveys/polls');
       
-      setSurveys(sData);
-      setPolls(pData);
+      if (isAdminOrStaff) {
+        setSurveys(sData);
+        setPolls(pData);
+      } else {
+        setSurveys(sData.filter((s: any) => s.status === 'ACTIVE'));
+        setPolls(pData.filter((p: any) => p.status === 'ACTIVE'));
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -62,8 +80,104 @@ export const SurveyPolls: React.FC = () => {
     try {
       await api.post(`/surveys/polls/${pollId}/vote`, { optionId });
       fetchData();
-    } catch (error) {
-      console.error('Error voting:', error);
+    } catch (err: any) {
+      console.error('Error voting:', err);
+      setError(err.response?.data?.error || 'Failed to submit vote. You may have already voted.');
+    }
+  };
+
+  const handleCreateSurvey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.post('/surveys', newSurvey);
+      setSuccess('Survey created successfully');
+      setShowCreateSurvey(false);
+      setNewSurvey({ title: '', description: '', questions: [] });
+      fetchData();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create survey');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.post('/surveys/polls', newPoll);
+      setSuccess('Poll created successfully');
+      setShowCreatePoll(false);
+      setNewPoll({ question: '', options: ['', ''] });
+      fetchData();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create poll');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTakeSurvey = async (id: string) => {
+    try {
+      const data = await api.get(`/surveys/${id}`);
+      setCurrentSurvey(data);
+      setShowTakeSurvey(true);
+      setAnswers({});
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSubmitSurvey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
+        questionId,
+        value,
+      }));
+      await api.post('/surveys/responses', {
+        surveyId: currentSurvey?.id,
+        answers: formattedAnswers,
+      });
+      setSuccess('Survey submitted successfully');
+      setShowTakeSurvey(false);
+      fetchData();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to submit survey');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewResults = async (id: string) => {
+    try {
+      const data = await api.get(`/surveys/${id}/analytics`);
+      setSurveyAnalytics(data);
+      setShowSurveyResults(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleSurveyStatus = async (id: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'ACTIVE' ? 'CLOSED' : 'ACTIVE';
+      await api.patch(`/surveys/${id}/status`, { status: newStatus });
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleTogglePollStatus = async (id: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'ACTIVE' ? 'CLOSED' : 'ACTIVE';
+      await api.patch(`/surveys/polls/${id}/status`, { status: newStatus });
+      fetchData();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -89,6 +203,24 @@ export const SurveyPolls: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-xl flex justify-between items-center">
+          <p>{error}</p>
+          <button onClick={() => setError('')} className="text-red-400 hover:text-red-600">
+            <X size={20} />
+          </button>
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 text-green-600 p-4 rounded-xl flex justify-between items-center">
+          <p>{success}</p>
+          <button onClick={() => setSuccess('')} className="text-green-400 hover:text-green-600">
+            <X size={20} />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2">
@@ -119,18 +251,21 @@ export const SurveyPolls: React.FC = () => {
 
       {activeTab === 'surveys' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-4 cursor-pointer hover:border-black transition-all group"
-          >
-            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-gray-400 group-hover:text-black transition-colors shadow-sm">
-              <Plus size={32} />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg">Create New Survey</h3>
-              <p className="text-sm text-gray-500">Design a custom questionnaire</p>
-            </div>
-          </motion.div>
+          {isAdminOrStaff && (
+            <motion.div 
+              whileHover={{ scale: 1.02 }}
+              onClick={() => setShowCreateSurvey(true)}
+              className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-4 cursor-pointer hover:border-black transition-all group"
+            >
+              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-gray-400 group-hover:text-black transition-colors shadow-sm">
+                <Plus size={32} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Create New Survey</h3>
+                <p className="text-sm text-gray-500">Design a custom questionnaire</p>
+              </div>
+            </motion.div>
+          )}
 
           {surveys.map((s) => (
             <motion.div 
@@ -140,7 +275,10 @@ export const SurveyPolls: React.FC = () => {
               className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6 flex flex-col"
             >
               <div className="flex justify-between items-start">
-                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${s.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                <div 
+                  onClick={() => isAdminOrStaff && handleToggleSurveyStatus(s.id, s.status)}
+                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${isAdminOrStaff ? 'cursor-pointer' : ''} ${s.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                >
                   {s.status}
                 </div>
                 <div className="text-gray-400">
@@ -156,21 +294,51 @@ export const SurveyPolls: React.FC = () => {
                   <BarChart3 size={16} />
                   {s._count.responses} Responses
                 </div>
-                <button className="flex items-center gap-2 text-sm font-bold text-black hover:gap-3 transition-all">
-                  View Results
-                  <ChevronRight size={16} />
-                </button>
+                {isAdminOrStaff ? (
+                  <button onClick={() => handleViewResults(s.id)} className="flex items-center gap-2 text-sm font-bold text-black hover:gap-3 transition-all">
+                    View Results
+                    <ChevronRight size={16} />
+                  </button>
+                ) : (
+                  <button onClick={() => handleTakeSurvey(s.id)} className="flex items-center gap-2 text-sm font-bold text-black hover:gap-3 transition-all">
+                    Take Survey
+                    <ChevronRight size={16} />
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {isAdminOrStaff && (
+            <motion.div 
+              whileHover={{ scale: 1.02 }}
+              onClick={() => setShowCreatePoll(true)}
+              className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-4 cursor-pointer hover:border-black transition-all group"
+            >
+              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-gray-400 group-hover:text-black transition-colors shadow-sm">
+                <Plus size={32} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Create New Poll</h3>
+                <p className="text-sm text-gray-500">Quick community feedback</p>
+              </div>
+            </motion.div>
+          )}
           {polls.map((p) => (
             <div key={p.id} className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-2xl font-bold">{p.question}</h3>
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{p._count.votes} Votes</span>
+                <div className="flex items-center gap-2">
+                  <div 
+                    onClick={() => isAdminOrStaff && handleTogglePollStatus(p.id, p.status)}
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${isAdminOrStaff ? 'cursor-pointer' : ''} ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                  >
+                    {p.status}
+                  </div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{p._count.votes} Votes</span>
+                </div>
               </div>
               <div className="space-y-4">
                 {p.options.map((o) => {
@@ -206,6 +374,427 @@ export const SurveyPolls: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Create Survey Modal */}
+      {showCreateSurvey && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6">Create New Survey</h2>
+            <form onSubmit={handleCreateSurvey} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input 
+                  type="text" 
+                  value={newSurvey.title}
+                  onChange={(e) => setNewSurvey({...newSurvey, title: e.target.value})}
+                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea 
+                  value={newSurvey.description}
+                  onChange={(e) => setNewSurvey({...newSurvey, description: e.target.value})}
+                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none h-24"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold">Questions</h3>
+                  <button 
+                    type="button"
+                    onClick={() => setNewSurvey({
+                      ...newSurvey, 
+                      questions: [...newSurvey.questions, { text: '', type: 'TEXT', options: [] }]
+                    })}
+                    className="text-sm font-bold text-blue-600 hover:text-blue-800"
+                  >
+                    + Add Question
+                  </button>
+                </div>
+                
+                {newSurvey.questions.map((q, qIndex) => (
+                  <div key={qIndex} className="p-4 border border-gray-100 rounded-2xl space-y-4 bg-gray-50">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-sm">Question {qIndex + 1}</span>
+                      {newSurvey.questions.length > 1 && (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const newQuestions = [...newSurvey.questions];
+                            newQuestions.splice(qIndex, 1);
+                            setNewSurvey({...newSurvey, questions: newQuestions});
+                          }}
+                          className="text-red-500 text-sm hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="Question text"
+                      value={q.text}
+                      onChange={(e) => {
+                        const newQuestions = [...newSurvey.questions];
+                        newQuestions[qIndex].text = e.target.value;
+                        setNewSurvey({...newSurvey, questions: newQuestions});
+                      }}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                      required
+                    />
+                    <select
+                      value={q.type}
+                      onChange={(e) => {
+                        const newQuestions = [...newSurvey.questions];
+                        newQuestions[qIndex].type = e.target.value as any;
+                        if (e.target.value !== 'MULTIPLE_CHOICE') {
+                          newQuestions[qIndex].options = [];
+                        } else if (newQuestions[qIndex].options.length === 0) {
+                           newQuestions[qIndex].options = ['Option 1', 'Option 2'];
+                        }
+                        setNewSurvey({...newSurvey, questions: newQuestions});
+                      }}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                    >
+                      <option value="TEXT">Text Answer</option>
+                      <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+                      <option value="RATING">Rating (1-5)</option>
+                    </select>
+
+                    {q.type === 'MULTIPLE_CHOICE' && (
+                      <div className="space-y-2 pl-4 border-l-2 border-gray-200">
+                        {q.options.map((opt, oIndex) => (
+                          <div key={oIndex} className="flex gap-2">
+                            <input 
+                              type="text"
+                              value={opt}
+                              onChange={(e) => {
+                                const newQuestions = [...newSurvey.questions];
+                                newQuestions[qIndex].options[oIndex] = e.target.value;
+                                setNewSurvey({...newSurvey, questions: newQuestions});
+                              }}
+                              className="flex-1 p-2 border border-gray-200 rounded-lg text-sm"
+                              placeholder={`Option ${oIndex + 1}`}
+                              required
+                            />
+                            {q.options.length > 2 && (
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  const newQuestions = [...newSurvey.questions];
+                                  newQuestions[qIndex].options.splice(oIndex, 1);
+                                  setNewSurvey({...newSurvey, questions: newQuestions});
+                                }}
+                                className="text-red-500 px-2"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const newQuestions = [...newSurvey.questions];
+                            newQuestions[qIndex].options.push(`Option ${newQuestions[qIndex].options.length + 1}`);
+                            setNewSurvey({...newSurvey, questions: newQuestions});
+                          }}
+                          className="text-xs font-bold text-gray-500 hover:text-black"
+                        >
+                          + Add Option
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-4 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setShowCreateSurvey(false)}
+                  className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 rounded-xl font-bold bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {loading ? 'Creating...' : 'Create Survey'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Poll Modal */}
+      {showCreatePoll && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-xl w-full">
+            <h2 className="text-2xl font-bold mb-6">Create New Poll</h2>
+            <form onSubmit={handleCreatePoll} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
+                <input 
+                  type="text" 
+                  value={newPoll.question}
+                  onChange={(e) => setNewPoll({...newPoll, question: e.target.value})}
+                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700">Options</label>
+                {newPoll.options.map((opt, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={opt}
+                      onChange={(e) => {
+                        const newOptions = [...newPoll.options];
+                        newOptions[index] = e.target.value;
+                        setNewPoll({...newPoll, options: newOptions});
+                      }}
+                      className="flex-1 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                      placeholder={`Option ${index + 1}`}
+                      required
+                    />
+                    {newPoll.options.length > 2 && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newOptions = [...newPoll.options];
+                          newOptions.splice(index, 1);
+                          setNewPoll({...newPoll, options: newOptions});
+                        }}
+                        className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                      >
+                        <X size={20} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button 
+                  type="button"
+                  onClick={() => setNewPoll({...newPoll, options: [...newPoll.options, '']})}
+                  className="text-sm font-bold text-blue-600 hover:text-blue-800"
+                >
+                  + Add Option
+                </button>
+              </div>
+
+              <div className="flex justify-end gap-4 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setShowCreatePoll(false)}
+                  className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 rounded-xl font-bold bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {loading ? 'Creating...' : 'Create Poll'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Take Survey Modal */}
+      {showTakeSurvey && currentSurvey && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-2">{currentSurvey.title}</h2>
+            <p className="text-gray-600 mb-8">{currentSurvey.description}</p>
+            
+            <form onSubmit={handleSubmitSurvey} className="space-y-8">
+              {currentSurvey.questions.map((q: any, index: number) => (
+                <div key={q.id} className="space-y-4">
+                  <label className="block font-medium text-gray-900">
+                    {index + 1}. {q.text}
+                  </label>
+                  
+                  {q.type === 'TEXT' && (
+                    <textarea 
+                      value={answers[q.id] || ''}
+                      onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none h-24"
+                      required
+                    />
+                  )}
+
+                  {q.type === 'MULTIPLE_CHOICE' && (
+                    <div className="space-y-2">
+                      {q.options.map((opt: string, oIndex: number) => (
+                        <label key={oIndex} className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
+                          <input 
+                            type="radio"
+                            name={`question-${q.id}`}
+                            value={opt}
+                            checked={answers[q.id] === opt}
+                            onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                            className="w-4 h-4 text-black focus:ring-black"
+                            required
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {q.type === 'RATING' && (
+                    <div className="flex gap-4">
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <label key={rating} className="flex flex-col items-center gap-2 cursor-pointer">
+                          <input 
+                            type="radio"
+                            name={`question-${q.id}`}
+                            value={rating}
+                            checked={answers[q.id] === rating.toString()}
+                            onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
+                            className="sr-only"
+                            required
+                          />
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all ${answers[q.id] === rating.toString() ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                            {rating}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <div className="flex justify-end gap-4 pt-6 border-t border-gray-100">
+                <button 
+                  type="button"
+                  onClick={() => setShowTakeSurvey(false)}
+                  className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 rounded-xl font-bold bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {loading ? 'Submitting...' : 'Submit Survey'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Survey Results Modal */}
+      {showSurveyResults && surveyAnalytics && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">{surveyAnalytics.survey.title}</h2>
+                <p className="text-gray-500">Total Responses: {surveyAnalytics.totalResponses}</p>
+              </div>
+              <button 
+                onClick={() => setShowSurveyResults(false)}
+                className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-8">
+              {surveyAnalytics.questions.map((q: any, index: number) => (
+                <div key={q.id} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                  <h3 className="font-bold text-lg mb-4">{index + 1}. {q.text}</h3>
+                  
+                  {q.type === 'MULTIPLE_CHOICE' && (
+                    <div className="space-y-3">
+                      {q.options.map((opt: string, oIndex: number) => {
+                        const count = q.answers[opt] || 0;
+                        const percentage = surveyAnalytics.totalResponses > 0 
+                          ? (count / surveyAnalytics.totalResponses) * 100 
+                          : 0;
+                        
+                        return (
+                          <div key={oIndex} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="font-medium text-gray-700">{opt}</span>
+                              <span className="text-gray-500">{count} ({Math.round(percentage)}%)</span>
+                            </div>
+                            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percentage}%` }}
+                                className="h-full bg-blue-500 rounded-full"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {q.type === 'RATING' && (
+                    <div className="flex items-end gap-2 h-32 pt-4">
+                      {[1, 2, 3, 4, 5].map((rating) => {
+                        const count = q.answers[rating.toString()] || 0;
+                        const percentage = surveyAnalytics.totalResponses > 0 
+                          ? (count / surveyAnalytics.totalResponses) * 100 
+                          : 0;
+                        
+                        return (
+                          <div key={rating} className="flex-1 flex flex-col items-center gap-2">
+                            <span className="text-xs text-gray-500">{count}</span>
+                            <div className="w-full bg-gray-200 rounded-t-lg relative flex-1 flex items-end justify-center">
+                              <motion.div 
+                                initial={{ height: 0 }}
+                                animate={{ height: `${percentage}%` }}
+                                className="w-full bg-purple-500 rounded-t-lg absolute bottom-0"
+                              />
+                            </div>
+                            <span className="font-bold text-sm">{rating}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {q.type === 'TEXT' && (
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      {Object.entries(q.answers).map(([answer, count]: [string, any], aIndex) => (
+                        <div key={aIndex} className="p-3 bg-white rounded-xl border border-gray-100 text-sm flex justify-between items-start gap-4">
+                          <p className="text-gray-700">{answer}</p>
+                          {count > 1 && (
+                            <span className="shrink-0 px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold">
+                              x{count}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {Object.keys(q.answers).length === 0 && (
+                        <p className="text-sm text-gray-500 italic">No responses yet.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

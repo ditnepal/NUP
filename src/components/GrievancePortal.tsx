@@ -129,7 +129,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
   const handleStatusChange = async (action: 'resolve' | 'escalate') => {
     if (!selectedGrievance) return;
     try {
-      await api.post(`/grievances/${selectedGrievance.id}/${action}`);
+      await api.post(`/grievances/${selectedGrievance.id}/${action}`, {});
       const updated = await api.get('/grievances');
       setGrievances(updated);
       setSelectedGrievance(updated.find((g: any) => g.id === selectedGrievance.id) || null);
