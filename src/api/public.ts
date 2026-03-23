@@ -23,13 +23,27 @@ router.get('/pages/:slug', async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/public/pages/id/:id
+// @desc    Get a page by ID
+// @access  Public
+router.get('/pages/id/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const page = await cmsService.getPageById(id);
+    if (!page) return res.status(404).json({ error: 'Page not found' });
+    res.json(page);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   GET /api/v1/public/posts
 // @desc    Get all posts by type
 // @access  Public
 router.get('/posts', async (req, res) => {
   try {
-    const { type, lang } = req.query;
-    const posts = await cmsService.getPosts(type as string, lang as string);
+    const { type, lang, categoryId } = req.query;
+    const posts = await cmsService.getPosts(type as string, lang as string, categoryId as string);
     res.json(posts);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -46,6 +60,36 @@ router.get('/posts/:slug', async (req, res) => {
     const post = await cmsService.getPostBySlug(slug, lang as string);
     if (!post) return res.status(404).json({ error: 'Post not found' });
     res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/public/posts/id/:id
+// @desc    Get a post by ID
+// @access  Public
+router.get('/posts/id/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const post = await cmsService.getPostById(id);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/public/categories
+// @desc    Get all categories
+// @access  Public
+router.get('/categories', async (req, res) => {
+  try {
+    const { type } = req.query;
+    const categories = await prisma.cmsCategory.findMany({
+      where: type ? { type: type as string } : {},
+      orderBy: { name: 'asc' }
+    });
+    res.json(categories);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

@@ -7,7 +7,19 @@ export class CmsService extends BaseService {
   async getPages(language: string = 'en') {
     return await this.db.cmsPage.findMany({
       where: { status: 'PUBLISHED', language },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: [
+        { isPinned: 'desc' },
+        { updatedAt: 'desc' }
+      ]
+    });
+  }
+
+  /**
+   * Get a page by ID
+   */
+  async getPageById(id: string) {
+    return await this.db.cmsPage.findFirst({
+      where: { id, status: 'PUBLISHED' }
     });
   }
 
@@ -23,11 +35,29 @@ export class CmsService extends BaseService {
   /**
    * Get all published posts by type
    */
-  async getPosts(type: string = 'NEWS', language: string = 'en') {
+  async getPosts(type: string = 'NEWS', language: string = 'en', categoryId?: string) {
+    const where: any = { status: 'PUBLISHED', type, language };
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
     return await this.db.cmsPost.findMany({
-      where: { status: 'PUBLISHED', type, language },
+      where,
       include: { category: true, author: { select: { displayName: true } } },
-      orderBy: { publishedAt: 'desc' }
+      orderBy: [
+        { isPinned: 'desc' },
+        { publishedAt: 'desc' }
+      ]
+    });
+  }
+
+  /**
+   * Get a post by ID
+   */
+  async getPostById(id: string) {
+    return await this.db.cmsPost.findFirst({
+      where: { id, status: 'PUBLISHED' },
+      include: { category: true, author: { select: { displayName: true } } }
     });
   }
 

@@ -17,6 +17,7 @@ export class CmsAdminService extends BaseService {
     seoKeywords?: string;
     language?: string;
     isSystem?: boolean;
+    isPinned?: boolean;
   }) {
     const { id, ...rest } = data;
     const page = id 
@@ -31,6 +32,21 @@ export class CmsAdminService extends BaseService {
       details: { slug: data.slug }
     });
 
+    return page;
+  }
+
+  /**
+   * Delete a page
+   */
+  async deletePage(id: string, userId: string) {
+    const page = await this.db.cmsPage.delete({ where: { id } });
+    await auditService.log({
+      action: 'CMS_PAGE_DELETED',
+      userId,
+      entityType: 'CmsPage',
+      entityId: id,
+      details: { slug: page.slug }
+    });
     return page;
   }
 
@@ -51,6 +67,7 @@ export class CmsAdminService extends BaseService {
     seoTitle?: string;
     seoDescription?: string;
     language?: string;
+    isPinned?: boolean;
     publishedAt?: Date;
   }) {
     const { id, ...rest } = data;
@@ -66,6 +83,21 @@ export class CmsAdminService extends BaseService {
       details: { slug: data.slug, type: data.type }
     });
 
+    return post;
+  }
+
+  /**
+   * Delete a post
+   */
+  async deletePost(id: string, userId: string) {
+    const post = await this.db.cmsPost.delete({ where: { id } });
+    await auditService.log({
+      action: 'CMS_POST_DELETED',
+      userId,
+      entityType: 'CmsPost',
+      entityId: id,
+      details: { slug: post.slug, type: post.type }
+    });
     return post;
   }
 

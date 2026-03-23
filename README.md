@@ -15,17 +15,15 @@ A production-ready internal management platform for Nagarik Unmukti Party Nepal.
 ### Tech Stack
 - **Frontend**: React 19, Vite, Tailwind CSS, Framer Motion.
 - **Backend**: Node.js (Express) with Vite Middleware.
-- **Database/Auth**: Firebase (Firestore, Authentication).
+- **Database**: Prisma with SQLite.
 - **Libraries**: Recharts (Analytics), jsPDF (ID Cards), PapaParse (CSV), i18next (i18n).
 
 ### Getting Started
 1. Clone the repository.
 2. Install dependencies: `npm install`.
-3. Set up Firebase:
-   - Create a project at [Firebase Console](https://console.firebase.google.com/).
-   - Enable Firestore and Authentication (Google).
-   - Copy your config to `firebase-applet-config.json`.
-4. Run the development server: `npm run dev`.
+3. Set up environment variables in `.env` (see `.env.example`).
+4. Generate Prisma client: `npx prisma generate`.
+5. Run the development server: `npm run dev`.
 
 ### Deployment
 The app is designed to run on Cloud Run or any Node.js environment.

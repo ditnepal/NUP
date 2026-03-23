@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap } from 'lucide-react';
+import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap, Calendar, Tag } from 'lucide-react';
 import { UserProfile } from '../types';
+import Markdown from 'react-markdown';
 
 interface PublicPortalProps {
   user?: UserProfile | null;
@@ -15,22 +16,28 @@ interface PublicPortalProps {
 export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [notices, setNotices] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPublicData();
+    fetchCategories();
   }, []);
+
+  useEffect(() => {
+    fetchNews();
+  }, [activeCategory]);
 
   const fetchPublicData = async () => {
     try {
-      const [newsData, noticesData, eventsData] = await Promise.all([
-        api.get('/public/posts?type=NEWS&lang=en'),
+      const [noticesData, eventsData] = await Promise.all([
         api.get('/communication/notices/public'),
         api.get('/v1/app-events/public')
       ]);
-      setNews(newsData);
       setNotices(noticesData);
       setEvents(eventsData);
     } catch (error) {
@@ -38,6 +45,31 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchNews = async () => {
+    try {
+      const url = activeCategory 
+        ? `/public/posts?type=NEWS&lang=en&categoryId=${activeCategory}`
+        : '/public/posts?type=NEWS&lang=en';
+      const newsData = await api.get(url);
+      setNews(newsData);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await api.get('/public/categories?type=POST');
+      setCategories(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const handlePostClick = (post: any) => {
+    setSelectedPost(post);
   };
 
   return (
@@ -55,7 +87,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             
             <div className="hidden md:flex items-center gap-8">
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Manifesto</a>
-              <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">News</a>
+              <a href="#news" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">News</a>
               <button onClick={onTrainingClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Training</button>
               <button onClick={onStatusClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Check Status</button>
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Contact</a>
@@ -86,7 +118,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
         <div className="fixed inset-0 z-40 bg-white pt-20 px-6 md:hidden">
           <div className="flex flex-col gap-6">
             <a href="#" className="text-2xl font-bold text-slate-800">Manifesto</a>
-            <a href="#" className="text-2xl font-bold text-slate-800">News</a>
+            <a href="#news" className="text-2xl font-bold text-slate-800">News</a>
             <button onClick={onTrainingClick} className="text-2xl font-bold text-slate-800 text-left">Training</button>
             <button onClick={onStatusClick} className="text-2xl font-bold text-slate-800 text-left">Check Status</button>
             <a href="#" className="text-2xl font-bold text-slate-800">Contact</a>
@@ -186,24 +218,46 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
       </section>
 
       {/* Latest News & Notices */}
-      <section className="py-24 bg-slate-50">
+      <section id="news" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             
             {/* News */}
             <div>
-              <div className="flex justify-between items-end mb-12">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-12 gap-6">
                 <h2 className="text-4xl font-black tracking-tight uppercase">Latest News</h2>
-                <a href="#" className="hidden md:flex items-center gap-2 text-emerald-600 font-bold hover:gap-3 transition-all">
-                  View All <ChevronRight size={20} />
-                </a>
+                <div className="flex flex-wrap gap-2">
+                  <button 
+                    onClick={() => setActiveCategory(null)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                      activeCategory === null ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {categories.map(cat => (
+                    <button 
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                        activeCategory === cat.id ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="grid gap-8">
                 {news.map((item) => (
-                  <div key={item.id} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all p-8 flex gap-6">
+                  <div 
+                    key={item.id} 
+                    onClick={() => handlePostClick(item)}
+                    className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all p-8 flex gap-6 cursor-pointer group"
+                  >
                     <div className="w-24 h-24 bg-slate-200 rounded-2xl flex-shrink-0 overflow-hidden">
                       {item.featuredImage ? (
-                        <img src={item.featuredImage} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={item.featuredImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-400">
                           <FileText size={24} />
@@ -211,13 +265,30 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                       )}
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-slate-400 mb-2 uppercase tracking-widest">
-                        {new Date(item.publishedAt || item.createdAt).toLocaleDateString()}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">
+                          {new Date(item.publishedAt || item.createdAt).toLocaleDateString()}
+                        </span>
+                        {item.isPinned && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold uppercase tracking-wider">
+                            Pinned
+                          </span>
+                        )}
                       </div>
-                      <h3 className="text-lg font-bold mb-2 line-clamp-2 hover:text-emerald-600 cursor-pointer">{item.title}</h3>
+                      <h3 className="text-lg font-bold mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors">{item.title}</h3>
+                      {item.category && (
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                          {item.category.name}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
+                {news.length === 0 && !loading && (
+                  <div className="py-10 text-center text-slate-400 italic">
+                    No news found in this category.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -276,6 +347,65 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
           </div>
         </div>
       </section>
+
+      {/* Post Detail Modal */}
+      {selectedPost && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="relative h-64 md:h-80 bg-slate-100">
+              {selectedPost.featuredImage ? (
+                <img src={selectedPost.featuredImage} alt={selectedPost.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-300">
+                  <FileText size={80} />
+                </div>
+              )}
+              <button 
+                onClick={() => setSelectedPost(null)}
+                className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-8 md:p-12">
+              <div className="flex flex-wrap items-center gap-4 mb-6">
+                <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                  <Calendar size={16} />
+                  {new Date(selectedPost.publishedAt || selectedPost.createdAt).toLocaleDateString()}
+                </div>
+                {selectedPost.category && (
+                  <div className="flex items-center gap-2 text-emerald-600 text-sm font-bold bg-emerald-50 px-3 py-1 rounded-full">
+                    <Tag size={14} />
+                    {selectedPost.category.name}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                  <User size={16} />
+                  {selectedPost.author?.displayName || 'Admin'}
+                </div>
+              </div>
+
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-8 leading-tight">
+                {selectedPost.title}
+              </h2>
+
+              <div className="prose prose-slate max-w-none">
+                <Markdown>{selectedPost.content}</Markdown>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setSelectedPost(null)}
+                className="px-8 py-3 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-20">

@@ -428,6 +428,7 @@ model CmsPage {
   seoKeywords    String?
   language       String   @default("en")
   isSystem       Boolean  @default(false)
+  isPinned       Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   author         User     @relation("PageAuthor", fields: [authorId], references: [id])
@@ -447,6 +448,7 @@ model CmsPost {
   seoTitle       String?
   seoDescription String?
   language       String       @default("en")
+  isPinned       Boolean      @default(false)
   publishedAt    DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt

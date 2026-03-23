@@ -17,6 +17,7 @@ const pageSchema = z.object({
   seoKeywords: z.string().optional(),
   language: z.enum(['en', 'ne']).optional(),
   isSystem: z.boolean().optional(),
+  isPinned: z.boolean().optional(),
 });
 
 const postSchema = z.object({
@@ -32,6 +33,7 @@ const postSchema = z.object({
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
   language: z.enum(['en', 'ne']).optional(),
+  isPinned: z.boolean().optional(),
   publishedAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
 });
 
@@ -65,6 +67,18 @@ router.post('/pages', authenticate, authorize(['ADMIN', 'STAFF']), async (req: A
   }
 });
 
+// @route   DELETE /api/v1/cms/pages/:id
+// @desc    Delete a page
+// @access  Private (Admin/Staff)
+router.delete('/pages/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    await cmsAdminService.deletePage(req.params.id, req.user?.id!);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // @route   GET /api/v1/cms/posts
 // @desc    Get all posts (Admin)
 // @access  Private (Admin/Staff)
@@ -92,6 +106,18 @@ router.post('/posts', authenticate, authorize(['ADMIN', 'STAFF']), async (req: A
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   DELETE /api/v1/cms/posts/:id
+// @desc    Delete a post
+// @access  Private (Admin/Staff)
+router.delete('/posts/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    await cmsAdminService.deletePost(req.params.id, req.user?.id!);
+    res.json({ success: true });
+  } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
