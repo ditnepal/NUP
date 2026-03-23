@@ -12,8 +12,9 @@ import { DocumentsView } from './components/DocumentsView';
 import { CmsAdmin } from './components/CmsAdmin';
 import { CommunicationAdmin } from './components/CommunicationAdmin';
 import { TrainingPortal } from './components/TrainingPortal';
+import { TrainingAdmin } from './components/TrainingAdmin';
 import { NotificationCenter } from './components/NotificationCenter';
-import { EventsAdmin } from './components/EventsAdmin';
+import { AppEventsAdmin } from './components/AppEventsAdmin';
 import { FinanceAdmin } from './components/FinanceAdmin';
 import { DonationPortal } from './components/DonationPortal';
 import { ElectionAdmin } from './components/ElectionAdmin';
@@ -137,6 +138,7 @@ export default function App() {
             }
           }} 
           onDocumentsClick={() => setCurrentView('public-documents')} 
+          onTrainingClick={() => setCurrentView('training')}
           onJoinClick={() => setCurrentView('membership-public')}
           onStatusClick={() => {
             setInitialTrackingCode('');
@@ -189,6 +191,17 @@ export default function App() {
         <div className="max-w-7xl mx-auto p-6">
           <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
           <PublicDocumentsView />
+        </div>
+      </div>
+    );
+  }
+
+  if (currentView === 'training' && !user) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="max-w-7xl mx-auto p-6">
+          <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
+          <TrainingPortal user={null} />
         </div>
       </div>
     );
@@ -379,8 +392,10 @@ export default function App() {
         {currentView === 'cms' && <CmsAdmin />}
         {currentView === 'documents' && <DocumentsView />}
         {currentView === 'communication' && <CommunicationAdmin />}
-        {currentView === 'training' && <TrainingPortal />}
-        {currentView === 'events' && <EventsAdmin />}
+        {currentView === 'training' && (
+          (user.role === 'ADMIN' || user.role === 'STAFF') ? <TrainingAdmin /> : <TrainingPortal user={user} />
+        )}
+        {currentView === 'events' && <AppEventsAdmin />}
         {currentView === 'finance' && <FinanceAdmin />}
         {currentView === 'election' && <ElectionAdmin />}
         {currentView === 'candidate-dashboard' && <CandidateDashboard />}

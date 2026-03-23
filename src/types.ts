@@ -204,6 +204,25 @@ export interface Registration {
   };
 }
 
+export interface AppEvent {
+  id: string;
+  title: string;
+  summary?: string | null;
+  description: string;
+  audience: 'PUBLIC' | 'MEMBERS';
+  status: 'DRAFT' | 'PUBLISHED';
+  isPinned: boolean;
+  eventDate: Date;
+  startAt: string;
+  endAt?: string | null;
+  location: string;
+  coverImageUrl?: string | null;
+  attachmentUrl?: string | null;
+  authorId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -293,6 +312,20 @@ export interface Notice {
   attachmentUrl?: string;
   externalUrl?: string;
   authorId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrainingProgram {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  audience: 'PUBLIC' | 'MEMBERS';
+  isPinned: boolean;
+  externalUrl?: string;
+  attachmentUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

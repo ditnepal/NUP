@@ -92,7 +92,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
         const [profileData, newsData, eventsData, noticesData] = await Promise.all([
           api.get('/members/me'),
           api.get('/public/posts?type=NEWS&limit=2'),
-          api.get('/events'),
+          api.get('/v1/app-events/members'),
           api.get('/communication/notices/members')
         ]);
         

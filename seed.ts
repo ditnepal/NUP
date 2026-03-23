@@ -43,22 +43,19 @@ async function main() {
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash('admin123', salt);
 
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@nup.org.np' },
-    update: {
-      passwordHash,
-      role: 'ADMIN',
-      isActive: true,
-    },
-    create: {
-      email: 'admin@nup.org.np',
-      passwordHash,
-      displayName: 'System Administrator',
-      role: 'ADMIN',
-      isActive: true,
-      orgUnitId: nationalUnit.id,
-    },
-  });
+  let adminUser = await prisma.user.findUnique({ where: { email: 'admin@nup.org.np' } });
+  if (!adminUser) {
+    adminUser = await prisma.user.create({
+      data: {
+        email: 'admin@nup.org.np',
+        passwordHash,
+        displayName: 'System Administrator',
+        role: 'ADMIN',
+        isActive: true,
+        orgUnitId: nationalUnit.id,
+      },
+    });
+  }
 
   // Create Member User
   const memberPasswordHash = await bcrypt.hash('member123', salt);

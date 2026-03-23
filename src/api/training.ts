@@ -9,7 +9,12 @@ const router = express.Router();
 const programSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional(),
-  category: z.enum(['INTERNAL', 'PUBLIC']),
+  category: z.string(),
+  status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
+  audience: z.enum(['PUBLIC', 'MEMBERS']).optional(),
+  isPinned: z.boolean().optional(),
+  externalUrl: z.string().optional(),
+  attachmentUrl: z.string().optional(),
 });
 
 const courseSchema = z.object({
@@ -42,9 +47,69 @@ const questionSchema = z.object({
 });
 
 // @route   GET /api/v1/training/programs
-// @desc    Get all training programs
-// @access  Public (filtered by category if not admin)
-router.get('/programs', async (req, res) => {
+// @desc    Get training programs (filtered by role/audience)
+// @access  Public/Private
+router.get('/programs', async (req: AuthRequest, res) => {
+  try {
+    // Redirect to appropriate endpoint based on context
+    res.status(400).json({ error: 'Use /programs/admin, /programs/portal, or /programs/public' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/training/programs/portal
+// @desc    Get training programs for learners
+// @access  Private (Member/Public)
+router.get('/programs/portal', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const role = req.user?.role;
+    const where: any = { status: 'PUBLISHED' };
+
+    if (role === 'MEMBER') {
+      where.audience = { in: ['PUBLIC', 'MEMBERS'] };
+    } else if (role === 'ADMIN' || role === 'STAFF') {
+      // Admins see everything in portal too, or maybe just published?
+      // Usually portal is for published content.
+      where.audience = { in: ['PUBLIC', 'MEMBERS'] };
+    } else {
+      where.audience = 'PUBLIC';
+    }
+
+    const programs = await prisma.trainingProgram.findMany({
+      where,
+      include: { courses: true },
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+    });
+    res.json(programs);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/training/programs/public
+// @desc    Get training programs for public users
+// @access  Public
+router.get('/programs/public', async (req, res) => {
+  try {
+    const programs = await prisma.trainingProgram.findMany({
+      where: {
+        status: 'PUBLISHED',
+        audience: 'PUBLIC',
+      },
+      include: { courses: true },
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+    });
+    res.json(programs);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/training/programs/admin
+// @desc    Get all training programs for management
+// @access  Private (Admin/Staff)
+router.get('/programs/admin', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
   try {
     const programs = await prisma.trainingProgram.findMany({
       include: { courses: true },
@@ -64,6 +129,34 @@ router.post('/programs', authenticate, authorize(['ADMIN', 'STAFF']), async (req
     const data = programSchema.parse(req.body);
     const program = await prisma.trainingProgram.create({ data });
     res.status(201).json(program);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   PUT /api/v1/training/programs/:id
+// @desc    Update a training program
+// @access  Private (Admin/Staff)
+router.put('/programs/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = programSchema.parse(req.body);
+    const program = await prisma.trainingProgram.update({
+      where: { id: req.params.id },
+      data,
+    });
+    res.json(program);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   DELETE /api/v1/training/programs/:id
+// @desc    Delete a training program
+// @access  Private (Admin)
+router.delete('/programs/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
+  try {
+    await prisma.trainingProgram.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Program deleted' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

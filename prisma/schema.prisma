@@ -7,70 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// -----------------------------------------------------------------------------
-// 1. AUTH & RBAC (Users, Roles, Permissions)
-// -----------------------------------------------------------------------------
-
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String?
-  displayName   String
-  phoneNumber   String?
-  role          String    @default("MEMBER") // Legacy role field for backward compatibility
-  isActive      Boolean   @default(true)
-  
-  // Advanced RBAC
-  roleId        String?
-  roleProfile   Role?     @relation(fields: [roleId], references: [id])
-  
-  // Hierarchy Scope
-  orgUnitId     String?
-  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  
-  // Relations
-  memberProfile   Member?
-  verifiedMembers Member[]  @relation("MemberVerifier")
-  approvedMembers Member[]  @relation("MemberApprover")
-  volunteerProfile Volunteer?
-  
-  auditLogs       AuditLog[]
-  createdPages    CmsPage[] @relation("PageAuthor")
-  createdPosts    CmsPost[] @relation("PostAuthor")
-  uploadedMedia   CmsMedia[] @relation("MediaUploader")
-  notifications   Notification[]
-  officeBearers   OfficeBearer[]
-  
-  // Phase 5 Relations
-  deliveryLogs    DeliveryLog[]
-  quizAttempts    QuizAttempt[]
-  enrollments     Enrollment[]
-  certificates    Certificate[]
-  attendance      Attendance[]
-  
-  // Phase 6 Relations
-  eventRegistrations EventRegistration[]
-  donorProfile    DonorProfile?
-  recordedTransactions Transaction[] @relation("TransactionRecorder")
-  
-  // Phase 7 Relations
-  boothTeams      BoothTeamMember[]
-  deployments     VolunteerDeployment[]
-  outreachRecords OutreachRecord[]
-  incidentReports ElectionIncident[] @relation("IncidentReporter")
-  
-  // Phase 8 Relations
-  grievances      Grievance[]       @relation("GrievanceReporter")
-  assignedGrievances GrievanceAssignment[]
-  grievanceResponses GrievanceResponse[]
-  surveyResponses SurveyResponse[]
-  pollVotes       PollVote[]
-  fieldReports    GroundIntelligenceReport[]
-  intelligenceAlerts IntelligenceAlert[]
-  notices         Notice[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                   String                     @id @default(uuid())
+  email                String                     @unique
+  passwordHash         String?
+  displayName          String
+  phoneNumber          String?
+  role                 String                     @default("MEMBER")
+  isActive             Boolean                    @default(true)
+  roleId               String?
+  orgUnitId            String?
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+  createdAppEvents     AppEvent[]                 @relation("AppEventAuthor")
+  attendance           Attendance[]
+  auditLogs            AuditLog[]
+  boothTeams           BoothTeamMember[]
+  certificates         Certificate[]
+  uploadedMedia        CmsMedia[]                 @relation("MediaUploader")
+  createdPages         CmsPage[]                  @relation("PageAuthor")
+  createdPosts         CmsPost[]                  @relation("PostAuthor")
+  deliveryLogs         DeliveryLog[]
+  donorProfile         DonorProfile?
+  incidentReports      ElectionIncident[]         @relation("IncidentReporter")
+  enrollments          Enrollment[]
+  eventRegistrations   EventRegistration[]
+  grievances           Grievance[]                @relation("GrievanceReporter")
+  assignedGrievances   GrievanceAssignment[]
+  grievanceResponses   GrievanceResponse[]
+  fieldReports         GroundIntelligenceReport[]
+  intelligenceAlerts   IntelligenceAlert[]
+  approvedMembers      Member[]                   @relation("MemberApprover")
+  verifiedMembers      Member[]                   @relation("MemberVerifier")
+  memberProfile        Member?
+  notices              Notice[]
+  notifications        Notification[]
+  officeBearers        OfficeBearer[]
+  outreachRecords      OutreachRecord[]
+  pollVotes            PollVote[]
+  quizAttempts         QuizAttempt[]
+  surveyResponses      SurveyResponse[]
+  recordedTransactions Transaction[]              @relation("TransactionRecorder")
+  orgUnit              OrganizationUnit?          @relation(fields: [orgUnitId], references: [id])
+  roleProfile          Role?                      @relation(fields: [roleId], references: [id])
+  volunteerProfile     Volunteer?
+  deployments          VolunteerDeployment[]
 
   @@index([roleId])
   @@index([orgUnitId])
@@ -78,184 +59,143 @@ model User {
 
 model Role {
   id          String       @id @default(uuid())
-  name        String       @unique // e.g., "NATIONAL_ADMIN", "DISTRICT_COORDINATOR"
+  name        String       @unique
   description String?
-  permissions Permission[]
-  users       User[]
-  
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  users       User[]
+  permissions Permission[] @relation("PermissionToRole")
 }
 
 model Permission {
-  id          String   @id @default(uuid())
-  action      String   // e.g., "CREATE", "READ", "UPDATE", "DELETE", "APPROVE", "BROADCAST"
-  resource    String   // e.g., "USER", "MEMBER", "FINANCE", "CAMPAIGN", "INTEL"
-  roles       Role[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  action    String
+  resource  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  roles     Role[]   @relation("PermissionToRole")
 }
 
-// -----------------------------------------------------------------------------
-// 2. ORGANIZATION HIERARCHY (The Backbone)
-// -----------------------------------------------------------------------------
-
 model OrganizationUnit {
-  id          String   @id @default(uuid())
-  name        String
-  level       String   // NATIONAL, PROVINCE, DISTRICT, CONSTITUENCY, MUNICIPALITY, WARD, BOOTH
-  code        String?  @unique
-  
-  parentId    String?
-  parent      OrganizationUnit? @relation("Hierarchy", fields: [parentId], references: [id])
-  children    OrganizationUnit[] @relation("Hierarchy")
-  
-  // Scoped Entities
-  users       User[]
-  members     Member[]
-  booths      Booth[]
-  offices     Office[]
-  committees  Committee[]
-  departments Department[]
-  wings       Wing[]
-  
-  // Phase 8 Relations
-  grievances      Grievance[]
-  fieldReports    GroundIntelligenceReport[]
+  id                  String                     @id @default(uuid())
+  name                String
+  level               String
+  code                String?                    @unique
+  parentId            String?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  areaStrengthScore   AreaStrengthScore?
+  booths              Booth[]
+  committees          Committee[]
   communityPriorities CommunityPriority[]
-  intelligenceAlerts IntelligenceAlert[]
-  areaStrengthScore  AreaStrengthScore?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  departments         Department[]
+  grievances          Grievance[]
+  fieldReports        GroundIntelligenceReport[]
+  intelligenceAlerts  IntelligenceAlert[]
+  members             Member[]
+  offices             Office[]
+  parent              OrganizationUnit?          @relation("Hierarchy", fields: [parentId], references: [id])
+  children            OrganizationUnit[]         @relation("Hierarchy")
+  users               User[]
+  wings               Wing[]
 }
 
 model Office {
-  id              String    @id @default(uuid())
-  name            String
-  type            String    // HEADQUARTERS, REGIONAL, CONTACT_POINT
-  
-  orgUnitId       String
-  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
-  
-  address         String
-  contactNumber   String?
-  email           String?
-  
-  // Geo-coordinates
-  latitude        Float?
-  longitude       Float?
-  
-  isActive        Boolean   @default(true)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String           @id @default(uuid())
+  name          String
+  type          String
+  orgUnitId     String
+  address       String
+  contactNumber String?
+  email         String?
+  latitude      Float?
+  longitude     Float?
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  orgUnit       OrganizationUnit @relation(fields: [orgUnitId], references: [id])
 }
 
 model Committee {
-  id              String    @id @default(uuid())
-  name            String
-  type            String    // MAIN, AD-HOC, ADVISORY
-  
-  orgUnitId       String
-  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
-  
-  bearers         OfficeBearer[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        String           @id @default(uuid())
+  name      String
+  type      String
+  orgUnitId String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  orgUnit   OrganizationUnit @relation(fields: [orgUnitId], references: [id])
+  bearers   OfficeBearer[]
 }
 
 model OfficeBearer {
-  id              String    @id @default(uuid())
-  committeeId     String
-  committee       Committee @relation(fields: [committeeId], references: [id])
-  
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  fullName        String
-  position        String    // PRESIDENT, SECRETARY, TREASURER, etc.
-  termStart       DateTime
-  termEnd         DateTime?
-  
-  status          String    @default("ACTIVE") // ACTIVE, RETIRED, SUSPENDED
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  committeeId String
+  userId      String?
+  fullName    String
+  position    String
+  termStart   DateTime
+  termEnd     DateTime?
+  status      String    @default("ACTIVE")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User?     @relation(fields: [userId], references: [id])
+  committee   Committee @relation(fields: [committeeId], references: [id])
 }
 
 model Department {
-  id              String    @id @default(uuid())
-  name            String
-  description     String?
-  
-  orgUnitId       String
-  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
-  
-  headId          String?   // User ID
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  orgUnitId   String
+  headId      String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  orgUnit     OrganizationUnit @relation(fields: [orgUnitId], references: [id])
 }
 
 model Wing {
-  id              String    @id @default(uuid())
-  name            String    // e.g., "Youth Wing", "Women Wing"
-  description     String?
-  
-  orgUnitId       String
-  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  orgUnitId   String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  orgUnit     OrganizationUnit @relation(fields: [orgUnitId], references: [id])
 }
-
-// -----------------------------------------------------------------------------
-// 3. SYSTEM UTILITIES (Config, Audit, Notifications)
-// -----------------------------------------------------------------------------
 
 model SystemConfig {
   id          String   @id @default(uuid())
   key         String   @unique
-  value       String   // JSON string
+  value       String
   description String?
   updatedBy   String?
-  
   updatedAt   DateTime @updatedAt
 }
 
 model Notification {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  title       String
-  message     String
-  type        String   // INFO, WARNING, SUCCESS, ERROR, TASK, ALERT
-  status      String   @default("UNREAD") // UNREAD, READ, ARCHIVED
-  
-  link        String?  // Optional action link
-  metadata    String?  // JSON string for extra data
-  
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  status    String   @default("UNREAD")
+  link      String?
+  metadata  String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AuditLog {
-  id              String    @id @default(uuid())
-  action          String    // e.g., "USER_LOGIN", "MEMBER_CREATED"
-  entityType      String?   
-  entityId        String?
-  details         String?   // JSON string
-  
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  ipAddress       String?
-  userAgent       String?
-  
-  timestamp       DateTime  @default(now())
+  id         String   @id @default(uuid())
+  action     String
+  entityType String?
+  entityId   String?
+  details    String?
+  userId     String?
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([action])
   @@index([userId])
@@ -263,1165 +203,910 @@ model AuditLog {
 }
 
 model MembershipType {
-  id          String   @id @default(uuid())
-  name        String   @unique // e.g., "General", "Life", "Honorary"
-  description String?
-  fee         Float
+  id             String   @id @default(uuid())
+  name           String   @unique
+  description    String?
+  fee            Float
   durationMonths Int
-  
-  members     Member[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  members        Member[]
 }
 
 model Member {
-  id              String    @id @default(uuid())
-  userId          String?   @unique
-  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  
-  membershipId    String?   @unique // e.g., NUP-2026-0001 (generated after approval)
-  trackingCode    String    @unique // e.g., T-123456 (generated on application)
-  
-  fullName        String
-  dateOfBirth     DateTime?
-  gender          String?
-  bloodGroup      String?
-  citizenshipNumber String? @unique // ECN requirement
-  
-  // Geo-location (Nepal Context)
-  province        String?
-  district        String?
-  localLevel      String?    // Municipality / Rural Municipality
-  ward            Int?
-  boothId         String?
-  booth           Booth?    @relation(fields: [boothId], references: [id])
-  
-  // Hierarchy Scope
-  orgUnitId       String?
-  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  
-  // Party specific
-  committeeLevel  String?   // CENTRAL, PROVINCE, DISTRICT, MUNICIPALITY, WARD
-  committeeRole   String?
-  joinedDate      DateTime?
-  expiryDate      DateTime?
-  
-  status          String    @default("PENDING") // PENDING, VERIFIED, APPROVED, ACTIVE, SUSPENDED, TERMINATED
-  
-  // Application fields
-  fatherName           String?
-  motherName           String?
-  citizenshipDistrict  String?
-  citizenshipIssueDate DateTime?
-  tole                 String?
-  mobile               String?
-  email                String?
-  alternateContactName String?
+  id                     String            @id @default(uuid())
+  userId                 String?           @unique
+  membershipId           String?           @unique
+  trackingCode           String            @unique
+  fullName               String
+  dateOfBirth            DateTime?
+  gender                 String?
+  bloodGroup             String?
+  citizenshipNumber      String?           @unique
+  province               String?
+  district               String?
+  localLevel             String?
+  ward                   Int?
+  boothId                String?
+  orgUnitId              String?
+  committeeLevel         String?
+  committeeRole          String?
+  joinedDate             DateTime?
+  expiryDate             DateTime?
+  status                 String            @default("PENDING")
+  fatherName             String?
+  motherName             String?
+  citizenshipDistrict    String?
+  citizenshipIssueDate   DateTime?
+  tole                   String?
+  mobile                 String?
+  email                  String?
+  alternateContactName   String?
   alternateContactMobile String?
-  occupation           String?
-  applicationMode      String    @default("FORM") // FORM, VIDEO, ASSISTED
-  videoUrl             String?
-  identityDocumentUrl  String?
-  identityDocumentType String?
-  profilePhotoUrl      String?
-  helperName           String?
-  helperPhone          String?
-  helperRole           String?
-
-  membershipTypeId String?
-  membershipType   MembershipType? @relation(fields: [membershipTypeId], references: [id])
-  
-  suspensionHistory String?   // JSON string
-  terminationHistory String?  // JSON string
-  
-  verifiedById    String?
-  verifiedBy      User?     @relation("MemberVerifier", fields: [verifiedById], references: [id])
-  approvedById    String?
-  approvedBy      User?     @relation("MemberApprover", fields: [approvedById], references: [id])
-  
-  qrCodeData      String?
-  
-  // Volunteer link
-  volunteer       Volunteer?
-  
-  // Renewal requests
-  renewalRequests RenewalRequest[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  occupation             String?
+  applicationMode        String            @default("FORM")
+  videoUrl               String?
+  identityDocumentUrl    String?
+  identityDocumentType   String?
+  profilePhotoUrl        String?
+  helperName             String?
+  helperPhone            String?
+  helperRole             String?
+  membershipTypeId       String?
+  suspensionHistory      String?
+  terminationHistory     String?
+  verifiedById           String?
+  approvedById           String?
+  qrCodeData             String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  approvedBy             User?             @relation("MemberApprover", fields: [approvedById], references: [id])
+  verifiedBy             User?             @relation("MemberVerifier", fields: [verifiedById], references: [id])
+  membershipType         MembershipType?   @relation(fields: [membershipTypeId], references: [id])
+  orgUnit                OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  booth                  Booth?            @relation(fields: [boothId], references: [id])
+  user                   User?             @relation(fields: [userId], references: [id])
+  renewalRequests        RenewalRequest[]
+  volunteer              Volunteer?
 }
 
 model RenewalRequest {
-  id            String   @id @default(uuid())
-  memberId      String
-  member        Member   @relation(fields: [memberId], references: [id])
-  
-  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  memberNote    String?
-  adminNote     String?
-  
-  reviewedBy    String?
-  reviewedAt    DateTime?
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         String    @id @default(uuid())
+  memberId   String
+  status     String    @default("PENDING")
+  memberNote String?
+  adminNote  String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  member     Member    @relation(fields: [memberId], references: [id])
 }
 
 model Volunteer {
-  id              String    @id @default(uuid())
-  memberId        String?   @unique
-  member          Member?   @relation(fields: [memberId], references: [id])
-  
-  userId          String?   @unique
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  fullName        String
-  email           String?
-  phone           String?
-  
-  skills          String    // Comma separated or JSON string
-  availability    String?   // Description of availability
-  
-  status          String    @default("ACTIVE") // ACTIVE, INACTIVE
-  
-  assignments     VolunteerAssignment[]
-  skillsList      VolunteerSkill[]
+  id               String                   @id @default(uuid())
+  memberId         String?                  @unique
+  userId           String?                  @unique
+  fullName         String
+  email            String?
+  phone            String?
+  skills           String
+  availability     String?
+  status           String                   @default("ACTIVE")
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  user             User?                    @relation(fields: [userId], references: [id])
+  member           Member?                  @relation(fields: [memberId], references: [id])
+  assignments      VolunteerAssignment[]
   availabilityList VolunteerAvailability[]
-  recognitions    VolunteerRecognition[]
-  performance     VolunteerPerformance[]
-  statusHistory   VolunteerStatusHistory[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  performance      VolunteerPerformance[]
+  recognitions     VolunteerRecognition[]
+  skillsList       VolunteerSkill[]
+  statusHistory    VolunteerStatusHistory[]
 }
 
 model VolunteerApplication {
-  id              String    @id @default(uuid())
-  fullName        String
-  email           String
-  phone           String
-  skills          String
-  availability    String
-  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String
+  phone        String
+  skills       String
+  availability String
+  status       String   @default("PENDING")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model VolunteerSkill {
-  id              String    @id @default(uuid())
-  volunteerId     String
-  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
-  skill           String
-  createdAt       DateTime  @default(now())
+  id          String    @id @default(uuid())
+  volunteerId String
+  skill       String
+  createdAt   DateTime  @default(now())
+  volunteer   Volunteer @relation(fields: [volunteerId], references: [id])
 }
 
 model VolunteerAvailability {
-  id              String    @id @default(uuid())
-  volunteerId     String
-  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
-  dayOfWeek       String
-  startTime       String
-  endTime         String
-  createdAt       DateTime  @default(now())
+  id          String    @id @default(uuid())
+  volunteerId String
+  dayOfWeek   String
+  startTime   String
+  endTime     String
+  createdAt   DateTime  @default(now())
+  volunteer   Volunteer @relation(fields: [volunteerId], references: [id])
 }
 
 model VolunteerRecognition {
-  id              String    @id @default(uuid())
-  volunteerId     String
-  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
-  title           String
-  description     String
-  date            DateTime  @default(now())
+  id          String    @id @default(uuid())
+  volunteerId String
+  title       String
+  description String
+  date        DateTime  @default(now())
+  volunteer   Volunteer @relation(fields: [volunteerId], references: [id])
 }
 
 model VolunteerPerformance {
-  id              String    @id @default(uuid())
-  volunteerId     String
-  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
-  rating          Int
-  feedback        String
-  createdAt       DateTime  @default(now())
+  id          String    @id @default(uuid())
+  volunteerId String
+  rating      Int
+  feedback    String
+  createdAt   DateTime  @default(now())
+  volunteer   Volunteer @relation(fields: [volunteerId], references: [id])
 }
 
 model VolunteerStatusHistory {
-  id              String    @id @default(uuid())
-  volunteerId     String
-  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
-  status          String
-  changedAt       DateTime  @default(now())
+  id          String    @id @default(uuid())
+  volunteerId String
+  status      String
+  changedAt   DateTime  @default(now())
+  volunteer   Volunteer @relation(fields: [volunteerId], references: [id])
 }
 
 model VolunteerAssignment {
-  id              String    @id @default(uuid())
-  volunteerId     String
-  volunteer       Volunteer @relation(fields: [volunteerId], references: [id])
-  
-  campaignId      String?
-  campaign        Campaign? @relation(fields: [campaignId], references: [id])
-  
-  taskName        String
-  description     String?
-  status          String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
-  
-  reports         VolunteerReport[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String            @id @default(uuid())
+  volunteerId String
+  campaignId  String?
+  taskName    String
+  description String?
+  status      String            @default("PENDING")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  campaign    Campaign?         @relation(fields: [campaignId], references: [id])
+  volunteer   Volunteer         @relation(fields: [volunteerId], references: [id])
+  reports     VolunteerReport[]
 }
 
 model VolunteerReport {
-  id              String    @id @default(uuid())
-  assignmentId    String
-  assignment      VolunteerAssignment @relation(fields: [assignmentId], references: [id])
-  
-  content         String
-  hoursSpent      Float?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String              @id @default(uuid())
+  assignmentId String
+  content      String
+  hoursSpent   Float?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  assignment   VolunteerAssignment @relation(fields: [assignmentId], references: [id])
 }
 
-// -----------------------------------------------------------------------------
-// 4. SUPPORTER / VOTER CRM
-// -----------------------------------------------------------------------------
-
 model Supporter {
-  id              String    @id @default(uuid())
+  id              String           @id @default(uuid())
   fullName        String
   phoneNumber     String?
   email           String?
-  
-  // Geo-location
   province        String
   district        String
   localLevel      String
   ward            Int
   boothId         String?
-  booth           Booth?    @relation(fields: [boothId], references: [id])
-  
-  supportLevel    String    @default("NEUTRAL") // STRONG, LEANING, NEUTRAL, UNDECIDED, VOLUNTEER, DONOR
-  issues          String?   // Comma separated or JSON
+  supportLevel    String           @default("NEUTRAL")
+  issues          String?
   notes           String?
-  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   interactions    Interaction[]
   outreachRecords OutreachRecord[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  booth           Booth?           @relation(fields: [boothId], references: [id])
 }
 
 model Interaction {
-  id              String    @id @default(uuid())
-  supporterId     String
-  supporter       Supporter @relation(fields: [supporterId], references: [id], onDelete: Cascade)
-  
-  type            String    // CALL, VISIT, EVENT, MESSAGE
-  date            DateTime  @default(now())
-  notes           String?
-  handledBy       String    // User ID
-  
-  createdAt       DateTime  @default(now())
+  id          String    @id @default(uuid())
+  supporterId String
+  type        String
+  date        DateTime  @default(now())
+  notes       String?
+  handledBy   String
+  createdAt   DateTime  @default(now())
+  supporter   Supporter @relation(fields: [supporterId], references: [id], onDelete: Cascade)
 }
 
-// -----------------------------------------------------------------------------
-// 2. CMS (DYNAMIC FRONTEND)
-// -----------------------------------------------------------------------------
-
 model CmsPage {
-  id              String    @id @default(uuid())
-  slug            String    @unique
-  title           String
-  content         String    // Markdown or HTML
-  status          String    @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
-  
-  authorId        String
-  author          User      @relation("PageAuthor", fields: [authorId], references: [id])
-  
-  seoTitle        String?
-  seoDescription  String?
-  seoKeywords     String?
-  
-  language        String    @default("en") // en, ne
-  isSystem        Boolean   @default(false) // For mandatory pages like manifesto, policy
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String   @id @default(uuid())
+  slug           String   @unique
+  title          String
+  content        String
+  status         String   @default("DRAFT")
+  authorId       String
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String?
+  language       String   @default("en")
+  isSystem       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  author         User     @relation("PageAuthor", fields: [authorId], references: [id])
 }
 
 model CmsPost {
-  id              String    @id @default(uuid())
-  slug            String    @unique
-  title           String
-  excerpt         String?
-  content         String
-  type            String    @default("NEWS") // NEWS, PRESS_RELEASE, STATEMENT, SPEECH
-  status          String    @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
-  
-  authorId        String
-  author          User      @relation("PostAuthor", fields: [authorId], references: [id])
-  
-  categoryId      String?
-  category        CmsCategory? @relation(fields: [categoryId], references: [id])
-  
-  featuredImage   String?   // URL to CmsMedia
-  
-  seoTitle        String?
-  seoDescription  String?
-  
-  language        String    @default("en") // en, ne
-  publishedAt     DateTime?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String       @id @default(uuid())
+  slug           String       @unique
+  title          String
+  excerpt        String?
+  content        String
+  type           String       @default("NEWS")
+  status         String       @default("DRAFT")
+  authorId       String
+  categoryId     String?
+  featuredImage  String?
+  seoTitle       String?
+  seoDescription String?
+  language       String       @default("en")
+  publishedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  category       CmsCategory? @relation(fields: [categoryId], references: [id])
+  author         User         @relation("PostAuthor", fields: [authorId], references: [id])
 }
 
 model CmsCategory {
-  id              String    @id @default(uuid())
-  name            String
-  slug            String    @unique
-  description     String?
-  type            String    @default("POST") // POST, MEDIA
-  
-  posts           CmsPost[]
-  media           CmsMedia[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  type        String     @default("POST")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  media       CmsMedia[]
+  posts       CmsPost[]
 }
 
 model CmsMedia {
-  id              String    @id @default(uuid())
-  title           String
-  fileName        String
-  fileType        String    // IMAGE, VIDEO, DOCUMENT
-  mimeType        String
-  url             String
-  size            Int
-  
-  categoryId      String?
-  category        CmsCategory? @relation(fields: [categoryId], references: [id])
-  
-  uploadedById    String
-  uploadedBy      User      @relation("MediaUploader", fields: [uploadedById], references: [id])
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String       @id @default(uuid())
+  title        String
+  fileName     String
+  fileType     String
+  mimeType     String
+  url          String
+  size         Int
+  categoryId   String?
+  uploadedById String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  uploadedBy   User         @relation("MediaUploader", fields: [uploadedById], references: [id])
+  category     CmsCategory? @relation(fields: [categoryId], references: [id])
 }
 
 model CmsRedirect {
-  id              String    @id @default(uuid())
-  fromPath        String    @unique
-  toPath          String
-  statusCode      Int       @default(301) // 301, 302
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id         String   @id @default(uuid())
+  fromPath   String   @unique
+  toPath     String
+  statusCode Int      @default(301)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model CmsDownload {
-  id              String    @id @default(uuid())
-  title           String
-  description     String?
-  fileUrl         String
-  fileType        String    // PDF, DOCX, ZIP
-  category        String?   // MANIFESTO, POLICY, FORMS
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  fileUrl     String
+  fileType    String
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
-
-// -----------------------------------------------------------------------------
-// 6. PUBLIC ISSUE SYSTEM (Grievances)
-// -----------------------------------------------------------------------------
 
 model Issue {
-  id              String    @id @default(uuid())
-  title           String
-  description     String
-  category        String
-  priority        String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
-  status          String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
-  
-  reporterId      String?   // User ID
-  contactInfo     String?   // If anonymous
-  
-  // Geo-location context
-  province        String?
-  district        String?
-  localLevel      String?
-  ward            Int?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  category    String
+  priority    String   @default("MEDIUM")
+  status      String   @default("OPEN")
+  reporterId  String?
+  contactInfo String?
+  province    String?
+  district    String?
+  localLevel  String?
+  ward        Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
-
-// -----------------------------------------------------------------------------
-// 7. CAMPAIGN MANAGEMENT
-// -----------------------------------------------------------------------------
 
 model Campaign {
-  id              String    @id @default(uuid())
-  name            String
-  title           String?   // Keep for compatibility if needed
-  description     String?
-  type            String?   // ELECTION, MEMBERSHIP_DRIVE, etc.
-  phase           String    @default("PLANNING") // PLANNING, ACTIVE, COMPLETED, PAUSED
-  status          String?   // PLANNED, ACTIVE, etc.
-  
-  startDate       DateTime?
-  endDate         DateTime?
-  
-  targetProvince  String?
-  targetDistrict  String?
-  targetLocalLevel String?
-  targetAudience  String?
-  budget          Float?
-  
-  managerId       String?   // User ID
-  
+  id                   String                @id @default(uuid())
+  name                 String
+  title                String?
+  description          String?
+  type                 String?
+  phase                String                @default("PLANNING")
+  status               String?
+  startDate            DateTime?
+  endDate              DateTime?
+  targetProvince       String?
+  targetDistrict       String?
+  targetLocalLevel     String?
+  targetAudience       String?
+  budget               Float?
+  managerId            String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
   volunteerAssignments VolunteerAssignment[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
 }
 
-// -----------------------------------------------------------------------------
-// 8. CANDIDATES & ELECTION CYCLES (Phase 7 Expanded)
-// -----------------------------------------------------------------------------
-
 model ElectionCycle {
-  id              String    @id @default(uuid())
-  name            String    // e.g., "General Election 2026"
-  year            Int
-  type            String    // FEDERAL, PROVINCIAL, LOCAL
-  status          String    @default("UPCOMING") // UPCOMING, ACTIVE, COMPLETED, ARCHIVED
-  
-  startDate       DateTime?
-  endDate         DateTime?
-  
-  candidates      Candidate[]
-  results         ElectionResult[]
-  incidents       ElectionIncident[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id         String             @id @default(uuid())
+  name       String
+  year       Int
+  type       String
+  status     String             @default("UPCOMING")
+  startDate  DateTime?
+  endDate    DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  candidates Candidate[]
+  incidents  ElectionIncident[]
+  results    ElectionResult[]
 }
 
 model Constituency {
-  id              String    @id @default(uuid())
+  id              String           @id @default(uuid())
   name            String
-  code            String?   @unique
-  type            String    // FEDERAL, PROVINCIAL
+  code            String?          @unique
+  type            String
   province        String
   district        String
-  
-  totalVoters     Int       @default(0)
-  
+  totalVoters     Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   candidates      Candidate[]
-  pollingStations PollingStation[]
   results         ElectionResult[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  pollingStations PollingStation[]
 }
 
 model Candidate {
-  id              String    @id @default(uuid())
+  id              String              @id @default(uuid())
   name            String
   position        String
-  
   electionCycleId String?
-  electionCycle   ElectionCycle? @relation(fields: [electionCycleId], references: [id])
-  
   constituencyId  String?
-  constituency    Constituency? @relation(fields: [constituencyId], references: [id])
-  
-  // Legacy fields for compatibility
-  electionType    String?   // FEDERAL, PROVINCIAL, LOCAL
+  electionType    String?
   electionYear    Int?
   province        String?
   district        String?
   localLevel      String?
   ward            Int?
-  
   manifesto       String?
-  status          String    @default("ACTIVE") // ACTIVE, WITHDRAWN, WON, LOST, NOMINATED, ELECTED, DEFEATED
-  
+  status          String              @default("ACTIVE")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  constituency    Constituency?       @relation(fields: [constituencyId], references: [id])
+  electionCycle   ElectionCycle?      @relation(fields: [electionCycleId], references: [id])
   documents       CandidateDocument[]
   results         ElectionResult[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
 }
 
 model CandidateDocument {
-  id              String    @id @default(uuid())
-  candidateId     String
-  candidate       Candidate @relation(fields: [candidateId], references: [id])
-  
-  title           String
-  type            String    // NOMINATION, CITIZENSHIP, MANIFESTO, OTHER
-  fileUrl         String
-  status          String    @default("PENDING") // PENDING, VERIFIED, REJECTED
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  candidateId String
+  title       String
+  type        String
+  fileUrl     String
+  status      String    @default("PENDING")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
 }
 
-// -----------------------------------------------------------------------------
-// 9. BOOTH / FIELD OPERATIONS (Phase 7 Expanded)
-// -----------------------------------------------------------------------------
-
 model PollingStation {
-  id              String    @id @default(uuid())
-  name            String
-  code            String?   @unique
-  location        String
-  
-  constituencyId  String?
-  constituency    Constituency? @relation(fields: [constituencyId], references: [id])
-  
-  ward            Int
-  localLevel      String
-  district        String
-  province        String
-  
-  booths          Booth[]
-  incidents       ElectionIncident[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String             @id @default(uuid())
+  name           String
+  code           String?            @unique
+  location       String
+  constituencyId String?
+  ward           Int
+  localLevel     String
+  district       String
+  province       String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  booths         Booth[]
+  incidents      ElectionIncident[]
+  constituency   Constituency?      @relation(fields: [constituencyId], references: [id])
 }
 
 model Booth {
-  id              String    @id @default(uuid())
-  name            String
-  code            String?   @unique
-  
+  id               String                @id @default(uuid())
+  name             String
+  code             String?               @unique
   pollingStationId String?
-  pollingStation  PollingStation? @relation(fields: [pollingStationId], references: [id])
-  
-  ward            Int
-  localLevel      String
-  district        String
-  province        String?
-  
-  totalVoters     Int       @default(0)
-  voterCount      Int?      // Match API
-  targetVotes     Int       @default(0)
-  status          String    @default("NEEDS_ATTENTION") // READY, NEEDS_ATTENTION, CRITICAL, SAFE, COMPETITIVE, WEAK
-  
-  coordinatorId   String?   // User ID
-  
-  // Hierarchy Scope
-  orgUnitId       String?
-  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  
-  // Relations
-  members         Member[]
-  supporters      Supporter[]
-  team            BoothTeamMember[]
-  deployments     VolunteerDeployment[]
-  outreach        OutreachRecord[]
-  pollingLogs     PollingDayLog[]
-  results         ElectionResult[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  ward             Int
+  localLevel       String
+  district         String
+  province         String?
+  totalVoters      Int                   @default(0)
+  voterCount       Int?
+  targetVotes      Int                   @default(0)
+  status           String                @default("NEEDS_ATTENTION")
+  coordinatorId    String?
+  orgUnitId        String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  orgUnit          OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
+  pollingStation   PollingStation?       @relation(fields: [pollingStationId], references: [id])
+  team             BoothTeamMember[]
+  results          ElectionResult[]
+  members          Member[]
+  outreach         OutreachRecord[]
+  pollingLogs      PollingDayLog[]
+  supporters       Supporter[]
+  deployments      VolunteerDeployment[]
 }
 
 model BoothTeamMember {
-  id              String    @id @default(uuid())
-  boothId         String
-  booth           Booth     @relation(fields: [boothId], references: [id])
-  
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  
-  role            String    // AGENT, VOLUNTEER, COORDINATOR
-  status          String    @default("ACTIVE")
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id        String   @id @default(uuid())
+  boothId   String
+  userId    String
+  role      String
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  booth     Booth    @relation(fields: [boothId], references: [id])
+
   @@unique([boothId, userId])
 }
 
 model VolunteerDeployment {
-  id              String    @id @default(uuid())
-  boothId         String
-  booth           Booth     @relation(fields: [boothId], references: [id])
-  
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  
-  startDate       DateTime
-  endDate         DateTime?
-  task            String?
-  status          String    @default("ASSIGNED") // ASSIGNED, ACTIVE, COMPLETED, CANCELLED
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        String    @id @default(uuid())
+  boothId   String
+  userId    String
+  startDate DateTime
+  endDate   DateTime?
+  task      String?
+  status    String    @default("ASSIGNED")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id])
+  booth     Booth     @relation(fields: [boothId], references: [id])
 }
 
 model OutreachRecord {
-  id              String    @id @default(uuid())
-  boothId         String
-  booth           Booth     @relation(fields: [boothId], references: [id])
-  
-  userId          String    // Volunteer who did the outreach
-  user            User      @relation(fields: [userId], references: [id])
-  
-  supporterId     String?
-  supporter       Supporter? @relation(fields: [supporterId], references: [id])
-  
-  type            String    // DOOR_TO_DOOR, PHONE_CALL, MEETING
-  outcome         String?   // POSITIVE, NEUTRAL, NEGATIVE
-  notes           String?
-  
-  createdAt       DateTime  @default(now())
+  id          String     @id @default(uuid())
+  boothId     String
+  userId      String
+  supporterId String?
+  type        String
+  outcome     String?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  supporter   Supporter? @relation(fields: [supporterId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
+  booth       Booth      @relation(fields: [boothId], references: [id])
 }
 
 model PollingDayLog {
-  id              String    @id @default(uuid())
-  boothId         String
-  booth           Booth     @relation(fields: [boothId], references: [id])
-  
-  timestamp       DateTime  @default(now())
-  voterTurnout    Int?      // Cumulative turnout at this time
+  id               String   @id @default(uuid())
+  boothId          String
+  timestamp        DateTime @default(now())
+  voterTurnout     Int?
   incidentOccurred Boolean  @default(false)
-  notes           String?
-  
-  createdAt       DateTime  @default(now())
+  notes            String?
+  createdAt        DateTime @default(now())
+  booth            Booth    @relation(fields: [boothId], references: [id])
 }
 
 model ElectionIncident {
-  id              String    @id @default(uuid())
-  cycleId         String
-  cycle           ElectionCycle @relation(fields: [cycleId], references: [id])
-  
+  id               String          @id @default(uuid())
+  cycleId          String
   pollingStationId String?
-  pollingStation  PollingStation? @relation(fields: [pollingStationId], references: [id])
-  
-  reporterId      String
-  reporter        User      @relation("IncidentReporter", fields: [reporterId], references: [id])
-  
-  type            String    // VIOLENCE, FRAUD, TECHNICAL, LOGISTICAL, OTHER
-  severity        String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
-  description     String
-  status          String    @default("REPORTED") // REPORTED, INVESTIGATING, RESOLVED, FALSE_ALARM
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  reporterId       String
+  type             String
+  severity         String          @default("MEDIUM")
+  description      String
+  status           String          @default("REPORTED")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  reporter         User            @relation("IncidentReporter", fields: [reporterId], references: [id])
+  pollingStation   PollingStation? @relation(fields: [pollingStationId], references: [id])
+  cycle            ElectionCycle   @relation(fields: [cycleId], references: [id])
 }
 
 model ElectionResult {
-  id              String    @id @default(uuid())
-  cycleId         String
-  cycle           ElectionCycle @relation(fields: [cycleId], references: [id])
-  
-  constituencyId  String?
-  constituency    Constituency? @relation(fields: [constituencyId], references: [id])
-  
-  boothId         String?
-  booth           Booth?    @relation(fields: [boothId], references: [id])
-  
-  candidateId     String
-  candidate       Candidate @relation(fields: [candidateId], references: [id])
-  
-  votesReceived   Int
-  isWinner        Boolean   @default(false)
-  
-  verifiedById    String?   // User ID who verified the result
-  verifiedAt      DateTime?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id             String        @id @default(uuid())
+  cycleId        String
+  constituencyId String?
+  boothId        String?
+  candidateId    String
+  votesReceived  Int
+  isWinner       Boolean       @default(false)
+  verifiedById   String?
+  verifiedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  candidate      Candidate     @relation(fields: [candidateId], references: [id])
+  booth          Booth?        @relation(fields: [boothId], references: [id])
+  constituency   Constituency? @relation(fields: [constituencyId], references: [id])
+  cycle          ElectionCycle @relation(fields: [cycleId], references: [id])
+
   @@unique([cycleId, boothId, candidateId])
 }
 
-// -----------------------------------------------------------------------------
-// 10. DOCUMENTS
-// -----------------------------------------------------------------------------
-
 model Document {
-  id              String    @id @default(uuid())
-  title           String
-  description     String?
-  category        String
-  fileUrl         String
-  fileName        String
-  fileType        String
-  size            Int
-  uploadedBy      String    // User ID
-  isPublished     Boolean   @default(false)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  category    String
+  fileUrl     String
+  fileName    String
+  fileType    String
+  size        Int
+  uploadedBy  String
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
-// -----------------------------------------------------------------------------
-// 11. EVENTS & LOGISTICS (Phase 6)
-// -----------------------------------------------------------------------------
-
 model Event {
-  id              String    @id @default(uuid())
-  title           String
-  description     String?
-  type            String    // PUBLIC, INTERNAL, RALLY, MEETING, CAMPAIGN, FUNDRAISER
-  status          String    @default("PLANNED") // PLANNED, ACTIVE, COMPLETED, CANCELLED
-  
-  startDate       DateTime
-  endDate         DateTime?
-  location        String
-  isVirtual       Boolean   @default(false)
-  meetingUrl      String?
-  
-  capacity        Int?
-  organizerId     String?   // User ID
-  
-  // Relations
-  registrations   EventRegistration[]
-  speakers        EventSpeaker[]
-  agenda          EventAgenda[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String              @id @default(uuid())
+  title         String
+  description   String?
+  type          String
+  status        String              @default("PLANNED")
+  startDate     DateTime
+  endDate       DateTime?
+  location      String
+  isVirtual     Boolean             @default(false)
+  meetingUrl    String?
+  capacity      Int?
+  organizerId   String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  agenda        EventAgenda[]
+  registrations EventRegistration[]
+  speakers      EventSpeaker[]
 }
 
 model EventRegistration {
-  id              String    @id @default(uuid())
-  eventId         String
-  event           Event     @relation(fields: [eventId], references: [id])
-  
-  userId          String?   // If registered user
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  // For non-users
-  fullName        String
-  email           String
-  phone           String?
-  
-  status          String    @default("REGISTERED") // REGISTERED, CANCELLED, ATTENDED, NO_SHOW
-  rsvpDate        DateTime  @default(now())
-  attendanceDate  DateTime?
-  
-  notes           String?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id             String    @id @default(uuid())
+  eventId        String
+  userId         String?
+  fullName       String
+  email          String
+  phone          String?
+  status         String    @default("REGISTERED")
+  rsvpDate       DateTime  @default(now())
+  attendanceDate DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User?     @relation(fields: [userId], references: [id])
+  event          Event     @relation(fields: [eventId], references: [id])
+
   @@unique([eventId, userId])
 }
 
 model EventSpeaker {
-  id              String    @id @default(uuid())
-  eventId         String
-  event           Event     @relation(fields: [eventId], references: [id])
-  
-  name            String
-  title           String?
-  bio             String?
-  photoUrl        String?
-  
-  createdAt       DateTime  @default(now())
+  id        String   @id @default(uuid())
+  eventId   String
+  name      String
+  title     String?
+  bio       String?
+  photoUrl  String?
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id])
 }
 
 model EventAgenda {
-  id              String    @id @default(uuid())
-  eventId         String
-  event           Event     @relation(fields: [eventId], references: [id])
-  
-  startTime       DateTime
-  endTime         DateTime
-  title           String
-  description     String?
-  
-  createdAt       DateTime  @default(now())
+  id          String   @id @default(uuid())
+  eventId     String
+  startTime   DateTime
+  endTime     DateTime
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  event       Event    @relation(fields: [eventId], references: [id])
 }
 
-// -----------------------------------------------------------------------------
-// 13. FINANCE & FUNDRAISING (Phase 6)
-// -----------------------------------------------------------------------------
-
 model FundraisingCampaign {
-  id              String    @id @default(uuid())
-  title           String
-  description     String?
-  goalAmount      Float
-  currentAmount   Float     @default(0)
-  
-  startDate       DateTime
-  endDate         DateTime?
-  status          String    @default("ACTIVE") // ACTIVE, COMPLETED, PAUSED
-  
-  donations       Donation[]
-  updates         FundraisingUpdate[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String              @id @default(uuid())
+  title         String
+  description   String?
+  goalAmount    Float
+  currentAmount Float               @default(0)
+  startDate     DateTime
+  endDate       DateTime?
+  status        String              @default("ACTIVE")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  donations     Donation[]
+  updates       FundraisingUpdate[]
 }
 
 model FundraisingUpdate {
-  id              String    @id @default(uuid())
-  campaignId      String
-  campaign        FundraisingCampaign @relation(fields: [campaignId], references: [id])
-  
-  title           String
-  content         String
-  
-  createdAt       DateTime  @default(now())
+  id         String              @id @default(uuid())
+  campaignId String
+  title      String
+  content    String
+  createdAt  DateTime            @default(now())
+  campaign   FundraisingCampaign @relation(fields: [campaignId], references: [id])
 }
 
 model DonorProfile {
-  id              String    @id @default(uuid())
-  userId          String?   @unique
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  fullName        String
-  email           String    @unique
-  phone           String?
-  address         String?
-  
-  totalDonated    Float     @default(0)
-  donationCount   Int       @default(0)
-  isAnonymous     Boolean   @default(false)
-  
-  donations       Donation[]
-  recurring       RecurringDonation[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String              @id @default(uuid())
+  userId        String?             @unique
+  fullName      String
+  email         String              @unique
+  phone         String?
+  address       String?
+  totalDonated  Float               @default(0)
+  donationCount Int                 @default(0)
+  isAnonymous   Boolean             @default(false)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  donations     Donation[]
+  user          User?               @relation(fields: [userId], references: [id])
+  recurring     RecurringDonation[]
 }
 
 model Donation {
-  id              String    @id @default(uuid())
-  donorId         String
-  donor           DonorProfile @relation(fields: [donorId], references: [id])
-  
-  campaignId      String?
-  campaign        FundraisingCampaign? @relation(fields: [campaignId], references: [id])
-  
-  transactionId   String    @unique
-  transaction     Transaction @relation(fields: [transactionId], references: [id])
-  
-  amount          Float
-  currency        String    @default("NPR")
-  status          String    @default("PENDING") // PENDING, VERIFIED, FAILED, REFUNDED
-  
-  isRecurring     Boolean   @default(false)
-  recurringId     String?
-  
-  receiptUrl      String?
-  notes           String?
-  
-  createdAt       DateTime  @default(now())
+  id            String               @id @default(uuid())
+  donorId       String
+  campaignId    String?
+  transactionId String               @unique
+  amount        Float
+  currency      String               @default("NPR")
+  status        String               @default("PENDING")
+  isRecurring   Boolean              @default(false)
+  recurringId   String?
+  receiptUrl    String?
+  notes         String?
+  createdAt     DateTime             @default(now())
+  transaction   Transaction          @relation(fields: [transactionId], references: [id])
+  campaign      FundraisingCampaign? @relation(fields: [campaignId], references: [id])
+  donor         DonorProfile         @relation(fields: [donorId], references: [id])
 }
 
 model RecurringDonation {
-  id              String    @id @default(uuid())
-  donorId         String
-  donor           DonorProfile @relation(fields: [donorId], references: [id])
-  
-  amount          Float
-  frequency       String    // MONTHLY, QUARTERLY, YEARLY
-  status          String    @default("ACTIVE") // ACTIVE, PAUSED, CANCELLED
-  
-  startDate       DateTime  @default(now())
-  nextDate        DateTime?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        String       @id @default(uuid())
+  donorId   String
+  amount    Float
+  frequency String
+  status    String       @default("ACTIVE")
+  startDate DateTime     @default(now())
+  nextDate  DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  donor     DonorProfile @relation(fields: [donorId], references: [id])
 }
 
 model Transaction {
-  id              String    @id @default(uuid())
-  type            String    // INCOME, EXPENSE
-  category        String    // DONATION, MEMBERSHIP_FEE, EVENT_FEE, SALARY, RENT, CAMPAIGN, OTHER
-  amount          Float
-  description     String?
-  date            DateTime  @default(now())
-  
-  status          String    @default("COMPLETED") // PENDING, COMPLETED, FAILED, REFUNDED
-  paymentMethod   String?   // KHALTI, ESEWA, BANK_TRANSFER, CASH
-  referenceId     String?   // External payment gateway reference
-  
-  recordedById    String?   // User ID
-  recordedBy      User?     @relation("TransactionRecorder", fields: [recordedById], references: [id])
-  
-  // Relations
-  donation        Donation?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String    @id @default(uuid())
+  type          String
+  category      String
+  amount        Float
+  description   String?
+  date          DateTime  @default(now())
+  status        String    @default("COMPLETED")
+  paymentMethod String?
+  referenceId   String?
+  recordedById  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  donation      Donation?
+  recordedBy    User?     @relation("TransactionRecorder", fields: [recordedById], references: [id])
 }
 
-// -----------------------------------------------------------------------------
-// 14. COMMUNICATION & NOTIFICATIONS (Phase 5)
-// -----------------------------------------------------------------------------
-
 model AudienceSegment {
-  id              String    @id @default(uuid())
-  name            String
-  description     String?
-  
-  // Targeting criteria (JSON string)
-  // e.g., { "role": "MEMBER", "province": "Bagmati" }
-  criteria        String    
-  
-  campaigns       CommunicationCampaign[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String                  @id @default(uuid())
+  name        String
+  description String?
+  criteria    String
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  campaigns   CommunicationCampaign[]
 }
 
 model CommunicationTemplate {
-  id              String    @id @default(uuid())
-  name            String
-  subject         String?
-  body            String    // Supports placeholders like {{fullName}}
-  type            String    // SMS, EMAIL, PUSH, IN_APP
-  category        String    // TRANSACTIONAL, MARKETING, ALERT
-  
-  campaigns       CommunicationCampaign[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        String                  @id @default(uuid())
+  name      String
+  subject   String?
+  body      String
+  type      String
+  category  String
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+  campaigns CommunicationCampaign[]
 }
 
 model CommunicationCampaign {
-  id              String    @id @default(uuid())
-  name            String
-  status          String    @default("DRAFT") // DRAFT, SCHEDULED, SENDING, COMPLETED, CANCELLED
-  
-  templateId      String
-  template        CommunicationTemplate @relation(fields: [templateId], references: [id])
-  
-  segmentId       String?
-  segment         AudienceSegment? @relation(fields: [segmentId], references: [id])
-  
-  scheduledAt     DateTime?
-  sentAt          DateTime?
-  
-  deliveryLogs    DeliveryLog[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String                @id @default(uuid())
+  name         String
+  status       String                @default("DRAFT")
+  templateId   String
+  segmentId    String?
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  segment      AudienceSegment?      @relation(fields: [segmentId], references: [id])
+  template     CommunicationTemplate @relation(fields: [templateId], references: [id])
+  deliveryLogs DeliveryLog[]
 }
 
 model DeliveryLog {
-  id              String    @id @default(uuid())
-  campaignId      String?
-  campaign        CommunicationCampaign? @relation(fields: [campaignId], references: [id])
-  
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  recipient       String    // Email or Phone
-  status          String    // SENT, DELIVERED, FAILED, OPENED, CLICKED
-  error           String?
-  provider        String?   // e.g., "Twilio", "SendGrid"
-  
-  sentAt          DateTime  @default(now())
+  id         String                 @id @default(uuid())
+  campaignId String?
+  userId     String?
+  recipient  String
+  status     String
+  error      String?
+  provider   String?
+  sentAt     DateTime               @default(now())
+  user       User?                  @relation(fields: [userId], references: [id])
+  campaign   CommunicationCampaign? @relation(fields: [campaignId], references: [id])
 }
 
-// -----------------------------------------------------------------------------
-// 15. TRAINING & CAPACITY BUILDING (Phase 5)
-// -----------------------------------------------------------------------------
-
 model TrainingProgram {
-  id              String    @id @default(uuid())
-  name            String
-  description     String?
-  category        String    // INTERNAL, PUBLIC
-  
-  courses         Course[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  category      String
+  status        String   @default("DRAFT")
+  audience      String   @default("PUBLIC")
+  isPinned      Boolean  @default(false)
+  externalUrl   String?
+  attachmentUrl String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  courses       Course[]
 }
 
 model Course {
-  id              String    @id @default(uuid())
-  programId       String
-  program         TrainingProgram @relation(fields: [programId], references: [id])
-  
-  title           String
-  description     String?
-  thumbnail       String?
-  level           String    // BEGINNER, INTERMEDIATE, ADVANCED
-  
-  lessons         Lesson[]
-  enrollments     Enrollment[]
-  certificates    Certificate[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String          @id @default(uuid())
+  programId    String
+  title        String
+  description  String?
+  thumbnail    String?
+  level        String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  certificates Certificate[]
+  program      TrainingProgram @relation(fields: [programId], references: [id])
+  enrollments  Enrollment[]
+  lessons      Lesson[]
 }
 
 model Lesson {
-  id              String    @id @default(uuid())
-  courseId        String
-  course          Course    @relation(fields: [courseId], references: [id])
-  
-  title           String
-  content         String    // Markdown/HTML
-  videoUrl        String?
-  order           Int
-  
-  quizzes         Quiz[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  courseId  String
+  title     String
+  content   String
+  videoUrl  String?
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id])
+  quizzes   Quiz[]
 }
 
 model Quiz {
-  id              String    @id @default(uuid())
-  lessonId        String
-  lesson          Lesson    @relation(fields: [lessonId], references: [id])
-  
-  title           String
-  passingScore    Int       @default(80)
-  
-  questions       QuizQuestion[]
-  attempts        QuizAttempt[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String         @id @default(uuid())
+  lessonId     String
+  title        String
+  passingScore Int            @default(80)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  lesson       Lesson         @relation(fields: [lessonId], references: [id])
+  attempts     QuizAttempt[]
+  questions    QuizQuestion[]
 }
 
 model QuizQuestion {
-  id              String    @id @default(uuid())
-  quizId          String
-  quiz            Quiz      @relation(fields: [quizId], references: [id])
-  
-  question        String
-  options         String    // JSON string of options
-  correctOption   Int       // Index of correct option
-  
-  createdAt       DateTime  @default(now())
+  id            String   @id @default(uuid())
+  quizId        String
+  question      String
+  options       String
+  correctOption Int
+  createdAt     DateTime @default(now())
+  quiz          Quiz     @relation(fields: [quizId], references: [id])
 }
 
 model QuizAttempt {
-  id              String    @id @default(uuid())
-  quizId          String
-  quiz            Quiz      @relation(fields: [quizId], references: [id])
-  
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  
-  score           Int
-  passed          Boolean
-  
-  createdAt       DateTime  @default(now())
+  id        String   @id @default(uuid())
+  quizId    String
+  userId    String
+  score     Int
+  passed    Boolean
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
 }
 
 model Enrollment {
-  id              String    @id @default(uuid())
-  courseId        String
-  course          Course    @relation(fields: [courseId], references: [id])
-  
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  
-  status          String    @default("ENROLLED") // ENROLLED, IN_PROGRESS, COMPLETED
-  progress        Float     @default(0) // Percentage
-  
-  completedAt     DateTime?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id          String    @id @default(uuid())
+  courseId    String
+  userId      String
+  status      String    @default("ENROLLED")
+  progress    Float     @default(0)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  course      Course    @relation(fields: [courseId], references: [id])
+
   @@unique([courseId, userId])
 }
 
 model Certificate {
-  id              String    @id @default(uuid())
-  courseId        String
-  course          Course    @relation(fields: [courseId], references: [id])
-  
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  
-  issueDate       DateTime  @default(now())
-  expiryDate      DateTime?
-  certificateUrl  String?
-  
-  createdAt       DateTime  @default(now())
+  id             String    @id @default(uuid())
+  courseId       String
+  userId         String
+  issueDate      DateTime  @default(now())
+  expiryDate     DateTime?
+  certificateUrl String?
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id])
+  course         Course    @relation(fields: [courseId], references: [id])
 }
 
 model LiveSession {
-  id              String    @id @default(uuid())
-  title           String
-  description     String?
-  startTime       DateTime
-  endTime         DateTime
-  type            String    // VIRTUAL, PHYSICAL
-  location        String?   // URL or Physical Address
-  
-  attendance      Attendance[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  type        String
+  location    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendance  Attendance[]
 }
 
 model Attendance {
-  id              String    @id @default(uuid())
-  sessionId       String
-  session         LiveSession @relation(fields: [sessionId], references: [id])
-  
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  
-  status          String    @default("PRESENT") // PRESENT, ABSENT, EXCUSED
-  
-  createdAt       DateTime  @default(now())
+  id        String      @id @default(uuid())
+  sessionId String
+  userId    String
+  status    String      @default("PRESENT")
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id])
+  session   LiveSession @relation(fields: [sessionId], references: [id])
 }
 
-// -----------------------------------------------------------------------------
-// 10. GRIEVANCE MANAGEMENT (Phase 8)
-// -----------------------------------------------------------------------------
-
 model GrievanceCategory {
-  id              String    @id @default(uuid())
-  name            String    @unique
-  description     String?
-  slaHours        Int       @default(48)
-  
-  grievances      Grievance[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String      @id @default(uuid())
+  name        String      @unique
+  description String?
+  slaHours    Int         @default(48)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  grievances  Grievance[]
 }
 
 model Grievance {
-  id              String    @id @default(uuid())
-  title           String
-  description     String
-  
-  categoryId      String
-  category        GrievanceCategory @relation(fields: [categoryId], references: [id])
-  
-  reporterId      String
-  reporter        User      @relation("GrievanceReporter", fields: [reporterId], references: [id])
-  
-  status          String    @default("OPEN") // OPEN, ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED, ESCALATED, APPEALED
-  priority        String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
-  
-  // Hierarchy Scope
-  orgUnitId       String?
-  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  
-  assignments     GrievanceAssignment[]
-  responses       GrievanceResponse[]
-  
-  resolvedAt      DateTime?
-  closedAt        DateTime?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String                @id @default(uuid())
+  title       String
+  description String
+  categoryId  String
+  reporterId  String
+  status      String                @default("OPEN")
+  priority    String                @default("MEDIUM")
+  orgUnitId   String?
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  orgUnit     OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
+  reporter    User                  @relation("GrievanceReporter", fields: [reporterId], references: [id])
+  category    GrievanceCategory     @relation(fields: [categoryId], references: [id])
+  assignments GrievanceAssignment[]
+  responses   GrievanceResponse[]
 
   @@index([status])
   @@index([reporterId])
@@ -1430,255 +1115,221 @@ model Grievance {
 }
 
 model GrievanceAssignment {
-  id              String    @id @default(uuid())
-  grievanceId     String
-  grievance       Grievance @relation(fields: [grievanceId], references: [id])
-  
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  
-  assignedAt      DateTime  @default(now())
-  status          String    @default("ACTIVE") // ACTIVE, COMPLETED, REASSIGNED
-  
-  createdAt       DateTime  @default(now())
+  id          String    @id @default(uuid())
+  grievanceId String
+  userId      String
+  assignedAt  DateTime  @default(now())
+  status      String    @default("ACTIVE")
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  grievance   Grievance @relation(fields: [grievanceId], references: [id])
 }
 
 model GrievanceResponse {
-  id              String    @id @default(uuid())
-  grievanceId     String
-  grievance       Grievance @relation(fields: [grievanceId], references: [id])
-  
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  
-  content         String
-  isInternal      Boolean   @default(false) // Internal notes vs public response
-  
-  createdAt       DateTime  @default(now())
+  id          String    @id @default(uuid())
+  grievanceId String
+  userId      String
+  content     String
+  isInternal  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  grievance   Grievance @relation(fields: [grievanceId], references: [id])
 }
 
-// -----------------------------------------------------------------------------
-// 11. SURVEYS & POLLS (Phase 8)
-// -----------------------------------------------------------------------------
-
 model Survey {
-  id              String    @id @default(uuid())
-  title           String
-  description     String?
-  status          String    @default("DRAFT") // DRAFT, ACTIVE, CLOSED
-  
-  questions       SurveyQuestion[]
-  responses       SurveyResponse[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String           @id @default(uuid())
+  title       String
+  description String?
+  status      String           @default("DRAFT")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  questions   SurveyQuestion[]
+  responses   SurveyResponse[]
 }
 
 model SurveyQuestion {
-  id              String    @id @default(uuid())
-  surveyId        String
-  survey          Survey    @relation(fields: [surveyId], references: [id])
-  
-  text            String
-  type            String    // TEXT, MULTIPLE_CHOICE, RATING
-  options         String?   // JSON string for choices
-  order           Int
-  
-  answers         SurveyAnswer[]
-  
-  createdAt       DateTime  @default(now())
+  id        String         @id @default(uuid())
+  surveyId  String
+  text      String
+  type      String
+  options   String?
+  order     Int
+  createdAt DateTime       @default(now())
+  answers   SurveyAnswer[]
+  survey    Survey         @relation(fields: [surveyId], references: [id])
 }
 
 model SurveyResponse {
-  id              String    @id @default(uuid())
-  surveyId        String
-  survey          Survey    @relation(fields: [surveyId], references: [id])
-  
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  answers         SurveyAnswer[]
-  
-  createdAt       DateTime  @default(now())
+  id        String         @id @default(uuid())
+  surveyId  String
+  userId    String?
+  createdAt DateTime       @default(now())
+  answers   SurveyAnswer[]
+  user      User?          @relation(fields: [userId], references: [id])
+  survey    Survey         @relation(fields: [surveyId], references: [id])
 }
 
 model SurveyAnswer {
-  id              String    @id @default(uuid())
-  responseId      String
-  response        SurveyResponse @relation(fields: [responseId], references: [id])
-  
-  questionId      String
-  question        SurveyQuestion @relation(fields: [questionId], references: [id])
-  
-  value           String    // The answer content
-  
-  createdAt       DateTime  @default(now())
+  id         String         @id @default(uuid())
+  responseId String
+  questionId String
+  value      String
+  createdAt  DateTime       @default(now())
+  question   SurveyQuestion @relation(fields: [questionId], references: [id])
+  response   SurveyResponse @relation(fields: [responseId], references: [id])
 }
 
 model Poll {
-  id              String    @id @default(uuid())
-  question        String
-  status          String    @default("ACTIVE") // ACTIVE, CLOSED
-  
-  options         PollOption[]
-  votes           PollVote[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        String       @id @default(uuid())
+  question  String
+  status    String       @default("ACTIVE")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  options   PollOption[]
+  votes     PollVote[]
 }
 
 model PollOption {
-  id              String    @id @default(uuid())
-  pollId          String
-  poll            Poll      @relation(fields: [pollId], references: [id])
-  
-  text            String
-  votes           PollVote[]
-  
-  createdAt       DateTime  @default(now())
+  id        String     @id @default(uuid())
+  pollId    String
+  text      String
+  createdAt DateTime   @default(now())
+  poll      Poll       @relation(fields: [pollId], references: [id])
+  votes     PollVote[]
 }
 
 model PollVote {
-  id              String    @id @default(uuid())
-  pollId          String
-  poll            Poll      @relation(fields: [pollId], references: [id])
-  
-  optionId        String
-  option          PollOption @relation(fields: [optionId], references: [id])
-  
-  userId          String?
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  createdAt       DateTime  @default(now())
-  
+  id        String     @id @default(uuid())
+  pollId    String
+  optionId  String
+  userId    String?
+  createdAt DateTime   @default(now())
+  user      User?      @relation(fields: [userId], references: [id])
+  option    PollOption @relation(fields: [optionId], references: [id])
+  poll      Poll       @relation(fields: [pollId], references: [id])
+
   @@unique([pollId, userId])
 }
 
-// -----------------------------------------------------------------------------
-// 12. PGIS / GROUND INTELLIGENCE (Phase 8)
-// -----------------------------------------------------------------------------
-
 model GroundIntelligenceReport {
-  id              String    @id @default(uuid())
-  reporterId      String
-  reporter        User      @relation(fields: [reporterId], references: [id])
-  
-  type            String    // SENTIMENT, PUBLIC_ISSUE, BOOTH_READINESS, INCIDENT, COMPETITOR_ACTIVITY
-  content         String
-  
-  // Geo-tagging
-  latitude        Float?
-  longitude       Float?
-  locationName    String?
-  
-  // Hierarchy Scope
-  orgUnitId       String?
-  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  
-  sentimentScore  Int?      // -100 to 100
-  priority        String    @default("MEDIUM")
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String            @id @default(uuid())
+  reporterId     String
+  type           String
+  content        String
+  latitude       Float?
+  longitude      Float?
+  locationName   String?
+  orgUnitId      String?
+  sentimentScore Int?
+  priority       String            @default("MEDIUM")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  orgUnit        OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  reporter       User              @relation(fields: [reporterId], references: [id])
 }
 
 model CommunityPriority {
-  id              String    @id @default(uuid())
-  orgUnitId       String
-  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
-  
-  issue           String
-  description     String?
-  rank            Int       @default(1)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String           @id @default(uuid())
+  orgUnitId   String
+  issue       String
+  description String?
+  rank        Int              @default(1)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  orgUnit     OrganizationUnit @relation(fields: [orgUnitId], references: [id])
 }
 
 model IntelligenceAlert {
-  id              String    @id @default(uuid())
-  title           String
-  content         String
-  severity        String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
-  
-  // Target Scope
-  orgUnitId       String?
-  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  
-  userId          String?   // Targeted user
-  user            User?     @relation(fields: [userId], references: [id])
-  
-  isRead          Boolean   @default(false)
-  
-  createdAt       DateTime  @default(now())
+  id        String            @id @default(uuid())
+  title     String
+  content   String
+  severity  String            @default("MEDIUM")
+  orgUnitId String?
+  userId    String?
+  isRead    Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  user      User?             @relation(fields: [userId], references: [id])
+  orgUnit   OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model AreaStrengthScore {
-  id              String    @id @default(uuid())
-  orgUnitId       String    @unique
-  orgUnit         OrganizationUnit @relation(fields: [orgUnitId], references: [id])
-  
-  partyStrength   Int       @default(0) // 0-100
-  oppositionStrength Int    @default(0) // 0-100
-  swingVoters     Int       @default(0) // 0-100
-  
-
-  lastUpdated     DateTime  @updatedAt
+  id                 String           @id @default(uuid())
+  orgUnitId          String           @unique
+  partyStrength      Int              @default(0)
+  oppositionStrength Int              @default(0)
+  swingVoters        Int              @default(0)
+  lastUpdated        DateTime         @updatedAt
+  orgUnit            OrganizationUnit @relation(fields: [orgUnitId], references: [id])
 }
 
-// -----------------------------------------------------------------------------
-// 10. COMMUNICATION SYSTEM (New Models)
-// -----------------------------------------------------------------------------
-
 model Notice {
-  id             String    @id @default(uuid())
-  title          String
-  content        String
-  audience       String    @default("PUBLIC") // PUBLIC, MEMBERS
-  status         String    @default("DRAFT")  // DRAFT, PUBLISHED
-  isPinned       Boolean   @default(false)
-  publishAt      DateTime?
-  expireAt       DateTime?
-  attachmentUrl  String?
-  externalUrl    String?
-  
-  authorId       String
-  author         User      @relation(fields: [authorId], references: [id])
-  
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id            String    @id @default(uuid())
+  title         String
+  content       String
+  audience      String    @default("PUBLIC")
+  status        String    @default("DRAFT")
+  isPinned      Boolean   @default(false)
+  publishAt     DateTime?
+  expireAt      DateTime?
+  attachmentUrl String?
+  externalUrl   String?
+  authorId      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  author        User      @relation(fields: [authorId], references: [id])
 
   @@index([status, audience])
 }
 
 model Contact {
-  id              String    @id @default(uuid())
-  fullName        String
-  email           String?
-  phone           String?
-  source          String    // MEMBER, VOLUNTEER, DONOR, MANUAL
-  sourceId        String?
-  tags            String    // Serialized JSON
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String?
+  phone     String?
+  source    String
+  sourceId  String?
+  tags      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model InternalNotice {
-  id              String    @id @default(uuid())
-  title           String
-  content         String
-  targetRoles     String    // Serialized JSON
-  createdAt       DateTime  @default(now())
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  targetRoles String
+  createdAt   DateTime @default(now())
 }
 
 model RetryQueue {
-  id              String    @id @default(uuid())
-  messageId       String
-  provider        String
-  payload         String
-  attempt         Int       @default(0)
-  status          String    // PENDING, RETRYING, FAILED, COMPLETED
-  nextRetryAt     DateTime
-  createdAt       DateTime  @default(now())
+  id          String   @id @default(uuid())
+  messageId   String
+  provider    String
+  payload     String
+  attempt     Int      @default(0)
+  status      String
+  nextRetryAt DateTime
+  createdAt   DateTime @default(now())
 }
 
+model AppEvent {
+  id            String   @id @default(uuid())
+  title         String
+  summary       String?
+  description   String
+  audience      String   @default("PUBLIC")
+  status        String   @default("DRAFT")
+  isPinned      Boolean  @default(false)
+  eventDate     DateTime
+  startAt       String
+  endAt         String?
+  location      String
+  coverImageUrl String?
+  attachmentUrl String?
+  authorId      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  author        User     @relation("AppEventAuthor", fields: [authorId], references: [id])
+
+  @@index([status, audience])
+}

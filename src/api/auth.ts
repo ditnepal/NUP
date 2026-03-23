@@ -49,24 +49,19 @@ const registerSchema = z.object({
  *         description: Invalid credentials
  */
 router.post('/login', async (req, res) => {
-  console.log('[DEBUG] Login attempt for email:', req.body.email);
-  console.log('[DEBUG] DATABASE_URL:', process.env.DATABASE_URL);
   try {
     const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-nup-os-2026';
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      console.log('[DEBUG] User not found for email:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     if (!user.passwordHash) {
-      console.log('[DEBUG] User found but no password hash:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
-    console.log('[DEBUG] Password match:', isMatch);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -80,7 +75,6 @@ router.post('/login', async (req, res) => {
 
     res.json({ token, user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role } });
   } catch (error) {
-    console.error('[DEBUG] Error in /login:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }

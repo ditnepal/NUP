@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink } from 'lucide-react';
+import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface PublicPortalProps {
   user?: UserProfile | null;
   onPortalClick?: () => void;
   onDocumentsClick?: () => void;
+  onTrainingClick?: () => void;
   onJoinClick?: () => void;
   onStatusClick?: () => void;
 }
 
-export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onJoinClick, onStatusClick }) => {
+export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,12 +25,14 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
 
   const fetchPublicData = async () => {
     try {
-      const [newsData, noticesData] = await Promise.all([
+      const [newsData, noticesData, eventsData] = await Promise.all([
         api.get('/public/posts?type=NEWS&lang=en'),
-        api.get('/communication/notices/public')
+        api.get('/communication/notices/public'),
+        api.get('/v1/app-events/public')
       ]);
       setNews(newsData);
       setNotices(noticesData);
+      setEvents(eventsData);
     } catch (error) {
       console.error('Error fetching public data:', error);
     } finally {
@@ -52,6 +56,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             <div className="hidden md:flex items-center gap-8">
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Manifesto</a>
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">News</a>
+              <button onClick={onTrainingClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Training</button>
               <button onClick={onStatusClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Check Status</button>
               <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Contact</a>
               {user ? (
@@ -82,6 +87,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
           <div className="flex flex-col gap-6">
             <a href="#" className="text-2xl font-bold text-slate-800">Manifesto</a>
             <a href="#" className="text-2xl font-bold text-slate-800">News</a>
+            <button onClick={onTrainingClick} className="text-2xl font-bold text-slate-800 text-left">Training</button>
             <button onClick={onStatusClick} className="text-2xl font-bold text-slate-800 text-left">Check Status</button>
             <a href="#" className="text-2xl font-bold text-slate-800">Contact</a>
             {user ? (
@@ -167,6 +173,15 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             <p className="text-slate-500 mb-6">Access our manifesto, policy documents, and membership forms.</p>
             <button onClick={onDocumentsClick} className="text-rose-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Browse Files <ChevronRight size={16} /></button>
           </div>
+
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <GraduationCap size={28} />
+            </div>
+            <h3 className="text-xl font-bold mb-3">Training</h3>
+            <p className="text-slate-500 mb-6">Access official party training materials and educational resources.</p>
+            <button onClick={onTrainingClick} className="text-emerald-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">View Programs <ChevronRight size={16} /></button>
+          </div>
         </div>
       </section>
 
@@ -231,6 +246,29 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 {notices.length === 0 && !loading && (
                   <div className="py-10 text-center text-slate-400 italic">
                     No notices published at this time.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Events */}
+            <div className="lg:col-span-2">
+              <div className="flex justify-between items-end mb-12">
+                <h2 className="text-4xl font-black tracking-tight uppercase">Upcoming Events</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {events.map((event) => (
+                  <div key={event.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+                    <h3 className="text-xl font-bold mb-2">{event.title}</h3>
+                    <p className="text-slate-600 text-sm mb-4">{event.summary}</p>
+                    <div className="text-xs font-medium text-slate-400 uppercase tracking-widest">
+                      {new Date(event.eventDate).toLocaleDateString()} at {event.startAt}
+                    </div>
+                  </div>
+                ))}
+                {events.length === 0 && !loading && (
+                  <div className="py-10 text-center text-slate-400 italic">
+                    No upcoming events at this time.
                   </div>
                 )}
               </div>

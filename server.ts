@@ -4,9 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:/app/applet/prisma/dev.db';
+  process.env.DATABASE_URL = 'file:/prisma/dev.db';
 }
-console.log('[DEBUG] DATABASE_URL:', process.env.DATABASE_URL);
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
@@ -28,6 +27,7 @@ import candidatesRouter from './src/api/candidates';
 import committeesRouter from './src/api/committees';
 import documentsRouter from './src/api/documents';
 import eventsRouter from './src/api/events';
+import appEventsRouter from './src/api/appEvents';
 import grievancesRouter from './src/api/grievance';
 import surveyRouter from './src/api/survey';
 import pgisRouter from './src/api/pgis';
@@ -107,6 +107,7 @@ export async function createApp() {
   app.use('/api/v1/committees', committeesRouter);
   app.use('/api/v1/documents', documentsRouter);
   app.use('/api/v1/events', eventsRouter);
+  app.use('/api/v1/app-events', appEventsRouter);
   app.use('/api/v1/grievances', grievancesRouter);
   app.use('/api/v1/surveys', surveyRouter);
   app.use('/api/v1/pgis', pgisRouter);
