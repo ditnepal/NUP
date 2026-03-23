@@ -83,4 +83,49 @@ router.post('/', authenticate, authorize(['ADMIN']), async (req: AuthRequest, re
   }
 });
 
+// @route   PUT /api/v1/hierarchy/:id
+// @desc    Update an organization unit
+// @access  Private (Admin)
+router.put('/:id', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
+  try {
+    const data = unitSchema.partial().parse(req.body);
+    const unit = await hierarchyService.update(req.params.id, data);
+
+    await auditService.log({
+      action: 'HIERARCHY_UNIT_UPDATED',
+      userId: req.user?.id,
+      entityType: 'OrganizationUnit',
+      entityId: unit.id,
+      details: unit
+    });
+
+    res.json(unit);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: (error as any).errors });
+    }
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
+// @route   DELETE /api/v1/hierarchy/:id
+// @desc    Delete an organization unit
+// @access  Private (Admin)
+router.delete('/:id', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
+  try {
+    await hierarchyService.delete(req.params.id);
+
+    await auditService.log({
+      action: 'HIERARCHY_UNIT_DELETED',
+      userId: req.user?.id,
+      entityType: 'OrganizationUnit',
+      entityId: req.params.id
+    });
+
+    res.json({ message: 'Unit deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Server error' });
+  }
+});
+
 export default router;

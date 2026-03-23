@@ -128,4 +128,36 @@ router.post('/:id/recognize', authenticate, authorize(['ADMIN', 'VOLUNTEER_MANAG
   }
 });
 
+// GET /api/v1/volunteers/:id
+router.get('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const volunteer = await volunteerService.getById(req.params.id);
+    if (!volunteer) return res.status(404).json({ error: 'Volunteer not found' });
+    res.json(volunteer);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/v1/volunteers/:id
+router.put('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = volunteerSchema.partial().parse(req.body);
+    const volunteer = await volunteerService.update(req.params.id, data as any);
+    res.json(volunteer);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// DELETE /api/v1/volunteers/:id
+router.delete('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    await volunteerService.delete(req.params.id);
+    res.status(204).send();
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

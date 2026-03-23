@@ -165,6 +165,64 @@ export class VolunteerService extends BaseService {
     });
     return recognition;
   }
+
+  /**
+   * Get volunteer by ID
+   */
+  async getById(id: string) {
+    return await this.db.volunteer.findUnique({
+      where: { id },
+      include: {
+        member: true,
+        assignments: { include: { campaign: true } },
+        performance: true,
+        recognitions: true
+      }
+    });
+  }
+
+  /**
+   * Update volunteer
+   */
+  async update(id: string, data: Partial<{
+    fullName: string;
+    email: string;
+    phone: string;
+    skills: string;
+    availability: string;
+    status: 'ACTIVE' | 'INACTIVE';
+  }>) {
+    const volunteer = await this.db.volunteer.update({
+      where: { id },
+      data
+    });
+
+    await auditService.log({
+      action: 'VOLUNTEER_UPDATED',
+      entityType: 'Volunteer',
+      entityId: id,
+      details: data
+    });
+
+    return volunteer;
+  }
+
+  /**
+   * Delete volunteer
+   */
+  async delete(id: string) {
+    await this.db.volunteer.delete({
+      where: { id }
+    });
+
+    await auditService.log({
+      action: 'VOLUNTEER_DELETED',
+      entityType: 'Volunteer',
+      entityId: id
+    });
+
+    return true;
+  }
 }
 
 export const volunteerService = new VolunteerService();

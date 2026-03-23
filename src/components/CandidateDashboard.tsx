@@ -26,14 +26,18 @@ export function CandidateDashboard() {
 
   const fetchCandidateData = async () => {
     try {
-      // In a real app, we'd fetch the candidate profile for the logged-in user
-      // For this demo, we'll fetch the first candidate in the active cycle
       const cycles = await api.get('/election/cycles');
       if (cycles.length > 0) {
-        const candidates = await api.get(`/election/candidates?cycleId=${cycles[0].id}`);
+        const activeCycle = cycles.find((c: any) => c.status === 'ACTIVE') || cycles[0];
+        const candidates = await api.get(`/election/candidates?cycleId=${activeCycle.id}`);
         if (candidates.length > 0) {
-          setCandidate(candidates[0]);
-          const resData = await api.get(`/election/results?cycleId=${cycles[0].id}&candidateId=${candidates[0].id}`);
+          // For now, we show the first one. In a real scenario, this would be filtered by user ID
+          const currentCandidate = candidates[0];
+          setCandidate(currentCandidate);
+          
+          const [resData] = await Promise.all([
+            api.get(`/election/results?cycleId=${activeCycle.id}&candidateId=${currentCandidate.id}`)
+          ]);
           setResults(resData);
         }
       }
@@ -77,7 +81,8 @@ export function CandidateDashboard() {
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{candidate.name}</h1>
             <span className={`inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold w-fit mx-auto md:mx-0 ${
               candidate.status === 'WON' ? 'bg-emerald-100 text-emerald-600' :
-              candidate.status === 'ACTIVE' ? 'bg-blue-100 text-blue-600' :
+              candidate.status === 'ACTIVE' || candidate.status === 'NOMINATED' ? 'bg-blue-100 text-blue-600' :
+              candidate.status === 'LOST' ? 'bg-red-100 text-red-600' :
               'bg-slate-100 text-slate-600'
             }`}>
               {candidate.status}
@@ -87,25 +92,31 @@ export function CandidateDashboard() {
           <div className="flex flex-wrap justify-center md:justify-start gap-2 sm:gap-4">
             <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
               <MapPin size={14} />
-              {candidate.constituency?.province}, {candidate.constituency?.district}
+              {candidate.constituency?.province || 'Province'}, {candidate.constituency?.district || 'District'}
             </div>
             <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
               <Calendar size={14} />
-              Election Year: {candidate.electionYear || '2026'}
+              Election Year: {candidate.electionCycle?.year || '2026'}
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-col gap-2 w-full md:w-auto">
-          <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold text-sm">
-            <FileText size={18} />
-            Edit Manifesto
-          </button>
-          <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold text-sm">
-            <Users size={18} />
-            Campaign Team
-          </button>
+        <div className="hidden md:flex flex-col gap-2 w-full md:w-auto">
+          <div className="px-6 py-2.5 bg-slate-50 text-slate-600 rounded-xl font-bold text-sm border border-slate-100 text-center">
+            Candidate Profile
+          </div>
         </div>
       </div>
+
+      {/* Manifesto Section */}
+      {candidate.manifesto && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="font-bold text-slate-900 flex items-center gap-2 mb-4">
+            <FileText size={20} className="text-emerald-600" />
+            Manifesto Summary
+          </h3>
+          <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{candidate.manifesto}</p>
+        </div>
+      )}
 
       {/* Performance Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

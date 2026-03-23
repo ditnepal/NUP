@@ -36,6 +36,18 @@ router.get('/categories', authenticate, async (req, res) => {
   }
 });
 
+router.get('/staff', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const staff = await prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'STAFF'] } },
+      select: { id: true, displayName: true, email: true, role: true }
+    });
+    res.json(staff);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/categories', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
   try {
     const data = z.object({

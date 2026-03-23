@@ -142,8 +142,8 @@ router.post('/join', async (req, res) => {
 // @access  Public
 router.post('/volunteer', async (req, res) => {
   try {
-    const volunteer = await volunteerService.register(req.body);
-    res.status(201).json({ message: 'Volunteer registration successful' });
+    const application = await volunteerService.apply(req.body);
+    res.status(201).json({ message: 'Volunteer application submitted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

@@ -103,6 +103,15 @@ export interface Grievance {
   };
   createdAt: string;
   assignments: any[];
+  responses?: {
+    id: string;
+    content: string;
+    isInternal: boolean;
+    createdAt: string;
+    user: {
+      displayName: string;
+    };
+  }[];
 }
 
 export interface AuditLog {
@@ -240,14 +249,52 @@ export interface Event {
   };
 }
 
+export interface ElectionCycle {
+  id: string;
+  name: string;
+  year: number;
+  type: string;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Constituency {
+  id: string;
+  name: string;
+  code?: string;
+  province: string;
+  district: string;
+  localLevel?: string;
+  ward?: number;
+  type: string;
+  totalVoters?: number;
+  parentConstituencyId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Candidate {
-  id?: string;
+  id: string;
   name: string;
   position: string;
-  constituency: string;
-  electionYear: number;
+  electionCycleId?: string;
+  constituencyId?: string;
+  electionType?: string;
+  electionYear?: number;
+  province?: string;
+  district?: string;
+  localLevel?: string;
+  ward?: number;
   manifesto?: string;
-  status: 'active' | 'withdrawn' | 'won' | 'lost';
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+  constituency?: Constituency;
+  electionCycle?: ElectionCycle;
+  documents?: any[];
 }
 
 export interface PartyDocument {
@@ -265,20 +312,31 @@ export interface PartyDocument {
   updatedAt: string;
 }
 
+export interface Interaction {
+  id: string;
+  supporterId: string;
+  type: string;
+  date: string;
+  notes?: string;
+  handledBy: string;
+  createdAt: string;
+}
+
 export interface Supporter {
   id?: string;
   fullName: string;
-  phone: string;
+  phoneNumber: string;
   province: string;
   district: string;
   localLevel: string;
   ward: number;
   supportLevel: SupporterLevel;
-  issues: IssueCategory[];
+  issues: string; // Backend expects string
   notes?: string;
   assignedTo?: string; // UID of field worker
   lastContactedAt?: string;
   createdAt: string;
+  interactions?: Interaction[];
 }
 
 export interface Campaign {
@@ -330,15 +388,48 @@ export interface TrainingProgram {
   updatedAt: string;
 }
 
+export interface Volunteer {
+  id: string;
+  memberId?: string;
+  userId?: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  skills: string;
+  availability?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  updatedAt: string;
+  member?: Member;
+  assignments?: any[];
+}
+
+export interface VolunteerApplication {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  skills: string;
+  availability: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Booth {
-  id?: string;
+  id: string;
   name: string;
-  pollingCenterId: string;
+  code?: string;
+  pollingStationId?: string;
   ward: number;
   localLevel: string;
   district: string;
-  coordinatorId?: string; // UID
-  totalVoters?: number;
-  estimatedSupporters?: number;
-  status: 'ready' | 'needs_attention' | 'critical';
+  province?: string;
+  totalVoters: number;
+  voterCount?: number;
+  targetVotes: number;
+  status: 'READY' | 'NEEDS_ATTENTION' | 'CRITICAL';
+  coordinatorId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

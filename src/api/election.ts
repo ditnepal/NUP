@@ -10,6 +10,7 @@ const electionCycleSchema = z.object({
   name: z.string().min(3),
   year: z.number().int().min(2020),
   type: z.enum(['FEDERAL', 'PROVINCIAL', 'LOCAL']),
+  status: z.enum(['UPCOMING', 'ACTIVE', 'COMPLETED']).optional(),
   startDate: z.string().optional().transform((val) => (val ? new Date(val) : undefined)),
   endDate: z.string().optional().transform((val) => (val ? new Date(val) : undefined)),
 });
@@ -39,6 +40,7 @@ const candidateSchema = z.object({
   position: z.string(),
   electionCycleId: z.string().uuid(),
   constituencyId: z.string().uuid().optional(),
+  status: z.enum(['ACTIVE', 'WITHDRAWN', 'DISQUALIFIED', 'WON', 'LOST']).optional(),
   manifesto: z.string().optional(),
 });
 
@@ -47,6 +49,7 @@ const incidentSchema = z.object({
   pollingStationId: z.string().uuid().optional(),
   type: z.enum(['VIOLENCE', 'FRAUD', 'TECHNICAL', 'LOGISTICAL', 'OTHER']),
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+  status: z.enum(['REPORTED', 'INVESTIGATING', 'RESOLVED', 'DISMISSED']).optional(),
   description: z.string().min(10),
 });
 
@@ -82,6 +85,27 @@ router.post('/cycles', authenticate, authorize(['ADMIN', 'STAFF']), async (req, 
   }
 });
 
+router.put('/cycles/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = electionCycleSchema.partial().parse(req.body);
+    const cycle = await electionService.updateElectionCycle(id, data);
+    res.json(cycle);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/cycles/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await electionService.deleteElectionCycle(id);
+    res.json({ message: 'Election cycle deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Constituencies
 router.get('/constituencies', authenticate, async (req, res) => {
   try {
@@ -97,6 +121,27 @@ router.post('/constituencies', authenticate, authorize(['ADMIN', 'STAFF']), asyn
     const data = constituencySchema.parse(req.body);
     const constituency = await electionService.createConstituency(data);
     res.status(201).json(constituency);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/constituencies/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = constituencySchema.partial().parse(req.body);
+    const constituency = await electionService.updateConstituency(id, data);
+    res.json(constituency);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/constituencies/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await electionService.deleteConstituency(id);
+    res.json({ message: 'Constituency deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -145,6 +190,27 @@ router.post('/candidates', authenticate, authorize(['ADMIN', 'STAFF']), async (r
   }
 });
 
+router.put('/candidates/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = candidateSchema.partial().parse(req.body);
+    const candidate = await electionService.updateCandidate(id, data);
+    res.json(candidate);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/candidates/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await electionService.deleteCandidate(id);
+    res.json({ message: 'Candidate deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Incidents
 router.get('/incidents', authenticate, async (req, res) => {
   try {
@@ -165,6 +231,27 @@ router.post('/incidents', authenticate, async (req: AuthRequest, res) => {
       reporterId: req.user?.id as string,
     });
     res.status(201).json(incident);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/incidents/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = incidentSchema.partial().parse(req.body);
+    const incident = await electionService.updateIncident(id, data);
+    res.json(incident);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/incidents/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await electionService.deleteIncident(id);
+    res.json({ message: 'Incident deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -191,6 +278,30 @@ router.post('/results', authenticate, authorize(['ADMIN', 'STAFF']), async (req:
       verifiedById: data.verified ? req.user?.id : undefined,
     });
     res.status(201).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/results/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const data = resultSchema.partial().parse(req.body);
+    const result = await electionService.updateResult(id, {
+      ...data,
+      verifiedById: data.verified ? req.user?.id : undefined,
+    });
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/results/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await electionService.deleteResult(id);
+    res.json({ message: 'Result deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

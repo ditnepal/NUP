@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap, Calendar, Tag } from 'lucide-react';
+import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap, Calendar, Tag, Loader2 } from 'lucide-react';
 import { UserProfile } from '../types';
 import Markdown from 'react-markdown';
 
@@ -70,6 +70,38 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
 
   const handlePostClick = (post: any) => {
     setSelectedPost(post);
+  };
+
+  const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
+  const [submittingVolunteer, setSubmittingVolunteer] = useState(false);
+  const [volunteerFormData, setVolunteerFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    skills: '',
+    availability: ''
+  });
+
+  const handleVolunteerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingVolunteer(true);
+    try {
+      await api.post('/public/volunteer', volunteerFormData);
+      alert('Thank you for your application! We will contact you soon.');
+      setIsVolunteerModalOpen(false);
+      setVolunteerFormData({
+        fullName: '',
+        email: '',
+        phone: '',
+        skills: '',
+        availability: ''
+      });
+    } catch (error) {
+      console.error('Error submitting volunteer application:', error);
+      alert('Failed to submit application. Please try again.');
+    } finally {
+      setSubmittingVolunteer(false);
+    }
   };
 
   return (
@@ -176,7 +208,12 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             </div>
             <h3 className="text-xl font-bold mb-3">Volunteer</h3>
             <p className="text-slate-500 mb-6">Contribute your skills and time to our local campaigns and initiatives.</p>
-            <a href="#" className="text-blue-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Apply Now <ChevronRight size={16} /></a>
+            <button 
+              onClick={() => setIsVolunteerModalOpen(true)}
+              className="text-blue-600 font-bold flex items-center gap-1 hover:gap-2 transition-all"
+            >
+              Apply Now <ChevronRight size={16} />
+            </button>
           </div>
 
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
@@ -403,6 +440,86 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Volunteer Modal */}
+      {isVolunteerModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-2xl font-black text-slate-900 uppercase">Volunteer Application</h2>
+              <button onClick={() => setIsVolunteerModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleVolunteerSubmit} className="p-8 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Full Name</label>
+                <input
+                  required
+                  type="text"
+                  className="w-full px-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                  value={volunteerFormData.fullName}
+                  onChange={e => setVolunteerFormData({ ...volunteerFormData, fullName: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Email</label>
+                  <input
+                    required
+                    type="email"
+                    className="w-full px-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                    value={volunteerFormData.email}
+                    onChange={e => setVolunteerFormData({ ...volunteerFormData, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Phone</label>
+                  <input
+                    required
+                    type="tel"
+                    className="w-full px-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                    value={volunteerFormData.phone}
+                    onChange={e => setVolunteerFormData({ ...volunteerFormData, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Skills</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Social Media, Event Planning"
+                  className="w-full px-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                  value={volunteerFormData.skills}
+                  onChange={e => setVolunteerFormData({ ...volunteerFormData, skills: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Availability</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Weekends, Evenings"
+                  className="w-full px-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                  value={volunteerFormData.availability}
+                  onChange={e => setVolunteerFormData({ ...volunteerFormData, availability: e.target.value })}
+                />
+              </div>
+              <div className="pt-4">
+                <button
+                  disabled={submittingVolunteer}
+                  type="submit"
+                  className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submittingVolunteer && <Loader2 className="animate-spin" size={20} />}
+                  Submit Application
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

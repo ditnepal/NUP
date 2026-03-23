@@ -50,6 +50,10 @@ export class GrievanceService {
         category: true,
         reporter: { select: { displayName: true, email: true } },
         assignments: { include: { user: { select: { displayName: true } } } },
+        responses: {
+          include: { user: { select: { displayName: true } } },
+          orderBy: { createdAt: 'asc' }
+        }
       },
       orderBy: { createdAt: 'desc' },
     });

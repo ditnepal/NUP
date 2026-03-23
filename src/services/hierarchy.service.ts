@@ -53,6 +53,65 @@ export class HierarchyService extends BaseService {
     const parentPath = await this.getPath(unit.parentId!);
     return [...parentPath, unit];
   }
+
+  /**
+   * Update an organization unit
+   */
+  async update(id: string, data: any) {
+    return this.db.organizationUnit.update({
+      where: { id },
+      data
+    });
+  }
+
+  /**
+   * Delete an organization unit with strict dependency checks
+   */
+  async delete(id: string) {
+    // 1. Check for children
+    const childrenCount = await this.db.organizationUnit.count({
+      where: { parentId: id }
+    });
+    if (childrenCount > 0) {
+      throw new Error('Cannot delete unit with sub-units. Delete sub-units first.');
+    }
+
+    // 2. Check for linked members
+    const membersCount = await this.db.member.count({
+      where: { orgUnitId: id }
+    });
+    if (membersCount > 0) {
+      throw new Error('Cannot delete unit with linked members.');
+    }
+
+    // 3. Check for linked booths
+    const boothsCount = await this.db.booth.count({
+      where: { orgUnitId: id }
+    });
+    if (boothsCount > 0) {
+      throw new Error('Cannot delete unit with linked booths.');
+    }
+
+    // 4. Check for linked offices
+    const officesCount = await this.db.office.count({
+      where: { orgUnitId: id }
+    });
+    if (officesCount > 0) {
+      throw new Error('Cannot delete unit with linked offices.');
+    }
+
+    // 5. Check for linked users
+    const usersCount = await this.db.user.count({
+      where: { orgUnitId: id }
+    });
+    if (usersCount > 0) {
+      throw new Error('Cannot delete unit with linked users.');
+    }
+
+    return this.db.organizationUnit.delete({
+      where: { id }
+    });
+  }
 }
 
 export const hierarchyService = new HierarchyService();

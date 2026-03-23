@@ -229,7 +229,7 @@ export default function App() {
     { id: 'events', label: 'Events', icon: Calendar, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
     { id: 'finance', label: 'Finance', icon: DollarSign, roles: ['ADMIN', 'FINANCE_OFFICER'] },
     { id: 'election', label: 'Election', icon: Vote, roles: ['ADMIN', 'STAFF'] },
-    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, roles: ['ADMIN', 'STAFF'] },
+    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
     { id: 'grievances', label: 'Grievances', icon: ShieldAlert, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
     { id: 'surveys', label: 'Surveys', icon: ClipboardList, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
     { id: 'pgis', label: 'PGIS', icon: Shield, roles: ['ADMIN', 'STAFF'] },
@@ -376,15 +376,15 @@ export default function App() {
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <p className="text-sm font-medium text-slate-500">Ready Booths</p>
               <p className="text-3xl font-bold text-slate-800 mt-2">
-                {booths.filter(b => b.status === 'ready').length}
+                {booths.filter(b => b.status === 'READY').length}
               </p>
             </div>
           </div>
         )}
 
         {currentView === 'campaigns' && <CampaignsView campaigns={campaigns} />}
-        {currentView === 'supporters' && <SupportersView supporters={supporters} />}
-        {currentView === 'booths' && <BoothsView booths={booths} />}
+        {currentView === 'supporters' && <SupportersView supporters={supporters} onRefresh={fetchData} />}
+        {currentView === 'booths' && <BoothsView booths={booths} onRefresh={fetchData} />}
         {currentView === 'hierarchy' && <HierarchyAdmin />}
         {currentView === 'membership' && <MembershipAdmin />}
         {currentView === 'renewals' && <RenewalsManagement />}
@@ -397,9 +397,13 @@ export default function App() {
         )}
         {currentView === 'events' && <AppEventsAdmin />}
         {currentView === 'finance' && <FinanceAdmin />}
-        {currentView === 'election' && <ElectionAdmin />}
-        {currentView === 'candidate-dashboard' && <CandidateDashboard />}
-        {currentView === 'grievances' && <GrievancePortal />}
+        {currentView === 'election' && <ElectionAdmin key="election-admin" />}
+        {currentView === 'candidate-dashboard' && (
+          (user.role === 'ADMIN' || user.role === 'STAFF') 
+            ? <ElectionAdmin key="candidate-admin" defaultTab="candidates" /> 
+            : <CandidateDashboard />
+        )}
+        {currentView === 'grievances' && <GrievancePortal user={user} />}
         {currentView === 'surveys' && <SurveyPolls />}
         {currentView === 'pgis' && <PgisDashboard />}
         {currentView === 'warroom' && <WarRoomDashboard />}

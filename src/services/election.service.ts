@@ -29,6 +29,34 @@ export class ElectionService {
     });
   }
 
+  async updateElectionCycle(id: string, data: {
+    name?: string;
+    year?: number;
+    type?: string;
+    status?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    return prisma.electionCycle.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteElectionCycle(id: string) {
+    const [candidates, results, incidents] = await Promise.all([
+      prisma.candidate.count({ where: { electionCycleId: id } }),
+      prisma.electionResult.count({ where: { cycleId: id } }),
+      prisma.electionIncident.count({ where: { cycleId: id } }),
+    ]);
+
+    if (candidates > 0 || results > 0 || incidents > 0) {
+      throw new Error('Cannot delete election cycle with linked candidates, results, or incidents.');
+    }
+
+    return prisma.electionCycle.delete({ where: { id } });
+  }
+
   // --- Constituencies & Polling Stations ---
   async createConstituency(data: {
     name: string;
@@ -44,7 +72,38 @@ export class ElectionService {
   async getConstituencies() {
     return prisma.constituency.findMany({
       orderBy: { name: 'asc' },
+      include: {
+        _count: { select: { candidates: true, pollingStations: true } }
+      }
     });
+  }
+
+  async updateConstituency(id: string, data: {
+    name?: string;
+    code?: string;
+    type?: string;
+    province?: string;
+    district?: string;
+    totalVoters?: number;
+  }) {
+    return prisma.constituency.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteConstituency(id: string) {
+    const [candidates, results, stations] = await Promise.all([
+      prisma.candidate.count({ where: { constituencyId: id } }),
+      prisma.electionResult.count({ where: { constituencyId: id } }),
+      prisma.pollingStation.count({ where: { constituencyId: id } }),
+    ]);
+
+    if (candidates > 0 || results > 0 || stations > 0) {
+      throw new Error('Cannot delete constituency with linked candidates, results, or polling stations.');
+    }
+
+    return prisma.constituency.delete({ where: { id } });
   }
 
   async createPollingStation(data: {
@@ -100,7 +159,47 @@ export class ElectionService {
       include: {
         constituency: true,
         documents: true,
+        electionCycle: true,
       },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async updateCandidate(id: string, data: {
+    name?: string;
+    position?: string;
+    electionCycleId?: string;
+    constituencyId?: string;
+    manifesto?: string;
+    status?: string;
+  }) {
+    return prisma.candidate.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteCandidate(id: string) {
+    // Check for election results
+    const resultsCount = await prisma.electionResult.count({
+      where: { candidateId: id },
+    });
+
+    if (resultsCount > 0) {
+      throw new Error('Cannot delete candidate with existing election results.');
+    }
+
+    // Check for documents
+    const docsCount = await prisma.candidateDocument.count({
+      where: { candidateId: id },
+    });
+
+    if (docsCount > 0) {
+      throw new Error('Cannot delete candidate with existing documents. Please remove documents first.');
+    }
+
+    return prisma.candidate.delete({
+      where: { id },
     });
   }
 
@@ -190,6 +289,21 @@ export class ElectionService {
     });
   }
 
+  async updateIncident(id: string, data: {
+    status?: string;
+    severity?: string;
+    description?: string;
+  }) {
+    return prisma.electionIncident.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteIncident(id: string) {
+    return prisma.electionIncident.delete({ where: { id } });
+  }
+
   // --- Results (High Sensitivity) ---
   async enterResult(data: {
     cycleId: string;
@@ -246,6 +360,24 @@ export class ElectionService {
       },
       orderBy: { votesReceived: 'desc' },
     });
+  }
+
+  async updateResult(id: string, data: {
+    votesReceived?: number;
+    isWinner?: boolean;
+    verifiedById?: string;
+  }) {
+    return prisma.electionResult.update({
+      where: { id },
+      data: {
+        ...data,
+        verifiedAt: data.verifiedById ? new Date() : undefined,
+      },
+    });
+  }
+
+  async deleteResult(id: string) {
+    return prisma.electionResult.delete({ where: { id } });
   }
 
   // --- Analytics & Readiness ---

@@ -48,7 +48,10 @@ router.get('/', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_CO
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { booth: { select: { name: true, code: true } } }
+        include: { 
+          booth: { select: { name: true, code: true } },
+          interactions: { orderBy: { date: 'desc' }, take: 5 }
+        }
       }),
       prisma.supporter.count({ where })
     ]);
@@ -113,6 +116,26 @@ router.put('/:id', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH
       return res.status(400).json({ error: (error as any).errors });
     }
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/v1/supporters/:id
+// @desc    Delete a supporter
+// @access  Private (Admin, Staff)
+router.delete('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    
+    const supporter = await prisma.supporter.findUnique({ where: { id } });
+    if (!supporter) {
+      return res.status(404).json({ error: 'Supporter not found' });
+    }
+
+    await prisma.supporter.delete({ where: { id } });
+    
+    res.json({ message: 'Supporter deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error deleting supporter' });
   }
 });
 
