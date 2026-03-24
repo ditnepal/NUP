@@ -51,6 +51,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${
                     tx.status === 'COMPLETED' ? 'bg-green-50 text-green-600' :
+                    tx.status === 'PENDING' ? 'bg-blue-50 text-blue-600' :
                     tx.status === 'REFUNDED' ? 'bg-amber-50 text-amber-600' :
                     'bg-red-50 text-red-600'
                   }`}>

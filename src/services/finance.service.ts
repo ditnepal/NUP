@@ -78,13 +78,14 @@ export class FinanceService {
     });
 
     // 2. Create transaction (Server-authoritative verification would happen here if integrated with a real gateway)
+    const isPublicDonation = !data.recordedById;
     const transaction = await prisma.transaction.create({
       data: {
         type: 'INCOME',
         category: 'DONATION',
         amount: data.amount,
         description: `Donation from ${donor.fullName}${data.campaignId ? ' for campaign ' + data.campaignId : ''}`,
-        status: 'COMPLETED', // In a real app, this might start as PENDING
+        status: isPublicDonation ? 'PENDING' : 'COMPLETED',
         paymentMethod: data.paymentMethod,
         referenceId: data.referenceId,
         recordedById: data.recordedById,
@@ -98,28 +99,31 @@ export class FinanceService {
         campaignId: data.campaignId,
         transactionId: transaction.id,
         amount: data.amount,
-        status: 'VERIFIED',
+        status: isPublicDonation ? 'PENDING' : 'VERIFIED',
+        paymentMethod: data.paymentMethod,
         receiptUrl: `/api/v1/finance/receipts/${transaction.id}`,
       },
     });
 
-    // 4. Update donor profile stats
-    await prisma.donorProfile.update({
-      where: { id: donor.id },
-      data: {
-        totalDonated: { increment: data.amount },
-        donationCount: { increment: 1 },
-      },
-    });
-
-    // 5. Update campaign stats if applicable
-    if (data.campaignId) {
-      await prisma.fundraisingCampaign.update({
-        where: { id: data.campaignId },
+    // 4. Update donor profile stats (Only if verified/completed)
+    if (!isPublicDonation) {
+      await prisma.donorProfile.update({
+        where: { id: donor.id },
         data: {
-          currentAmount: { increment: data.amount },
+          totalDonated: { increment: data.amount },
+          donationCount: { increment: 1 },
         },
       });
+
+      // 5. Update campaign stats if applicable
+      if (data.campaignId) {
+        await prisma.fundraisingCampaign.update({
+          where: { id: data.campaignId },
+          data: {
+            currentAmount: { increment: data.amount },
+          },
+        });
+      }
     }
 
     await auditService.log({
@@ -259,6 +263,34 @@ export class FinanceService {
       refundCount: refundStats._count.id || 0,
       recentTransactionCount,
     };
+  }
+
+  async listPublicPaymentIntegrations(module?: string) {
+    const integrations = await prisma.paymentIntegration.findMany({
+      where: { enabled: true },
+      orderBy: { sortOrder: 'asc' },
+      select: {
+        id: true,
+        provider: true,
+        displayName: true,
+        region: true,
+        mode: true,
+        sortOrder: true,
+        supportedModules: true,
+        instructions: true,
+      }
+    });
+    
+    let parsed = integrations.map(i => ({
+      ...i,
+      supportedModules: i.supportedModules.split(',').filter(Boolean),
+    }));
+
+    if (module) {
+      parsed = parsed.filter(i => i.supportedModules.includes(module));
+    }
+
+    return parsed;
   }
 
   async listPaymentIntegrations() {

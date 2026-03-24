@@ -50,6 +50,7 @@ interface MemberProfile {
   expiryDate?: string;
   qrCodeUrl?: string;
   profilePhotoUrl?: string;
+  paymentMethod?: string;
   orgUnit: {
     name: string;
     level: string;
@@ -64,6 +65,8 @@ interface MemberProfile {
   };
 }
 
+import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
+
 export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEvent }) => {
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [news, setNews] = useState<any[]>([]);
@@ -76,6 +79,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
   const [renewalNote, setRenewalNote] = useState('');
   const [renewalError, setRenewalError] = useState('');
   const [renewalSuccess, setRenewalSuccess] = useState('');
+  const [selectedMethod, setSelectedMethod] = useState<any | null>(null);
 
   const fetchRenewals = async () => {
     try {
@@ -113,12 +117,20 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
 
   const handleRenewalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedMethod) {
+      setRenewalError('Please select a payment method.');
+      return;
+    }
     setRenewalError('');
     setRenewalSuccess('');
     try {
-      await api.post('/members/me/renewals', { memberNote: renewalNote });
+      await api.post('/members/me/renewals', { 
+        memberNote: renewalNote,
+        paymentMethod: selectedMethod.provider
+      });
       setRenewalSuccess('Renewal request submitted successfully.');
       setRenewalNote('');
+      setSelectedMethod(null);
       setIsRenewing(false);
       await fetchRenewals();
     } catch (err: any) {
@@ -205,6 +217,10 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
               <div className="space-y-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tracking Code</p>
                 <p className="font-mono font-bold text-slate-700">{profile.trackingCode || 'N/A'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Method</p>
+                <p className="font-bold text-slate-700 uppercase">{profile.paymentMethod || 'N/A'}</p>
               </div>
             </div>
 
@@ -333,6 +349,14 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
             </p>
 
             <form onSubmit={handleRenewalSubmit}>
+              <div className="mb-6">
+                <PaymentMethodSelector 
+                  module="RENEWALS"
+                  selectedMethodId={selectedMethod?.id || null}
+                  onSelect={setSelectedMethod}
+                />
+              </div>
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Additional Note (Optional)
@@ -362,7 +386,8 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all"
+                  disabled={!selectedMethod}
+                  className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Submit Request
                 </button>

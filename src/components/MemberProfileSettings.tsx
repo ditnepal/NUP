@@ -177,6 +177,10 @@ export const MemberProfileSettings: React.FC<MemberProfileSettingsProps> = ({ pr
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Citizenship Number</p>
                 <p className="font-mono font-bold text-slate-800">{profile.citizenshipNumber || 'N/A'}</p>
               </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Payment Method</p>
+                <p className="font-bold text-slate-800 uppercase">{profile.paymentMethod || 'N/A'}</p>
+              </div>
             </div>
           </div>
         </div>

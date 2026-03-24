@@ -57,6 +57,12 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Application Mode</p>
               <p className="font-bold text-slate-800">{member.applicationMode}</p>
             </div>
+            {member.paymentMethod && (
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment Method</p>
+                <p className="font-bold text-slate-800">{member.paymentMethod}</p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-6">

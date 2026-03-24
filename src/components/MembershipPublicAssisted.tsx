@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api } from '../lib/api';
+import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 
 const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
   const { register, handleSubmit, getValues } = useForm();
@@ -12,12 +13,18 @@ const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code
 
   const [idDoc, setIdDoc] = useState<File | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<any | null>(null);
 
   const onSubmit = async (data: any) => {
+    if (!selectedMethod) {
+      alert('Please select a payment method.');
+      return;
+    }
     try {
       const formData = new FormData();
       Object.keys(data).forEach(key => formData.append(key, data[key]));
       formData.append('applicationMode', 'ASSISTED');
+      formData.append('paymentMethod', selectedMethod.provider);
       if (idDoc) formData.append('identityDocument', idDoc);
 
       const result = await api.postFormData('/members/apply', formData);
@@ -66,7 +73,16 @@ const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code
       <input {...register('helperPhone')} placeholder="Helper Phone" className="p-3 border rounded-lg" required />
       <input {...register('helperRole')} placeholder="Relationship/Role" className="p-3 border rounded-lg" required />
       
-      <button type="submit" className="p-4 bg-purple-600 text-white rounded-xl">Submit Assisted</button>
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-800">Payment Information</h2>
+        <PaymentMethodSelector 
+          module="MEMBERSHIP"
+          selectedMethodId={selectedMethod?.id || null}
+          onSelect={setSelectedMethod}
+        />
+      </div>
+
+      <button type="submit" disabled={!selectedMethod} className="p-4 bg-purple-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">Submit Assisted</button>
       <button type="button" onClick={onBack} className="p-4 bg-gray-200 rounded-xl">Back</button>
     </form>
   );

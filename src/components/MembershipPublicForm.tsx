@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api } from '../lib/api';
+import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 
 const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (trackingCode: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
   const { register, handleSubmit, getValues } = useForm();
@@ -14,13 +15,19 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
 
   const [idDoc, setIdDoc] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<any | null>(null);
 
   const onSubmit = async (data: any) => {
+    if (!selectedMethod) {
+      alert('Please select a payment method.');
+      return;
+    }
     setLoading(true);
     try {
       const formData = new FormData();
       Object.keys(data).forEach(key => formData.append(key, data[key]));
       formData.append('applicationMode', 'FORM');
+      formData.append('paymentMethod', selectedMethod.provider);
       if (idDoc) formData.append('identityDocument', idDoc);
       if (photo) formData.append('profilePhoto', photo);
 
@@ -150,6 +157,15 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
         </div>
       </div>
 
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-800">Payment Information</h2>
+        <PaymentMethodSelector 
+          module="MEMBERSHIP"
+          selectedMethodId={selectedMethod?.id || null}
+          onSelect={setSelectedMethod}
+        />
+      </div>
+
       <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
         <label className="flex items-start gap-3 cursor-pointer group">
           <input type="checkbox" {...register('declaration')} className="mt-1 w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" required />
@@ -162,8 +178,8 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
       <div className="flex flex-col sm:flex-row gap-4 pt-4">
         <button 
           type="submit" 
-          disabled={loading}
-          className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 disabled:opacity-50"
+          disabled={loading || !selectedMethod}
+          className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Submitting...' : 'Submit Application'}
         </button>

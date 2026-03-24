@@ -1,9 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // @route   GET /api/v1/renewals
 // @desc    Get all renewal requests

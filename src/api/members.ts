@@ -60,8 +60,17 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
     });
     res.json(members);
   } catch (error: any) {
-    console.error('Detailed error in GET /api/v1/members:', error);
-    res.status(500).json({ error: 'Server error', details: error.message });
+    console.error('Detailed error in GET /api/v1/members:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    });
+    res.status(500).json({ 
+      error: 'Server error', 
+      details: error.message,
+      code: error.code 
+    });
   }
 });
 
@@ -200,6 +209,7 @@ const memberApplySchema = z.object({
   helperPhone: z.string().optional().or(z.literal('')),
   helperRole: z.string().optional().or(z.literal('')),
   declaration: z.preprocess((val) => val === 'true' || val === true, z.boolean().optional()),
+  paymentMethod: z.string().optional().or(z.literal('')),
 });
 
 // @route   POST /api/v1/members/me/photo
@@ -356,12 +366,13 @@ router.post('/me/renewals', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'You already have a pending renewal request' });
     }
 
-    const { memberNote } = req.body;
+    const { memberNote, paymentMethod } = req.body;
 
     const renewal = await prisma.renewalRequest.create({
       data: {
         memberId: member.id,
         memberNote: memberNote || null,
+        paymentMethod: paymentMethod || null,
         status: 'PENDING'
       }
     });
@@ -599,6 +610,7 @@ router.put('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: Auth
       data: {
         fullName: data.fullName,
         citizenshipNumber: data.citizenshipNumber,
+        paymentMethod: data.paymentMethod,
         status: data.status,
       }
     });

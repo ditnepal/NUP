@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api } from '../lib/api';
+import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 
 const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
   const { register, handleSubmit, getValues } = useForm();
@@ -13,8 +14,13 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: s
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [idDoc, setIdDoc] = useState<File | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<any | null>(null);
 
   const onSubmit = async (data: any) => {
+    if (!selectedMethod) {
+      alert('Please select a payment method.');
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append('fullName', data.fullName);
@@ -22,6 +28,7 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: s
       formData.append('orgUnitId', data.orgUnitId);
       formData.append('identityDocumentType', data.identityDocumentType);
       formData.append('applicationMode', 'VIDEO');
+      formData.append('paymentMethod', selectedMethod.provider);
       if (idDoc) formData.append('identityDocument', idDoc);
       if (videoFile) formData.append('video', videoFile);
 
@@ -65,7 +72,17 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: s
       <input type="file" onChange={(e) => setIdDoc(e.target.files?.[0] || null)} className="p-3 border rounded-lg" required />
       <label>Video Upload</label>
       <input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] || null)} className="p-3 border rounded-lg" required />
-      <button type="submit" className="p-4 bg-green-600 text-white rounded-xl">Submit Video</button>
+      
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-800">Payment Information</h2>
+        <PaymentMethodSelector 
+          module="MEMBERSHIP"
+          selectedMethodId={selectedMethod?.id || null}
+          onSelect={setSelectedMethod}
+        />
+      </div>
+
+      <button type="submit" disabled={!selectedMethod} className="p-4 bg-green-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">Submit Video</button>
       <button type="button" onClick={onBack} className="p-4 bg-gray-200 rounded-xl">Back</button>
     </form>
   );

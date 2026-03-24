@@ -34,6 +34,7 @@ export class MembershipService extends BaseService {
     helperPhone?: string;
     helperRole?: string;
     declaration?: boolean;
+    paymentMethod?: string;
     orgUnitId: string;
   }) {
     // 1. Duplicate Detection (only if citizenshipNumber or email provided)
@@ -92,6 +93,7 @@ export class MembershipService extends BaseService {
         helperName: data.helperName,
         helperPhone: data.helperPhone,
         helperRole: data.helperRole,
+        paymentMethod: data.paymentMethod,
         trackingCode,
         status: 'PENDING',
         orgUnitId: data.orgUnitId,

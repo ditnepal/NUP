@@ -73,6 +73,7 @@ export default function RenewalsManagement() {
                 <th className="p-4 text-sm font-semibold text-slate-600">Member</th>
                 <th className="p-4 text-sm font-semibold text-slate-600">Member ID</th>
                 <th className="p-4 text-sm font-semibold text-slate-600">Current Expiry</th>
+                <th className="p-4 text-sm font-semibold text-slate-600">Payment Method</th>
                 <th className="p-4 text-sm font-semibold text-slate-600">Status</th>
                 <th className="p-4 text-sm font-semibold text-slate-600">Requested At</th>
                 <th className="p-4 text-sm font-semibold text-slate-600">Actions</th>
@@ -88,6 +89,9 @@ export default function RenewalsManagement() {
                   <td className="p-4 text-sm text-slate-600">{renewal.member.membershipId || 'N/A'}</td>
                   <td className="p-4 text-sm text-slate-600">
                     {renewal.member.expiryDate ? format(new Date(renewal.member.expiryDate), 'MMM d, yyyy') : 'N/A'}
+                  </td>
+                  <td className="p-4 text-sm font-bold text-slate-600 uppercase">
+                    {renewal.paymentMethod || 'N/A'}
                   </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -157,6 +161,10 @@ export default function RenewalsManagement() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Org Unit</label>
                   <div className="text-slate-900 font-medium">{selectedRenewal.member.orgUnit?.name || 'N/A'}</div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Payment Method</label>
+                  <div className="text-emerald-600 font-black uppercase">{selectedRenewal.paymentMethod || 'N/A'}</div>
                 </div>
               </div>
 

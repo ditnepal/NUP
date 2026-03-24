@@ -252,6 +252,7 @@ model Member {
   helperName             String?
   helperPhone            String?
   helperRole             String?
+  paymentMethod          String?
   membershipTypeId       String?
   suspensionHistory      String?
   terminationHistory     String?
@@ -276,6 +277,7 @@ model RenewalRequest {
   status     String    @default("PENDING")
   memberNote String?
   adminNote  String?
+  paymentMethod String?
   reviewedBy String?
   reviewedAt DateTime?
   createdAt  DateTime  @default(now())
@@ -869,6 +871,7 @@ model Donation {
   amount        Float
   currency      String               @default("NPR")
   status        String               @default("PENDING")
+  paymentMethod String?
   isRecurring   Boolean              @default(false)
   recurringId   String?
   receiptUrl    String?

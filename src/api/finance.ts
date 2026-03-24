@@ -140,14 +140,27 @@ const integrationSchema = z.object({
   provider: z.string(),
   displayName: z.string(),
   region: z.enum(['NEPAL', 'INDIA', 'INTERNATIONAL']),
-  enabled: z.boolean().default(true),
-  mode: z.enum(['TEST', 'LIVE']).default('TEST'),
-  sortOrder: z.number().int().default(0),
+  enabled: z.boolean().optional(),
+  mode: z.enum(['TEST', 'LIVE']).optional(),
+  sortOrder: z.number().int().optional(),
   supportedModules: z.array(z.string()),
   instructions: z.string().optional(),
   publicKey: z.string().optional(),
   secretRef: z.string().optional(),
   metadata: z.string().optional(),
+});
+
+// @route   GET /api/v1/finance/integrations/public
+// @desc    Get public payment integrations (enabled only)
+// @access  Public
+router.get('/integrations/public', async (req, res) => {
+  try {
+    const module = req.query.module as string;
+    const integrations = await financeService.listPublicPaymentIntegrations(module);
+    res.json(integrations);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // @route   GET /api/v1/finance/integrations

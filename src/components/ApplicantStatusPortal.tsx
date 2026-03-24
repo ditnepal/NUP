@@ -257,6 +257,13 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                     </p>
                     <p className="font-bold text-slate-700 uppercase">{statusData.applicationMode}</p>
                   </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <CheckCircle size={12} />
+                      Payment Method
+                    </p>
+                    <p className="font-bold text-slate-700 uppercase">{statusData.paymentMethod || 'N/A'}</p>
+                  </div>
                   {statusData.membershipId && (
                     <div className="space-y-1">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">

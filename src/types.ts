@@ -174,6 +174,7 @@ export interface Member {
   fatherName?: string;
   motherName?: string;
   occupation?: string;
+  paymentMethod?: string;
   qrCodeData?: string;
   createdAt: string;
   updatedAt: string;

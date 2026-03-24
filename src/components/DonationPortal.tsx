@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Heart, TrendingUp, Users, CheckCircle, Shield, CreditCard, Smartphone, Landmark, ArrowRight, Star } from 'lucide-react';
 import { FundraisingCampaign } from '../types';
+import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 
 export const DonationPortal: React.FC = () => {
   const [campaigns, setCampaigns] = useState<FundraisingCampaign[]>([]);
@@ -15,6 +16,7 @@ export const DonationPortal: React.FC = () => {
     isAnonymous: false,
   });
   const [step, setStep] = useState<'browse' | 'form' | 'payment' | 'success'>('browse');
+  const [selectedMethod, setSelectedMethod] = useState<any | null>(null);
 
   useEffect(() => {
     fetchCampaigns();
@@ -33,12 +35,16 @@ export const DonationPortal: React.FC = () => {
   };
 
   const handleDonate = async () => {
+    if (!selectedMethod) {
+      alert('Please select a payment method.');
+      return;
+    }
     try {
       await api.post('/finance/donations', {
         ...donorInfo,
         amount,
         campaignId: selectedCampaign?.id,
-        paymentMethod: 'KHALTI', // Mock payment method
+        paymentMethod: selectedMethod.provider,
         referenceId: 'MOCK_' + Math.random().toString(36).substr(2, 9),
       });
       setStep('success');
@@ -177,33 +183,11 @@ export const DonationPortal: React.FC = () => {
             ) : (
               <div className="space-y-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">Select Payment Method</h3>
-                <div className="space-y-4">
-                  <button className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
-                        <Smartphone size={24} />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-bold text-emerald-900">Khalti / eSewa</p>
-                        <p className="text-xs text-emerald-600">Instant Verification</p>
-                      </div>
-                    </div>
-                    <div className="w-6 h-6 rounded-full border-2 border-emerald-500 flex items-center justify-center">
-                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                    </div>
-                  </button>
-                  <button className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-gray-100 hover:border-emerald-200 transition-all group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-emerald-600 transition-colors">
-                        <Landmark size={24} />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-bold text-gray-900">Bank Transfer</p>
-                        <p className="text-xs text-gray-400">Requires Manual Verification</p>
-                      </div>
-                    </div>
-                  </button>
-                </div>
+                <PaymentMethodSelector 
+                  module="FUNDRAISER"
+                  selectedMethodId={selectedMethod?.id || null}
+                  onSelect={setSelectedMethod}
+                />
                 <div className="pt-6 border-t border-gray-100">
                   <div className="flex justify-between text-lg font-bold text-gray-900 mb-6">
                     <span>Total Amount</span>
@@ -211,7 +195,8 @@ export const DonationPortal: React.FC = () => {
                   </div>
                   <button 
                     onClick={handleDonate}
-                    className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-2"
+                    disabled={!selectedMethod}
+                    className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Complete Donation <Heart size={20} />
                   </button>

@@ -153,7 +153,7 @@ export const FundraiserAdmin: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-bold text-emerald-600">+ NPR {donation.amount.toLocaleString()}</p>
-                            <p className="text-[10px] text-gray-400">{new Date(donation.createdAt).toLocaleDateString()}</p>
+                            <p className="text-[10px] text-gray-400">{donation.paymentMethod || 'N/A'} • {new Date(donation.createdAt).toLocaleDateString()}</p>
                           </div>
                         </div>
                       ))

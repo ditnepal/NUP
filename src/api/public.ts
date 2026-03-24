@@ -228,6 +228,7 @@ router.post('/membership-status', async (req, res) => {
       applicationMode: member.applicationMode,
       rejectionReason: rejectionReason || null,
       email: member.email,
+      paymentMethod: member.paymentMethod,
       hasAccount: !!member.userId
     });
   } catch (error) {
