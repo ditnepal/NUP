@@ -21,16 +21,54 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [notices, setNotices] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [surveys, setSurveys] = useState<any[]>([]);
+  const [polls, setPolls] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPublicData();
     fetchCategories();
+    fetchPublicSurveysAndPolls();
   }, []);
 
   useEffect(() => {
     fetchNews();
   }, [activeCategory]);
+
+  useEffect(() => {
+    if (selectedPost) {
+      fetchPostSurveysAndPolls(selectedPost.slug);
+    }
+  }, [selectedPost]);
+
+  const fetchPublicSurveysAndPolls = async () => {
+    try {
+      const [surveysData, pollsData] = await Promise.all([
+        api.get('/v1/public/surveys?placementType=PUBLIC_PORTAL'),
+        api.get('/v1/public/polls?placementType=PUBLIC_PORTAL')
+      ]);
+      setSurveys(surveysData);
+      setPolls(pollsData);
+    } catch (error) {
+      console.error('Error fetching public surveys/polls:', error);
+    }
+  };
+
+  const [postSurveys, setPostSurveys] = useState<any[]>([]);
+  const [postPolls, setPostPolls] = useState<any[]>([]);
+
+  const fetchPostSurveysAndPolls = async (slug: string) => {
+    try {
+      const [surveysData, pollsData] = await Promise.all([
+        api.get(`/v1/public/surveys?placementType=CONTENT_INLINE&targetSlug=${slug}`),
+        api.get(`/v1/public/polls?placementType=CONTENT_INLINE&targetSlug=${slug}`)
+      ]);
+      setPostSurveys(surveysData);
+      setPostPolls(pollsData);
+    } catch (error) {
+      console.error('Error fetching post surveys/polls:', error);
+    }
+  };
 
   const fetchPublicData = async () => {
     try {
@@ -381,6 +419,46 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 )}
               </div>
             </div>
+
+            {/* Public Surveys & Polls */}
+            {(surveys.length > 0 || polls.length > 0) && (
+              <div className="lg:col-span-2 mt-12">
+                <div className="flex justify-between items-end mb-12">
+                  <h2 className="text-4xl font-black tracking-tight uppercase text-emerald-600">Community Voice</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {surveys.map((survey) => (
+                    <div key={survey.id} className="bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm p-8">
+                      <div className="flex items-center gap-2 mb-4">
+                        <MessageSquare size={20} className="text-emerald-600" />
+                        <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Survey</span>
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">{survey.title}</h3>
+                      <p className="text-slate-600 text-sm mb-6">{survey.description}</p>
+                      <button onClick={() => alert('Please log in to participate in this survey.')} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all">
+                        Take Survey
+                      </button>
+                    </div>
+                  ))}
+                  {polls.map((poll) => (
+                    <div key={poll.id} className="bg-blue-50 rounded-3xl border border-blue-100 shadow-sm p-8">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Megaphone size={20} className="text-blue-600" />
+                        <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">Poll</span>
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">{poll.title}</h3>
+                      <div className="space-y-3 mt-4">
+                        {poll.options?.map((opt: string, idx: number) => (
+                          <button key={idx} onClick={() => alert('Please log in to vote in this poll.')} className="w-full py-2 px-4 bg-white border border-blue-100 text-slate-700 text-sm font-medium rounded-xl hover:bg-blue-100 transition-all text-left">
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -430,6 +508,39 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               <div className="prose prose-slate max-w-none">
                 <Markdown>{selectedPost.content}</Markdown>
               </div>
+
+              {/* Inline Surveys & Polls */}
+              {(postSurveys.length > 0 || postPolls.length > 0) && (
+                <div className="mt-12 pt-12 border-t border-slate-100">
+                  <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                    <MessageSquare size={20} className="text-emerald-600" />
+                    Related Feedback
+                  </h3>
+                  <div className="grid gap-6">
+                    {postSurveys.map((survey) => (
+                      <div key={survey.id} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                        <h4 className="font-bold mb-2">{survey.title}</h4>
+                        <p className="text-sm text-slate-600 mb-4">{survey.description}</p>
+                        <button onClick={() => alert('Please log in to participate in this survey.')} className="px-6 py-2 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 transition-all">
+                          Start Survey
+                        </button>
+                      </div>
+                    ))}
+                    {postPolls.map((poll) => (
+                      <div key={poll.id} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                        <h4 className="font-bold mb-4">{poll.title}</h4>
+                        <div className="grid gap-2">
+                          {poll.options?.map((opt: string, idx: number) => (
+                            <button key={idx} onClick={() => alert('Please log in to vote in this poll.')} className="w-full py-2 px-4 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-emerald-50 hover:border-emerald-200 transition-all text-left">
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t border-slate-100 flex justify-end">

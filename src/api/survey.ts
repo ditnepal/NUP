@@ -9,6 +9,9 @@ const router = Router();
 const surveySchema = z.object({
   title: z.string().min(3),
   description: z.string().optional(),
+  audience: z.enum(['PUBLIC', 'MEMBER']).optional(),
+  placementType: z.enum(['GENERAL', 'PUBLIC_PORTAL', 'CONTENT_INLINE', 'REGISTRATION_PRE_FORM']).optional(),
+  targetSlug: z.string().optional(),
   questions: z.array(z.object({
     text: z.string().min(3),
     type: z.enum(['TEXT', 'MULTIPLE_CHOICE', 'RATING']),
@@ -27,6 +30,9 @@ const responseSchema = z.object({
 const pollSchema = z.object({
   question: z.string().min(5),
   options: z.array(z.string().min(1)),
+  audience: z.enum(['PUBLIC', 'MEMBER']).optional(),
+  placementType: z.enum(['GENERAL', 'PUBLIC_PORTAL', 'CONTENT_INLINE', 'REGISTRATION_PRE_FORM']).optional(),
+  targetSlug: z.string().optional(),
 });
 
 // --- Routes ---

@@ -43,8 +43,21 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
   const [showSurveyResults, setShowSurveyResults] = useState(false);
   const [currentSurvey, setCurrentSurvey] = useState<any>(null);
   const [surveyAnalytics, setSurveyAnalytics] = useState<any>(null);
-  const [newSurvey, setNewSurvey] = useState<any>({ title: '', description: '', questions: [] });
-  const [newPoll, setNewPoll] = useState<any>({ question: '', options: ['', ''] });
+  const [newSurvey, setNewSurvey] = useState<any>({ 
+    title: '', 
+    description: '', 
+    questions: [], 
+    audience: 'MEMBER', 
+    placementType: 'GENERAL', 
+    targetSlug: '' 
+  });
+  const [newPoll, setNewPoll] = useState<any>({ 
+    question: '', 
+    options: ['', ''], 
+    audience: 'MEMBER', 
+    placementType: 'GENERAL', 
+    targetSlug: '' 
+  });
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -93,7 +106,14 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
       await api.post('/surveys', newSurvey);
       setSuccess('Survey created successfully');
       setShowCreateSurvey(false);
-      setNewSurvey({ title: '', description: '', questions: [] });
+      setNewSurvey({ 
+        title: '', 
+        description: '', 
+        questions: [], 
+        audience: 'MEMBER', 
+        placementType: 'GENERAL', 
+        targetSlug: '' 
+      });
       fetchData();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create survey');
@@ -109,7 +129,13 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
       await api.post('/surveys/polls', newPoll);
       setSuccess('Poll created successfully');
       setShowCreatePoll(false);
-      setNewPoll({ question: '', options: ['', ''] });
+      setNewPoll({ 
+        question: '', 
+        options: ['', ''], 
+        audience: 'MEMBER', 
+        placementType: 'GENERAL', 
+        targetSlug: '' 
+      });
       fetchData();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create poll');
@@ -402,6 +428,47 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
                   required
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Audience</label>
+                  <select
+                    value={newSurvey.audience}
+                    onChange={(e) => setNewSurvey({...newSurvey, audience: e.target.value})}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                  >
+                    <option value="MEMBER">Members Only</option>
+                    <option value="PUBLIC">Public (Read-only for Anon)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Placement</label>
+                  <select
+                    value={newSurvey.placementType}
+                    onChange={(e) => setNewSurvey({...newSurvey, placementType: e.target.value})}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                  >
+                    <option value="GENERAL">General/Dashboard</option>
+                    <option value="PUBLIC_PORTAL">Public Portal (Inline)</option>
+                    <option value="CONTENT_INLINE">Content Inline (Target Slug)</option>
+                    <option value="REGISTRATION_PRE_FORM">Registration Pre-Form</option>
+                  </select>
+                </div>
+              </div>
+
+              {newSurvey.placementType === 'CONTENT_INLINE' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Slug (Page/Post URL Slug)</label>
+                  <input 
+                    type="text" 
+                    value={newSurvey.targetSlug}
+                    onChange={(e) => setNewSurvey({...newSurvey, targetSlug: e.target.value})}
+                    placeholder="e.g. news-article-1"
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                    required
+                  />
+                </div>
+              )}
               
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
@@ -552,6 +619,47 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
                   required
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Audience</label>
+                  <select
+                    value={newPoll.audience}
+                    onChange={(e) => setNewPoll({...newPoll, audience: e.target.value})}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                  >
+                    <option value="MEMBER">Members Only</option>
+                    <option value="PUBLIC">Public (Read-only for Anon)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Placement</label>
+                  <select
+                    value={newPoll.placementType}
+                    onChange={(e) => setNewPoll({...newPoll, placementType: e.target.value})}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                  >
+                    <option value="GENERAL">General/Dashboard</option>
+                    <option value="PUBLIC_PORTAL">Public Portal (Inline)</option>
+                    <option value="CONTENT_INLINE">Content Inline (Target Slug)</option>
+                    <option value="REGISTRATION_PRE_FORM">Registration Pre-Form</option>
+                  </select>
+                </div>
+              </div>
+
+              {newPoll.placementType === 'CONTENT_INLINE' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Slug (Page/Post URL Slug)</label>
+                  <input 
+                    type="text" 
+                    value={newPoll.targetSlug}
+                    onChange={(e) => setNewPoll({...newPoll, targetSlug: e.target.value})}
+                    placeholder="e.g. news-article-1"
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none"
+                    required
+                  />
+                </div>
+              )}
               
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-gray-700">Options</label>

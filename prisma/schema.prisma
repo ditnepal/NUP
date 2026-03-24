@@ -1139,14 +1139,17 @@ model GrievanceResponse {
 }
 
 model Survey {
-  id          String           @id @default(uuid())
-  title       String
-  description String?
-  status      String           @default("DRAFT")
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  questions   SurveyQuestion[]
-  responses   SurveyResponse[]
+  id            String           @id @default(uuid())
+  title         String
+  description   String?
+  status        String           @default("DRAFT")
+  audience      String           @default("MEMBER") // PUBLIC or MEMBER
+  placementType String           @default("GENERAL") // GENERAL, PUBLIC_PORTAL, CONTENT_INLINE, REGISTRATION_PRE_FORM
+  targetSlug    String?          // For CONTENT_INLINE, which page/post slug
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  questions     SurveyQuestion[]
+  responses     SurveyResponse[]
 }
 
 model SurveyQuestion {
@@ -1182,13 +1185,16 @@ model SurveyAnswer {
 }
 
 model Poll {
-  id        String       @id @default(uuid())
-  question  String
-  status    String       @default("ACTIVE")
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  options   PollOption[]
-  votes     PollVote[]
+  id            String       @id @default(uuid())
+  question      String
+  status        String       @default("ACTIVE")
+  audience      String       @default("MEMBER") // PUBLIC or MEMBER
+  placementType String       @default("GENERAL") // GENERAL, PUBLIC_PORTAL, CONTENT_INLINE, REGISTRATION_PRE_FORM
+  targetSlug    String?      // For CONTENT_INLINE
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  options       PollOption[]
+  votes         PollVote[]
 }
 
 model PollOption {

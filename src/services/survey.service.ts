@@ -1,12 +1,15 @@
 import prisma from '../lib/prisma';
 
 export class SurveyService {
-  async createSurvey(data: { title: string; description?: string; questions: any[] }) {
+  async createSurvey(data: { title: string; description?: string; questions: any[]; audience?: string; placementType?: string; targetSlug?: string }) {
     return prisma.survey.create({
       data: {
         title: data.title,
         description: data.description,
         status: 'DRAFT',
+        audience: data.audience || 'MEMBER',
+        placementType: data.placementType || 'GENERAL',
+        targetSlug: data.placementType === 'CONTENT_INLINE' && data.targetSlug ? data.targetSlug : null,
         questions: {
           create: data.questions.map((q, idx) => ({
             text: q.text,
@@ -108,11 +111,14 @@ export class SurveyService {
   }
 
   // --- Polls ---
-  async createPoll(data: { question: string; options: string[] }) {
+  async createPoll(data: { question: string; options: string[]; audience?: string; placementType?: string; targetSlug?: string }) {
     return prisma.poll.create({
       data: {
         question: data.question,
         status: 'ACTIVE',
+        audience: data.audience || 'MEMBER',
+        placementType: data.placementType || 'GENERAL',
+        targetSlug: data.placementType === 'CONTENT_INLINE' && data.targetSlug ? data.targetSlug : null,
         options: {
           create: data.options.map((o) => ({ text: o })),
         },

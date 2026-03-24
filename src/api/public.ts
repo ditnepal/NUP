@@ -312,4 +312,64 @@ router.post('/membership-claim', async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/public/surveys
+// @desc    Get public surveys by placement
+// @access  Public
+router.get('/surveys', async (req, res) => {
+  try {
+    const { placementType, targetSlug } = req.query;
+    const surveys = await prisma.survey.findMany({
+      where: {
+        status: 'ACTIVE',
+        audience: 'PUBLIC',
+        placementType: placementType as string || undefined,
+        targetSlug: targetSlug as string || undefined,
+      },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formattedSurveys = surveys.map(s => ({
+      ...s,
+      questions: s.questions.map(q => ({
+        ...q,
+        options: q.options ? JSON.parse(q.options) : []
+      }))
+    }));
+
+    res.json(formattedSurveys);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/public/polls
+// @desc    Get public polls by placement
+// @access  Public
+router.get('/polls', async (req, res) => {
+  try {
+    const { placementType, targetSlug } = req.query;
+    const polls = await prisma.poll.findMany({
+      where: {
+        status: 'ACTIVE',
+        audience: 'PUBLIC',
+        placementType: placementType as string || undefined,
+        targetSlug: targetSlug as string || undefined,
+      },
+      include: {
+        options: true,
+        _count: { select: { votes: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(polls);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

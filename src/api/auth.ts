@@ -75,10 +75,11 @@ router.post('/login', async (req, res) => {
 
     res.json({ token, user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role } });
   } catch (error) {
+    console.error('[AUTH LOGIN ERROR]', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', details: error instanceof Error ? error.message : String(error) });
   }
 });
 
