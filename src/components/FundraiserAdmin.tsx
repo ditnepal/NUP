@@ -129,8 +129,8 @@ export const FundraiserAdmin: React.FC = () => {
             <div className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard label="Total Raised" value={`NPR ${analytics.totalRaised.toLocaleString()}`} icon={DollarSign} color="text-emerald-600" bg="bg-emerald-50" trend={{ value: '+12%', positive: true }} />
-                <StatCard label="Total Donors" value={analytics.donorCount} icon={Users} color="text-blue-600" bg="bg-blue-50" trend={{ value: '+5%', positive: true }} />
-                <StatCard label="Avg. Donation" value={`NPR ${(analytics.totalRaised / (analytics.donorCount || 1)).toFixed(0)}`} icon={TrendingUp} color="text-purple-600" bg="bg-purple-50" trend={{ value: '-2%', positive: false }} />
+                <StatCard label="Total Donors" value={analytics.donorCount || 0} icon={Users} color="text-blue-600" bg="bg-blue-50" trend={{ value: '+5%', positive: true }} />
+                <StatCard label="Avg. Donation" value={`NPR ${((analytics.totalRaised || 0) / (analytics.donorCount || 1)).toFixed(0)}`} icon={TrendingUp} color="text-purple-600" bg="bg-purple-50" trend={{ value: '-2%', positive: false }} />
                 <StatCard label="Active Fundraisers" value={analytics.campaigns.length} icon={PieChart} color="text-amber-600" bg="bg-amber-50" />
               </div>
 
@@ -180,7 +180,7 @@ export const FundraiserAdmin: React.FC = () => {
                             <span className="text-gray-500">NPR {fundraiser.currentAmount.toLocaleString()} / {fundraiser.goalAmount.toLocaleString()}</span>
                           </div>
                           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min((fundraiser.currentAmount / fundraiser.goalAmount) * 100, 100)}%` }} />
+                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${fundraiser.goalAmount > 0 ? Math.min((fundraiser.currentAmount / fundraiser.goalAmount) * 100, 100) : 0}%` }} />
                           </div>
                         </div>
                       ))
@@ -306,8 +306,11 @@ export const FundraiserAdmin: React.FC = () => {
                   <input
                     required
                     type="number"
-                    value={newFundraiser.goalAmount}
-                    onChange={(e) => setNewFundraiser({ ...newFundraiser, goalAmount: parseFloat(e.target.value) })}
+                    value={isNaN(newFundraiser.goalAmount) ? '' : newFundraiser.goalAmount}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setNewFundraiser({ ...newFundraiser, goalAmount: isNaN(val) ? 0 : val });
+                    }}
                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                   />
                 </div>

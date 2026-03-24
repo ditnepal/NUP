@@ -56,6 +56,7 @@ export class FinanceService {
     paymentMethod: string;
     referenceId: string;
     recordedById?: string;
+    isManual?: boolean;
   }) {
     // 1. Get or create donor profile
     const donor = await prisma.donorProfile.upsert({
@@ -77,15 +78,19 @@ export class FinanceService {
       },
     });
 
-    // 2. Create transaction (Server-authoritative verification would happen here if integrated with a real gateway)
-    const isPublicDonation = !data.recordedById;
+    // 2. Create transaction
+    // If it's a manual payment or a public donation, it starts as PENDING
+    // For online payment methods (Khalti, eSewa), it MUST start as PENDING until verified
+    const isOnlinePayment = ['KHALTI', 'ESEWA'].includes(data.paymentMethod);
+    const isPending = data.isManual || isOnlinePayment || !data.recordedById;
+    
     const transaction = await prisma.transaction.create({
       data: {
         type: 'INCOME',
         category: 'DONATION',
         amount: data.amount,
         description: `Donation from ${donor.fullName}${data.campaignId ? ' for campaign ' + data.campaignId : ''}`,
-        status: isPublicDonation ? 'PENDING' : 'COMPLETED',
+        status: isPending ? 'PENDING' : 'COMPLETED',
         paymentMethod: data.paymentMethod,
         referenceId: data.referenceId,
         recordedById: data.recordedById,
@@ -99,14 +104,14 @@ export class FinanceService {
         campaignId: data.campaignId,
         transactionId: transaction.id,
         amount: data.amount,
-        status: isPublicDonation ? 'PENDING' : 'VERIFIED',
+        status: isPending ? 'PENDING' : 'VERIFIED',
         paymentMethod: data.paymentMethod,
         receiptUrl: `/api/v1/finance/receipts/${transaction.id}`,
       },
     });
 
     // 4. Update donor profile stats (Only if verified/completed)
-    if (!isPublicDonation) {
+    if (!isPending) {
       await prisma.donorProfile.update({
         where: { id: donor.id },
         data: {
@@ -131,10 +136,48 @@ export class FinanceService {
       userId: data.donorInfo.userId,
       entityType: 'Donation',
       entityId: donation.id,
-      details: { amount: data.amount, transactionId: transaction.id },
+      details: { amount: data.amount, transactionId: transaction.id, status: transaction.status },
     });
 
     return donation;
+  }
+
+  /**
+   * Initiate a manual payment for Membership or Renewals
+   * Creates a pending transaction record for later verification
+   */
+  async initiateManualPayment(data: {
+    module: 'MEMBERSHIP' | 'RENEWALS';
+    amount: number;
+    paymentMethod: string;
+    description: string;
+    memberId?: string;
+    renewalRequestId?: string;
+    recordedById?: string;
+  }) {
+    const transaction = await prisma.transaction.create({
+      data: {
+        type: 'INCOME',
+        category: data.module === 'MEMBERSHIP' ? 'MEMBERSHIP_FEE' : 'RENEWAL_FEE',
+        amount: data.amount,
+        description: data.description,
+        status: 'PENDING',
+        paymentMethod: data.paymentMethod,
+        memberId: data.memberId,
+        renewalRequestId: data.renewalRequestId,
+        recordedById: data.recordedById,
+      },
+    });
+
+    await auditService.log({
+      action: 'PAYMENT_INITIATED',
+      userId: data.recordedById,
+      entityType: 'Transaction',
+      entityId: transaction.id,
+      details: { module: data.module, amount: data.amount, method: data.paymentMethod },
+    });
+
+    return transaction;
   }
 
   async processRefund(donationId: string, reason: string, recordedById: string) {
@@ -357,6 +400,252 @@ export class FinanceService {
       entityType: 'PaymentIntegration',
       entityId: id,
     });
+    return { success: true };
+  }
+
+  async initiatePayment(data: {
+    amount: number;
+    paymentMethod: string;
+    purchaseOrderId: string;
+    purchaseOrderName: string;
+    customerInfo: { fullName: string; email: string; phone?: string };
+    returnUrl: string;
+  }) {
+    const integration = await prisma.paymentIntegration.findFirst({
+      where: { provider: data.paymentMethod, enabled: true },
+    });
+
+    if (!integration) {
+      throw new Error(`Payment provider ${data.paymentMethod} not found or disabled`);
+    }
+
+    const isTest = integration.mode === 'TEST';
+    const amountInPaisa = Math.round(data.amount * 100);
+    const finalReturnUrl = data.returnUrl.includes('?') 
+      ? `${data.returnUrl}&purchase_order_id=${data.purchaseOrderId}`
+      : `${data.returnUrl}?purchase_order_id=${data.purchaseOrderId}`;
+
+    if (data.paymentMethod === 'KHALTI') {
+      const secretKey = process.env[integration.secretRef || 'KHALTI_SECRET_KEY'] || integration.secretRef;
+      if (!secretKey) {
+        throw new Error('Khalti secret key not configured in environment or integration settings');
+      }
+
+      const endpoint = isTest 
+        ? 'https://a.khalti.com/api/v2/epayment/initiate/' 
+        : 'https://khalti.com/api/v2/epayment/initiate/';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Key ${secretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          return_url: finalReturnUrl,
+          website_url: finalReturnUrl.split('/')[0] + '//' + finalReturnUrl.split('/')[2],
+          amount: amountInPaisa,
+          purchase_order_id: data.purchaseOrderId,
+          purchase_order_name: data.purchaseOrderName,
+          customer_info: {
+            name: data.customerInfo.fullName,
+            email: data.customerInfo.email,
+            phone: data.customerInfo.phone || '9800000000',
+          },
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(`Khalti initiation failed: ${JSON.stringify(result)}`);
+      }
+
+      return {
+        type: 'REDIRECT',
+        url: result.payment_url,
+        pidx: result.pidx,
+      };
+    }
+
+    if (data.paymentMethod === 'ESEWA') {
+      let secretKey = process.env[integration.secretRef || 'ESEWA_SECRET_KEY'] || integration.secretRef;
+      
+      // Use standard eSewa test secret key if in TEST mode and no valid key is provided
+      if (isTest && (!secretKey || secretKey === 'ESEWA_SECRET_KEY_TEST')) {
+        secretKey = '8gBm/:&EnhH.1/q';
+      }
+
+      if (!secretKey) {
+        throw new Error('eSewa secret key not configured in environment or integration settings');
+      }
+
+      const productCode = isTest ? 'EPAYTEST' : (integration.publicKey || 'ESEWA_PRODUCT_CODE');
+      const endpoint = isTest
+        ? 'https://rc-epay.esewa.com.np/api/epay/main/v2/form'
+        : 'https://epay.esewa.com.np/api/epay/main/v2/form';
+
+      // eSewa v2 signature: total_amount,transaction_uuid,product_code
+      // amount, tax_amount, product_service_charge, product_delivery_charge, total_amount, transaction_uuid, product_code
+      const totalAmount = data.amount;
+      const transactionUuid = data.purchaseOrderId;
+      
+      const signatureString = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${productCode}`;
+      
+      const { createHmac } = await import('crypto');
+      const signature = createHmac('sha256', secretKey)
+        .update(signatureString)
+        .digest('base64');
+
+      return {
+        type: 'FORM',
+        url: endpoint,
+        params: {
+          amount: totalAmount,
+          tax_amount: 0,
+          product_service_charge: 0,
+          product_delivery_charge: 0,
+          total_amount: totalAmount,
+          transaction_uuid: transactionUuid,
+          product_code: productCode,
+          success_url: finalReturnUrl,
+          failure_url: finalReturnUrl,
+          signed_field_names: 'total_amount,transaction_uuid,product_code',
+          signature: signature,
+        },
+      };
+    }
+
+    throw new Error(`Provider ${data.paymentMethod} initiation not implemented`);
+  }
+
+  async verifyTransaction(id: string, reviewerId: string) {
+    const transaction = await prisma.transaction.findUnique({
+      where: { id },
+      include: {
+        donation: {
+          include: {
+            donor: true,
+            campaign: true,
+          }
+        },
+        member: true,
+        renewalRequest: true,
+      }
+    });
+
+    if (!transaction) throw new Error('Transaction not found');
+    if (transaction.status !== 'PENDING') throw new Error('Transaction is not pending');
+
+    // 1. Update transaction status
+    await prisma.transaction.update({
+      where: { id },
+      data: {
+        status: 'COMPLETED',
+        updatedAt: new Date(),
+      }
+    });
+
+    // 2. Handle module specific logic
+    if (transaction.donation) {
+      const donation = transaction.donation;
+      await prisma.donation.update({
+        where: { id: donation.id },
+        data: { status: 'VERIFIED' }
+      });
+
+      // Update donor profile stats
+      await prisma.donorProfile.update({
+        where: { id: donation.donorId },
+        data: {
+          totalDonated: { increment: donation.amount },
+          donationCount: { increment: 1 },
+        },
+      });
+
+      // Update campaign stats if applicable
+      if (donation.campaignId) {
+        await prisma.fundraisingCampaign.update({
+          where: { id: donation.campaignId },
+          data: {
+            currentAmount: { increment: donation.amount },
+          },
+        });
+      }
+    }
+
+    if (transaction.renewalRequestId) {
+      await prisma.renewalRequest.update({
+        where: { id: transaction.renewalRequestId },
+        data: {
+          status: 'COMPLETED',
+          reviewedBy: reviewerId,
+          reviewedAt: new Date(),
+        }
+      });
+      
+      // Note: Membership extension logic is typically in MembershipService.
+      // For now, we just mark the request as completed.
+    }
+
+    await auditService.log({
+      action: 'TRANSACTION_VERIFIED',
+      userId: reviewerId,
+      entityType: 'Transaction',
+      entityId: id,
+      details: { amount: transaction.amount, category: transaction.category },
+    });
+
+    return { success: true };
+  }
+
+  async rejectTransaction(id: string, reason: string, reviewerId: string) {
+    const transaction = await prisma.transaction.findUnique({
+      where: { id },
+      include: {
+        donation: true,
+        renewalRequest: true,
+      }
+    });
+
+    if (!transaction) throw new Error('Transaction not found');
+    if (transaction.status !== 'PENDING') throw new Error('Transaction is not pending');
+
+    await prisma.transaction.update({
+      where: { id },
+      data: {
+        status: 'REJECTED',
+        description: `${transaction.description || ''} (REJECTED: ${reason})`,
+        updatedAt: new Date(),
+      }
+    });
+
+    if (transaction.donation) {
+      await prisma.donation.update({
+        where: { id: transaction.donation.id },
+        data: { status: 'REJECTED', notes: `Rejected: ${reason}` }
+      });
+    }
+
+    if (transaction.renewalRequestId) {
+      await prisma.renewalRequest.update({
+        where: { id: transaction.renewalRequestId },
+        data: {
+          status: 'REJECTED',
+          adminNote: reason,
+          reviewedBy: reviewerId,
+          reviewedAt: new Date(),
+        }
+      });
+    }
+
+    await auditService.log({
+      action: 'TRANSACTION_REJECTED',
+      userId: reviewerId,
+      entityType: 'Transaction',
+      entityId: id,
+      details: { amount: transaction.amount, reason },
+    });
+
     return { success: true };
   }
 }

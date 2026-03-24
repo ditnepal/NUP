@@ -64,6 +64,29 @@ export const FinanceAdmin: React.FC = () => {
     }
   };
 
+  const handleVerify = async (id: string) => {
+    if (!confirm('Are you sure you want to verify this payment?')) return;
+    try {
+      await api.post(`/finance/transactions/${id}/verify`, {});
+      alert('Payment verified successfully');
+      fetchData();
+    } catch (error: any) {
+      alert(`Verification failed: ${error.message}`);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    const reason = prompt('Reason for rejection:');
+    if (!reason) return;
+    try {
+      await api.post(`/finance/transactions/${id}/reject`, { reason });
+      alert('Payment rejected');
+      fetchData();
+    } catch (error: any) {
+      alert(`Rejection failed: ${error.message}`);
+    }
+  };
+
   const handleSaveIntegration = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -379,7 +402,12 @@ export const FinanceAdmin: React.FC = () => {
                   <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
                 </div>
               </div>
-              <TransactionTable transactions={filteredTransactions} onRefund={handleRefund} />
+              <TransactionTable 
+                transactions={filteredTransactions} 
+                onRefund={handleRefund} 
+                onVerify={handleVerify}
+                onReject={handleReject}
+              />
             </div>
           )}
 

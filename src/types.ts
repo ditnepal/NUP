@@ -79,10 +79,18 @@ export interface Transaction {
   amount: number;
   date: string;
   description: string;
-  status: 'PENDING' | 'COMPLETED' | 'REFUNDED' | 'FAILED';
+  status: 'PENDING' | 'COMPLETED' | 'REFUNDED' | 'FAILED' | 'REJECTED';
   paymentMethod: string;
   referenceId: string;
-  donationId?: string;
+  donation?: {
+    id: string;
+    donor: { fullName: string };
+    campaign?: { title: string };
+  };
+  memberId?: string;
+  member?: { fullName: string };
+  renewalRequestId?: string;
+  renewalRequest?: { id: string };
 }
 
 export interface PaymentIntegration {

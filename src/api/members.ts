@@ -3,11 +3,56 @@ import prisma from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
 import { z } from 'zod';
 import { membershipService } from '../services/membership.service';
+import { financeService } from '../services/finance.service';
 import { auditService } from '../services/audit.service';
 import { hierarchyService } from '../services/hierarchy.service';
 
 const router = express.Router();
 console.log('Members router loaded');
+
+// @route   GET /api/v1/members/dashboard/metrics
+// @desc    Get membership dashboard metrics
+// @access  Private (Admin/Staff)
+router.get('/dashboard/metrics', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    // Basic member counts
+    const totalPending = await prisma.member.count({ where: { status: 'PENDING' } });
+    const totalActive = await prisma.member.count({ where: { status: 'ACTIVE' } });
+    const totalInactive = await prisma.member.count({ 
+      where: { status: { in: ['REJECTED', 'SUSPENDED', 'TERMINATED'] } } 
+    });
+
+    // Renewal counts
+    const pendingRenewals = await prisma.renewalRequest.count({ where: { status: 'PENDING' } });
+    const processedRenewals = await prisma.renewalRequest.count({ 
+      where: { status: { in: ['APPROVED', 'REJECTED', 'COMPLETED'] } } 
+    });
+
+    // Financial collections (from transactions)
+    const membershipCollections = await prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { category: 'MEMBERSHIP_FEE', type: 'INCOME', status: 'COMPLETED' }
+    });
+
+    const renewalCollections = await prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { category: 'RENEWAL_FEE', type: 'INCOME', status: 'COMPLETED' }
+    });
+
+    res.json({
+      totalPending,
+      totalActive,
+      totalInactive,
+      pendingRenewals,
+      processedRenewals,
+      membershipCollections: membershipCollections._sum.amount || 0,
+      renewalCollections: renewalCollections._sum.amount || 0
+    });
+  } catch (error) {
+    console.error('Error fetching membership metrics:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // @route   GET /api/v1/members/:id
 // @desc    Get member details
@@ -377,6 +422,31 @@ router.post('/me/renewals', authenticate, async (req: AuthRequest, res) => {
       }
     });
 
+    // Initiate manual payment if applicable
+    if (paymentMethod) {
+      const integrations = await financeService.listPublicPaymentIntegrations('RENEWALS');
+      const selectedMethod = integrations.find(i => i.provider === paymentMethod);
+      
+      if (selectedMethod && selectedMethod.instructions) {
+        // For now, use a default renewal fee if not specified, or fetch it
+        // In a real app, we'd look up the fee from MembershipType
+        const membershipType = member.membershipTypeId 
+          ? await prisma.membershipType.findUnique({ where: { id: member.membershipTypeId } })
+          : null;
+        const amount = membershipType?.fee || 0;
+
+        await financeService.initiateManualPayment({
+          module: 'RENEWALS',
+          amount,
+          paymentMethod,
+          description: `Renewal fee for ${member.fullName} (${member.membershipId})`,
+          memberId: member.id,
+          renewalRequestId: renewal.id,
+          recordedById: req.user?.id,
+        });
+      }
+    }
+
     res.status(201).json(renewal);
   } catch (error: any) {
     console.error('Error submitting renewal request:', error);
@@ -421,6 +491,25 @@ router.post('/apply', upload.fields([
     };
 
     const member = await membershipService.apply(applicationData as any);
+
+    // Initiate manual payment if applicable
+    if (validatedData.paymentMethod) {
+      const integrations = await financeService.listPublicPaymentIntegrations('MEMBERSHIP');
+      const selectedMethod = integrations.find(i => i.provider === validatedData.paymentMethod);
+      
+      if (selectedMethod && selectedMethod.instructions) {
+        // In a real app, we'd fetch the fee from the selected MembershipType
+        // For now, we'll use a placeholder or look it up if we had the ID
+        await financeService.initiateManualPayment({
+          module: 'MEMBERSHIP',
+          amount: 0, // Placeholder: Fee should be fetched based on type
+          paymentMethod: validatedData.paymentMethod,
+          description: `Membership application fee for ${validatedData.fullName}`,
+          memberId: member.id,
+        });
+      }
+    }
+
     res.status(201).json({ trackingCode: member.trackingCode });
   } catch (error: any) {
     if (error instanceof z.ZodError) {

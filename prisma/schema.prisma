@@ -269,6 +269,7 @@ model Member {
   user                   User?             @relation(fields: [userId], references: [id])
   renewalRequests        RenewalRequest[]
   volunteer              Volunteer?
+  transactions           Transaction[]
 }
 
 model RenewalRequest {
@@ -283,6 +284,7 @@ model RenewalRequest {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   member     Member    @relation(fields: [memberId], references: [id])
+  transactions Transaction[]
 }
 
 model Volunteer {
@@ -910,6 +912,11 @@ model Transaction {
   updatedAt     DateTime  @updatedAt
   donation      Donation?
   recordedBy    User?     @relation("TransactionRecorder", fields: [recordedById], references: [id])
+  
+  memberId          String?
+  member            Member?         @relation(fields: [memberId], references: [id])
+  renewalRequestId  String?
+  renewalRequest    RenewalRequest? @relation(fields: [renewalRequestId], references: [id])
 }
 
 model PaymentIntegration {

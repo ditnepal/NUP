@@ -1,13 +1,15 @@
 import React from 'react';
 import { Transaction } from '../../types';
-import { RefreshCw, Search } from 'lucide-react';
+import { RefreshCw, Search, CheckCircle, XCircle, User, RefreshCw as RenewalIcon, Heart } from 'lucide-react';
 
 interface TransactionTableProps {
   transactions: Transaction[];
   onRefund: (id: string) => void;
+  onVerify: (id: string) => void;
+  onReject: (id: string) => void;
 }
 
-export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onRefund }) => {
+export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onRefund, onVerify, onReject }) => {
   if (transactions.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-500 shadow-sm">
@@ -37,7 +39,12 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
               <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{new Date(tx.date).toLocaleDateString()}</td>
                 <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">{tx.description}</div>
+                  <div className="flex items-center gap-2">
+                    {tx.category === 'MEMBERSHIP_FEE' && <User size={14} className="text-blue-500" />}
+                    {tx.category === 'RENEWAL_FEE' && <RenewalIcon size={14} className="text-purple-500" />}
+                    {tx.category === 'DONATION' && <Heart size={14} className="text-rose-500" />}
+                    <div className="text-sm font-medium text-gray-900">{tx.description}</div>
+                  </div>
                   <div className="text-[10px] text-gray-400 uppercase font-bold">{tx.paymentMethod} • {tx.referenceId}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -53,17 +60,38 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     tx.status === 'COMPLETED' ? 'bg-green-50 text-green-600' :
                     tx.status === 'PENDING' ? 'bg-blue-50 text-blue-600' :
                     tx.status === 'REFUNDED' ? 'bg-amber-50 text-amber-600' :
+                    tx.status === 'REJECTED' ? 'bg-red-50 text-red-600' :
                     'bg-red-50 text-red-600'
                   }`}>
                     {tx.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right whitespace-nowrap">
-                  {tx.status === 'COMPLETED' && tx.category === 'DONATION' && tx.donationId && (
-                    <button onClick={() => onRefund(tx.donationId!)} className="text-rose-600 hover:text-rose-700 font-bold text-xs flex items-center gap-1 ml-auto">
-                      <RefreshCw size={14} /> Refund
-                    </button>
-                  )}
+                  <div className="flex items-center justify-end gap-2">
+                    {tx.status === 'PENDING' && (
+                      <>
+                        <button 
+                          onClick={() => onVerify(tx.id)} 
+                          className="text-emerald-600 hover:text-emerald-700 font-bold text-xs flex items-center gap-1"
+                          title="Verify Payment"
+                        >
+                          <CheckCircle size={14} /> Verify
+                        </button>
+                        <button 
+                          onClick={() => onReject(tx.id)} 
+                          className="text-rose-600 hover:text-rose-700 font-bold text-xs flex items-center gap-1"
+                          title="Reject Payment"
+                        >
+                          <XCircle size={14} /> Reject
+                        </button>
+                      </>
+                    )}
+                    {tx.status === 'COMPLETED' && tx.category === 'DONATION' && tx.donation?.id && (
+                      <button onClick={() => onRefund(tx.donation.id)} className="text-rose-600 hover:text-rose-700 font-bold text-xs flex items-center gap-1">
+                        <RefreshCw size={14} /> Refund
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

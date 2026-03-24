@@ -128,7 +128,13 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
         memberNote: renewalNote,
         paymentMethod: selectedMethod.provider
       });
-      setRenewalSuccess('Renewal request submitted successfully.');
+      
+      const isManual = selectedMethod.instructions ? true : false;
+      setRenewalSuccess(isManual 
+        ? 'Renewal request initiated. Please follow the payment instructions provided.' 
+        : 'Renewal request submitted successfully.'
+      );
+      
       setRenewalNote('');
       setSelectedMethod(null);
       setIsRenewing(false);

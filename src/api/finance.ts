@@ -65,12 +65,48 @@ router.post('/campaigns', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OF
   }
 });
 
+// @route   POST /api/v1/finance/donations/initiate
+// @desc    Initiate a donation payment with a provider
+// @access  Public
+router.post('/donations/initiate', async (req, res) => {
+  try {
+    const { amount, paymentMethod, campaignId, fullName, email, phone, returnUrl } = req.body;
+    
+    if (!amount || !paymentMethod || !fullName || !email || !returnUrl) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const purchaseOrderId = `DON_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    const purchaseOrderName = campaignId ? `Donation for Campaign ${campaignId}` : 'General Donation';
+
+    const result = await financeService.initiatePayment({
+      amount,
+      paymentMethod,
+      purchaseOrderId,
+      purchaseOrderName,
+      customerInfo: { fullName, email, phone },
+      returnUrl,
+    });
+
+    res.json({ ...result, purchaseOrderId });
+  } catch (error: any) {
+    console.error('Payment initiation error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // @route   POST /api/v1/finance/donations
 // @desc    Process a donation
 // @access  Public/Private
 router.post('/donations', async (req: AuthRequest, res) => {
   try {
     const data = donationSchema.parse(req.body);
+    
+    // Check if this is a manual payment method to set isManual flag
+    const integrations = await financeService.listPublicPaymentIntegrations('FUNDRAISER');
+    const selectedMethod = integrations.find(i => i.provider === data.paymentMethod);
+    const isManual = selectedMethod?.instructions ? true : false;
+
     const donation = await financeService.processDonation({
       donorInfo: {
         fullName: data.fullName,
@@ -85,6 +121,7 @@ router.post('/donations', async (req: AuthRequest, res) => {
       paymentMethod: data.paymentMethod,
       referenceId: data.referenceId,
       recordedById: req.user?.id,
+      isManual,
     });
     res.status(201).json(donation);
   } catch (error: any) {
@@ -127,12 +164,40 @@ router.get('/transactions', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_
       orderBy: { date: 'desc' },
       include: {
         donation: { include: { donor: true, campaign: true } },
+        member: true,
+        renewalRequest: true,
         recordedBy: true,
       },
     });
     res.json(transactions);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   POST /api/v1/finance/transactions/:id/verify
+// @desc    Verify a pending transaction
+// @access  Private (Admin/Staff)
+router.post('/transactions/:id/verify', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+  try {
+    const result = await financeService.verifyTransaction(req.params.id, req.user?.id!);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/finance/transactions/:id/reject
+// @desc    Reject a pending transaction
+// @access  Private (Admin/Staff)
+router.post('/transactions/:id/reject', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason) return res.status(400).json({ error: 'Reason for rejection is required' });
+    const result = await financeService.rejectTransaction(req.params.id, reason, req.user?.id!);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 });
 

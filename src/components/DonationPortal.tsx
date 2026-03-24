@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Heart, TrendingUp, Users, CheckCircle, Shield, CreditCard, Smartphone, Landmark, ArrowRight, Star } from 'lucide-react';
+import { Heart, TrendingUp, Users, CheckCircle, Shield, CreditCard, Smartphone, Landmark, ArrowRight, Star, Info } from 'lucide-react';
 import { FundraisingCampaign } from '../types';
 import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 
@@ -34,39 +34,131 @@ export const DonationPortal: React.FC = () => {
     }
   };
 
+  const [donationResult, setDonationResult] = useState<any | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment_status') === 'returned') {
+      const purchaseOrderId = params.get('purchase_order_id');
+      const amount = params.get('amount');
+      const method = params.get('method');
+      
+      if (purchaseOrderId && amount && method) {
+        // We returned from a payment provider. 
+        // We need to create the pending donation record in our DB if it doesn't exist.
+        // Actually, it's better to create it BEFORE redirecting, but Khalti/eSewa might fail.
+        // For now, let's just show the success screen.
+        setDonationResult({ status: 'PENDING' });
+        const parsedAmount = parseFloat(amount);
+        if (!isNaN(parsedAmount)) {
+          setAmount(parsedAmount);
+        }
+        setStep('success');
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   const handleDonate = async () => {
     if (!selectedMethod) {
       alert('Please select a payment method.');
       return;
     }
+
+    setIsProcessing(true);
     try {
+      // 1. If it's a manual method (has instructions), use the old flow
+      if (selectedMethod.instructions) {
+        const result = await api.post('/finance/donations', {
+          ...donorInfo,
+          amount,
+          campaignId: selectedCampaign?.id,
+          paymentMethod: selectedMethod.provider,
+          referenceId: 'MANUAL_' + Math.random().toString(36).substr(2, 9),
+        });
+        setDonationResult(result);
+        setStep('success');
+        return;
+      }
+
+      // 2. For Khalti/eSewa, initiate payment
+      const returnUrl = `${window.location.origin}${window.location.pathname}?payment_status=returned&amount=${amount}&method=${selectedMethod.provider}`;
+      
+      const initiation = await api.post('/finance/donations/initiate', {
+        ...donorInfo,
+        amount,
+        campaignId: selectedCampaign?.id,
+        paymentMethod: selectedMethod.provider,
+        returnUrl,
+      });
+
+      // 3. Create the pending donation record in our DB BEFORE redirecting
+      // This ensures we have a record of the attempt
       await api.post('/finance/donations', {
         ...donorInfo,
         amount,
         campaignId: selectedCampaign?.id,
         paymentMethod: selectedMethod.provider,
-        referenceId: 'MOCK_' + Math.random().toString(36).substr(2, 9),
+        referenceId: initiation.purchaseOrderId, // Use the same ID
       });
-      setStep('success');
+
+      if (initiation.type === 'REDIRECT') {
+        window.location.href = initiation.url;
+      } else if (initiation.type === 'FORM') {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = initiation.url;
+
+        Object.entries(initiation.params).forEach(([key, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = String(value);
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+      }
     } catch (error: any) {
-      alert(`Donation failed: ${error.message}`);
+      alert(`Payment initiation failed: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   if (step === 'success') {
+    const isPending = donationResult?.status === 'PENDING';
     return (
       <div className="max-w-2xl mx-auto py-20 text-center">
-        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8">
-          <CheckCircle size={48} />
+        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-8 ${
+          isPending ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'
+        }`}>
+          {isPending ? <Info size={48} /> : <CheckCircle size={48} />}
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">Thank You for Your Support!</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+          {isPending ? 'Donation Initiated' : 'Thank You for Your Support!'}
+        </h1>
         <p className="text-xl text-gray-500 mb-12 leading-relaxed">
-          Your contribution of NPR {amount.toLocaleString()} has been received. 
-          A receipt has been sent to your email.
+          {isPending 
+            ? `Your donation of NPR ${amount.toLocaleString()} has been initiated. Please follow the payment instructions provided. Our finance team will verify your payment soon.`
+            : `Your contribution of NPR ${amount.toLocaleString()} has been received. A receipt has been sent to your email.`
+          }
         </p>
         <button 
-          onClick={() => { setStep('browse'); setDonorInfo({ fullName: '', email: '', phone: '', isAnonymous: false }); }}
-          className="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200"
+          onClick={() => { 
+            setStep('browse'); 
+            setDonorInfo({ fullName: '', email: '', phone: '', isAnonymous: false }); 
+            setDonationResult(null);
+          }}
+          className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-xl ${
+            isPending 
+              ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-amber-200' 
+              : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'
+          }`}
         >
           Back to Fundraisers
         </button>
@@ -116,8 +208,11 @@ export const DonationPortal: React.FC = () => {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">NPR</span>
                 <input 
                   type="number" 
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
+                  value={isNaN(amount) ? '' : amount}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setAmount(isNaN(val) ? 0 : val);
+                  }}
                   className="w-full pl-16 pr-4 py-4 rounded-2xl border-2 border-gray-100 focus:border-emerald-500 outline-none font-bold text-lg"
                   placeholder="Other Amount"
                 />
@@ -195,10 +290,15 @@ export const DonationPortal: React.FC = () => {
                   </div>
                   <button 
                     onClick={handleDonate}
-                    disabled={!selectedMethod}
+                    disabled={!selectedMethod || isProcessing}
                     className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Complete Donation <Heart size={20} />
+                    {isProcessing ? 'Processing...' : (
+                      <>
+                        {selectedMethod?.instructions ? 'Complete Donation' : 'Proceed to Payment'} 
+                        <Heart size={20} />
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -257,13 +357,13 @@ export const DonationPortal: React.FC = () => {
               
               <div className="mb-10 mt-auto">
                 <div className="flex justify-between text-sm font-bold mb-3">
-                  <span className="text-gray-900">{Math.round((campaign.currentAmount / campaign.goalAmount) * 100)}% Raised</span>
+                  <span className="text-gray-900">{campaign.goalAmount > 0 ? Math.round((campaign.currentAmount / campaign.goalAmount) * 100) : 0}% Raised</span>
                   <span className="text-gray-400">Goal: NPR {campaign.goalAmount.toLocaleString()}</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-emerald-500 transition-all duration-500" 
-                    style={{ width: `${Math.min((campaign.currentAmount / campaign.goalAmount) * 100, 100)}%` }}
+                    style={{ width: `${campaign.goalAmount > 0 ? Math.min((campaign.currentAmount / campaign.goalAmount) * 100, 100) : 0}%` }}
                   />
                 </div>
               </div>

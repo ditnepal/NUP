@@ -17,6 +17,8 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
   const [photo, setPhoto] = useState<File | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<any | null>(null);
 
+  const [isPendingPayment, setIsPendingPayment] = useState(false);
+
   const onSubmit = async (data: any) => {
     if (!selectedMethod) {
       alert('Please select a payment method.');
@@ -33,6 +35,7 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
 
       const result = await api.postFormData('/members/apply', formData);
       setSuccess(result.trackingCode);
+      setIsPendingPayment(selectedMethod.instructions ? true : false);
     } catch (err: any) {
       console.error('Submission error:', err);
       alert(err.message || 'An error occurred during submission');
@@ -44,11 +47,24 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
   if (success) {
     return (
       <div className="p-8 bg-emerald-50 border-2 border-emerald-100 rounded-3xl text-center animate-in fade-in zoom-in duration-300">
-        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${
+          isPendingPayment ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'
+        }`}>
+          {isPendingPayment ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          )}
         </div>
-        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Application Submitted!</h2>
-        <p className="text-slate-600 mb-8">Your application has been received and is currently being processed.</p>
+        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">
+          {isPendingPayment ? 'Application Initiated' : 'Application Submitted!'}
+        </h2>
+        <p className="text-slate-600 mb-8">
+          {isPendingPayment 
+            ? "Your application has been initiated. Please follow the payment instructions provided. Once your payment is verified, your application will be processed."
+            : "Your application has been received and is currently being processed."
+          }
+        </p>
         
         <div className="bg-white p-6 rounded-2xl border border-emerald-100 mb-8 shadow-sm">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Your Tracking Code</p>

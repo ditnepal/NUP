@@ -15,6 +15,8 @@ const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<any | null>(null);
 
+  const [isPendingPayment, setIsPendingPayment] = useState(false);
+
   const onSubmit = async (data: any) => {
     if (!selectedMethod) {
       alert('Please select a payment method.');
@@ -29,6 +31,7 @@ const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code
 
       const result = await api.postFormData('/members/apply', formData);
       setSuccess(result.trackingCode);
+      setIsPendingPayment(selectedMethod.instructions ? true : false);
     } catch (err: any) {
       console.error('Submission error:', err);
       alert(err.message || 'An error occurred during submission');
@@ -37,11 +40,21 @@ const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code
 
   if (success) {
     return (
-      <div className="p-8 bg-emerald-50 border-2 border-emerald-100 rounded-3xl text-center">
-        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Assisted Application Submitted!</h2>
-        <p className="text-slate-600 mb-8">Tracking Code: <span className="font-mono font-bold text-emerald-600">{success}</span></p>
+      <div className={`p-8 border-2 rounded-3xl text-center ${
+        isPendingPayment ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'
+      }`}>
+        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">
+          {isPendingPayment ? 'Assisted Application Initiated' : 'Assisted Application Submitted!'}
+        </h2>
+        <p className="text-slate-600 mb-8">
+          {isPendingPayment 
+            ? "Application initiated. Please follow the payment instructions. Tracking Code: " 
+            : "Application submitted successfully. Tracking Code: "
+          }
+          <span className={`font-mono font-bold ${isPendingPayment ? 'text-amber-600' : 'text-emerald-600'}`}>{success}</span>
+        </p>
         <div className="flex flex-col gap-3">
-          <button onClick={() => onSuccess?.(success, getValues('mobile'))} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold">Check Status Now</button>
+          <button onClick={() => onSuccess?.(success, getValues('mobile'))} className={`w-full py-4 text-white rounded-2xl font-bold ${isPendingPayment ? 'bg-amber-600' : 'bg-emerald-600'}`}>Check Status Now</button>
           <button onClick={onBack} className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold">Back to Portal</button>
         </div>
       </div>
