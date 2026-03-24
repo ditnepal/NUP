@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }
-    res.status(500).json({ error: 'Server error', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

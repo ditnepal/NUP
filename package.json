@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "prisma generate && tsx server.ts",
-    "start": "tsx start.ts",
+    "predev": "prisma generate",
+    "dev": "tsx server.ts",
+    "start": "tsx server.ts",
     "build": "prisma generate && vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Heart, TrendingUp, Users, CheckCircle, Shield, CreditCard, Smartphone, Landmark, ArrowRight, Star } from 'lucide-react';
+import { FundraisingCampaign } from '../types';
 
 export const DonationPortal: React.FC = () => {
-  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<FundraisingCampaign[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<FundraisingCampaign | null>(null);
   const [amount, setAmount] = useState<number>(1000);
   const [donorInfo, setDonorInfo] = useState({
     fullName: '',
@@ -25,7 +26,7 @@ export const DonationPortal: React.FC = () => {
       const data = await api.get('/finance/campaigns');
       setCampaigns(data);
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
+      console.error('Error fetching fundraisers:', error);
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export const DonationPortal: React.FC = () => {
           onClick={() => { setStep('browse'); setDonorInfo({ fullName: '', email: '', phone: '', isAnonymous: false }); }}
           className="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200"
         >
-          Back to Campaigns
+          Back to Fundraisers
         </button>
       </div>
     );
@@ -74,7 +75,7 @@ export const DonationPortal: React.FC = () => {
           onClick={() => setStep('browse')}
           className="mb-8 text-emerald-600 hover:underline flex items-center gap-2 font-bold"
         >
-          ← Back to Campaigns
+          ← Back to Fundraisers
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -264,7 +265,7 @@ export const DonationPortal: React.FC = () => {
                 <TrendingUp size={32} />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">{campaign.title}</h3>
-              <p className="text-sm text-blue-600 font-bold uppercase tracking-widest mb-6">Active Campaign</p>
+              <p className="text-sm text-blue-600 font-bold uppercase tracking-widest mb-6">Active Fundraiser</p>
               <p className="text-gray-500 mb-8 leading-relaxed line-clamp-3">
                 {campaign.description}
               </p>
@@ -286,7 +287,7 @@ export const DonationPortal: React.FC = () => {
                 onClick={() => { setSelectedCampaign(campaign); setStep('form'); }}
                 className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-100"
               >
-                Support Campaign <ArrowRight size={20} />
+                Support Fundraiser <ArrowRight size={20} />
               </button>
             </div>
           ))}

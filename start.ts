@@ -1,7 +1,9 @@
 import { execSync } from 'child_process';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const isProd = process.env.NODE_ENV === 'production';
-const dbUrl = process.env.DATABASE_URL || 'file:/prisma/dev.db';
+const dbUrl = process.env.DATABASE_URL || 'file:/app/applet/prisma/dev.db';
 process.env.DATABASE_URL = dbUrl;
 
 console.log(`[START] Using DATABASE_URL: ${dbUrl}`);

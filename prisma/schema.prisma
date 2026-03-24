@@ -817,18 +817,22 @@ model EventAgenda {
 }
 
 model FundraisingCampaign {
-  id            String              @id @default(uuid())
-  title         String
-  description   String?
-  goalAmount    Float
-  currentAmount Float               @default(0)
-  startDate     DateTime
-  endDate       DateTime?
-  status        String              @default("ACTIVE")
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  donations     Donation[]
-  updates       FundraisingUpdate[]
+  id                String              @id @default(uuid())
+  title             String
+  description       String?
+  fundraiserType    String              @default("PARTY_FUND")
+  beneficiaryType   String              @default("PARTY")
+  candidateId       String?
+  candidateSnapshot Json?
+  goalAmount        Float
+  currentAmount     Float               @default(0)
+  startDate         DateTime
+  endDate           DateTime?
+  status            String              @default("ACTIVE")
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  donations         Donation[]
+  updates           FundraisingUpdate[]
 }
 
 model FundraisingUpdate {
@@ -903,6 +907,23 @@ model Transaction {
   updatedAt     DateTime  @updatedAt
   donation      Donation?
   recordedBy    User?     @relation("TransactionRecorder", fields: [recordedById], references: [id])
+}
+
+model PaymentIntegration {
+  id               String   @id @default(uuid())
+  provider         String   // e.g., KHALTI, ESEWA, STRIPE
+  displayName      String
+  region           String   // NEPAL, INDIA, INTERNATIONAL
+  enabled          Boolean  @default(true)
+  mode             String   @default("TEST") // TEST, LIVE
+  sortOrder        Int      @default(0)
+  supportedModules String   // JSON string or comma-separated: MEMBERSHIP,RENEWALS,FUNDRAISER
+  instructions     String?
+  publicKey        String?
+  secretRef        String?  // Reference to env var or safe placeholder
+  metadata         String?  // JSON string for extra config
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model AudienceSegment {

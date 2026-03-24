@@ -16,6 +16,7 @@ import { TrainingAdmin } from './components/TrainingAdmin';
 import { NotificationCenter } from './components/NotificationCenter';
 import { AppEventsAdmin } from './components/AppEventsAdmin';
 import { FinanceAdmin } from './components/FinanceAdmin';
+import { FundraiserAdmin } from './components/FundraiserAdmin';
 import { DonationPortal } from './components/DonationPortal';
 import { ElectionAdmin } from './components/ElectionAdmin';
 import { CandidateDashboard } from './components/CandidateDashboard';
@@ -34,7 +35,7 @@ import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -221,6 +222,7 @@ export default function App() {
     { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph, roles: ['ADMIN'] },
     { id: 'membership', label: 'Membership', icon: UserPlus, roles: ['ADMIN', 'STAFF'] },
     { id: 'renewals', label: 'Renewals', icon: Clock, roles: ['ADMIN', 'STAFF'] },
+    { id: 'fundraiser', label: 'Fundraiser', icon: Heart, roles: ['ADMIN', 'STAFF', 'FINANCE_OFFICER'] },
     { id: 'volunteers', label: 'Volunteers', icon: Heart, roles: ['ADMIN', 'STAFF'] },
     { id: 'cms', label: 'CMS', icon: Layout, roles: ['ADMIN', 'STAFF'] },
     { id: 'documents', label: 'Documents', icon: FileText, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
@@ -397,6 +399,7 @@ export default function App() {
         )}
         {currentView === 'events' && <AppEventsAdmin />}
         {currentView === 'finance' && <FinanceAdmin />}
+        {currentView === 'fundraiser' && <FundraiserAdmin />}
         {currentView === 'election' && <ElectionAdmin key="election-admin" />}
         {currentView === 'candidate-dashboard' && (
           (user.role === 'ADMIN' || user.role === 'STAFF') 

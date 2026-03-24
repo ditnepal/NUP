@@ -7,7 +7,7 @@ const router = express.Router();
 
 const transactionSchema = z.object({
   type: z.enum(['INCOME', 'EXPENSE']),
-  category: z.enum(['DONATION', 'MEMBERSHIP_FEE', 'EVENT_TICKET', 'MERCHANDISE', 'CAMPAIGN_EXPENSE', 'OFFICE_EXPENSE', 'SALARY', 'OTHER']),
+  category: z.enum(['DONATION', 'MEMBERSHIP_FEE', 'RENEWAL_FEE', 'EVENT_TICKET', 'MERCHANDISE', 'CAMPAIGN_EXPENSE', 'OFFICE_EXPENSE', 'SALARY', 'OTHER']),
   amount: z.number().positive(),
   description: z.string(),
   date: z.string().datetime().optional(),

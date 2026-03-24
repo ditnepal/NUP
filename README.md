@@ -32,3 +32,14 @@ The app is designed to run on Cloud Run or any Node.js environment.
 
 ### Environment Variables
 See `.env.example` for required variables.
+
+### Safety Lock (Baseline Stabilization)
+To prevent database path and environment mistakes, the following baseline is locked:
+- **Canonical DB Path**: `/app/applet/prisma/dev.db` (Absolute path required).
+- **Canonical Env Source**: Root `.env` file.
+- **Startup Flow**: `npm run dev` executes `tsx start.ts`, which ensures Prisma client generation and environment stabilization before launching `server.ts`.
+- **Critical Rules**:
+    - NEVER use relative paths for `DATABASE_URL` in production or shared environments.
+    - NEVER allow nested `prisma/prisma/dev.db` directories.
+    - NEVER remove `dotenv.config()` from the entry points.
+    - Database re-seeding is manual and should not be automated on startup.

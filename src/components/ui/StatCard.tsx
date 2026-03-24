@@ -11,18 +11,18 @@ interface StatCardProps {
 }
 
 export const StatCard: React.FC<StatCardProps> = ({ label, value, icon: Icon, color, bg, trend }) => (
-  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
+  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all group">
     <div className="flex justify-between items-start mb-4">
-      <div className={`p-2 ${bg} ${color} rounded-xl`}>
+      <div className={`p-2.5 ${bg} ${color} rounded-xl group-hover:scale-110 transition-transform`}>
         <Icon size={24} />
       </div>
       {trend && (
-        <span className={`${trend.positive ? 'text-green-600' : 'text-red-600'} text-xs font-bold flex items-center gap-1`}>
-          {trend.value}
+        <span className={`${trend.positive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'} px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider`}>
+          {trend.positive ? '↑' : '↓'} {trend.value}
         </span>
       )}
     </div>
-    <p className="text-sm font-medium text-gray-500">{label}</p>
-    <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{label}</p>
+    <p className="text-3xl font-bold text-gray-900 mt-1 tracking-tight">{value}</p>
   </div>
 );

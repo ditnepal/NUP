@@ -178,6 +178,13 @@ async function startServer() {
 
 if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   console.log('[SERVER] Starting server initialization...');
+  try {
+    console.log('[SERVER] Running prisma generate...');
+    const { execSync } = await import('child_process');
+    execSync('npx prisma generate', { stdio: 'inherit' });
+  } catch (err) {
+    console.error('[SERVER] Failed to run prisma generate:', err);
+  }
   startServer().catch(err => {
     console.error('[SERVER] Failed to start server:', err);
   });

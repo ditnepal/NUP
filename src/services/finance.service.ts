@@ -5,19 +5,45 @@ export class FinanceService {
   async createFundraisingCampaign(data: {
     title: string;
     description?: string;
+    fundraiserType?: string;
+    beneficiaryType?: string;
+    candidateId?: string;
     goalAmount: number;
     startDate: Date;
     endDate?: Date;
   }) {
+    let candidateSnapshot = null;
+    if (data.candidateId) {
+      const candidate = await prisma.candidate.findUnique({
+        where: { id: data.candidateId },
+        include: { constituency: true, electionCycle: true }
+      });
+      if (candidate) {
+        candidateSnapshot = {
+          id: candidate.id,
+          name: candidate.name,
+          position: candidate.position,
+          electionType: candidate.electionType,
+          electionYear: candidate.electionYear,
+          constituency: candidate.constituency?.name,
+          province: candidate.province,
+          district: candidate.district,
+        };
+      }
+    }
+
     const campaign = await prisma.fundraisingCampaign.create({
-      data,
+      data: {
+        ...data,
+        candidateSnapshot: candidateSnapshot as any,
+      },
     });
 
     await auditService.log({
       action: 'FUNDRAISING_CAMPAIGN_CREATED',
       entityType: 'FundraisingCampaign',
       entityId: campaign.id,
-      details: { title: campaign.title, goal: campaign.goalAmount },
+      details: { title: campaign.title, goal: campaign.goalAmount, type: campaign.fundraiserType },
     });
 
     return campaign;
@@ -170,7 +196,7 @@ export class FinanceService {
     return { success: true };
   }
 
-  async getFundraisingAnalytics() {
+  async getFinanceAnalytics() {
     const totalRaised = await prisma.donation.aggregate({
       where: { status: 'VERIFIED' },
       _sum: { amount: true },
@@ -190,12 +216,116 @@ export class FinanceService {
       },
     });
 
+    // Consolidated Metrics
+    const membershipCollections = await prisma.transaction.aggregate({
+      where: { category: 'MEMBERSHIP_FEE', type: 'INCOME', status: 'COMPLETED' },
+      _sum: { amount: true },
+    });
+
+    const renewalCollections = await prisma.transaction.aggregate({
+      where: { category: 'RENEWAL_FEE', type: 'INCOME', status: 'COMPLETED' },
+      _sum: { amount: true },
+    });
+
+    const fundraiserCollections = totalRaised._sum.amount || 0;
+    const totalCollections = (membershipCollections._sum.amount || 0) + 
+                             (renewalCollections._sum.amount || 0) + 
+                             fundraiserCollections;
+
+    const refundStats = await prisma.transaction.aggregate({
+      where: { category: 'REFUND', type: 'EXPENSE', status: 'COMPLETED' },
+      _sum: { amount: true },
+      _count: { id: true },
+    });
+
+    const recentTransactionCount = await prisma.transaction.count({
+      where: {
+        date: {
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+        }
+      }
+    });
+
     return {
-      totalRaised: totalRaised._sum.amount || 0,
+      totalRaised: fundraiserCollections,
       donorCount,
       recentDonations,
       campaigns,
+      membershipCollections: membershipCollections._sum.amount || 0,
+      renewalCollections: renewalCollections._sum.amount || 0,
+      fundraiserCollections,
+      totalCollections,
+      refundTotal: refundStats._sum.amount || 0,
+      refundCount: refundStats._count.id || 0,
+      recentTransactionCount,
     };
+  }
+
+  async listPaymentIntegrations() {
+    const integrations = await prisma.paymentIntegration.findMany({
+      orderBy: { sortOrder: 'asc' },
+    });
+    return integrations.map(i => ({
+      ...i,
+      supportedModules: i.supportedModules.split(',').filter(Boolean),
+    }));
+  }
+
+  async createPaymentIntegration(data: any) {
+    const integration = await prisma.paymentIntegration.create({
+      data: {
+        ...data,
+        supportedModules: Array.isArray(data.supportedModules) 
+          ? data.supportedModules.join(',') 
+          : data.supportedModules,
+      },
+    });
+
+    await auditService.log({
+      action: 'PAYMENT_INTEGRATION_CREATED',
+      entityType: 'PaymentIntegration',
+      entityId: integration.id,
+      details: { provider: integration.provider, displayName: integration.displayName },
+    });
+
+    return {
+      ...integration,
+      supportedModules: integration.supportedModules.split(',').filter(Boolean),
+    };
+  }
+
+  async updatePaymentIntegration(id: string, data: any) {
+    const integration = await prisma.paymentIntegration.update({
+      where: { id },
+      data: {
+        ...data,
+        supportedModules: Array.isArray(data.supportedModules) 
+          ? data.supportedModules.join(',') 
+          : data.supportedModules,
+      },
+    });
+
+    await auditService.log({
+      action: 'PAYMENT_INTEGRATION_UPDATED',
+      entityType: 'PaymentIntegration',
+      entityId: integration.id,
+      details: { provider: integration.provider, displayName: integration.displayName },
+    });
+
+    return {
+      ...integration,
+      supportedModules: integration.supportedModules.split(',').filter(Boolean),
+    };
+  }
+
+  async deletePaymentIntegration(id: string) {
+    await prisma.paymentIntegration.delete({ where: { id } });
+    await auditService.log({
+      action: 'PAYMENT_INTEGRATION_DELETED',
+      entityType: 'PaymentIntegration',
+      entityId: id,
+    });
+    return { success: true };
   }
 }
 

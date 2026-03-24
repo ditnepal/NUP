@@ -85,6 +85,23 @@ export interface Transaction {
   donationId?: string;
 }
 
+export interface PaymentIntegration {
+  id: string;
+  provider: string;
+  displayName: string;
+  region: 'NEPAL' | 'INDIA' | 'INTERNATIONAL';
+  enabled: boolean;
+  mode: 'TEST' | 'LIVE';
+  sortOrder: number;
+  supportedModules: string[];
+  instructions?: string;
+  publicKey?: string;
+  secretRef?: string;
+  metadata?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface GrievanceCategory {
   id: string;
   name: string;
@@ -339,15 +356,35 @@ export interface Supporter {
   interactions?: Interaction[];
 }
 
-export interface Campaign {
+export interface FundraisingCampaign {
   id: string;
   title: string;
   description: string;
+  fundraiserType: 'PARTY_FUND' | 'CANDIDATE_FUND' | 'CAUSE_FUND' | 'RELIEF_FUND' | 'PUBLIC_SUPPORT_FUND';
+  beneficiaryType: 'PARTY' | 'CANDIDATE' | 'PUBLIC' | 'COMMUNITY';
+  candidateId?: string;
+  candidateSnapshot?: any;
   goalAmount: number;
   currentAmount: number;
   status: 'ACTIVE' | 'PAUSED' | 'COMPLETED';
   donationsCount: number;
+  _count?: {
+    donations: number;
+  };
   startDate: string;
+  endDate?: string;
+}
+
+export type Fundraiser = FundraisingCampaign;
+
+export interface Campaign {
+  id: string;
+  name: string;
+  description?: string;
+  type?: string;
+  phase?: string;
+  status?: string;
+  startDate?: string;
   endDate?: string;
 }
 
@@ -355,7 +392,14 @@ export interface FinanceAnalytics {
   totalRaised: number;
   donorCount: number;
   recentDonations: any[];
-  campaigns: Campaign[];
+  campaigns: FundraisingCampaign[];
+  membershipCollections: number;
+  renewalCollections: number;
+  fundraiserCollections: number;
+  totalCollections: number;
+  refundTotal: number;
+  refundCount: number;
+  recentTransactionCount: number;
 }
 
 export interface Notice {

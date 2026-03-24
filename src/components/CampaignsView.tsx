@@ -34,8 +34,8 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
 
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter(c => {
-      const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           c.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           (c.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       const matchesStatus = phaseFilter === 'all' || c.status === phaseFilter;
       return matchesSearch && matchesStatus;
     });
@@ -47,12 +47,10 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
     
     try {
       await api.post('/campaigns', {
-        title: formData.get('title') as string,
+        name: formData.get('name') as string,
         description: formData.get('description') as string,
-        status: formData.get('status') as 'ACTIVE' | 'PAUSED' | 'COMPLETED',
-        goalAmount: Number(formData.get('goalAmount')),
-        currentAmount: 0,
-        donationsCount: 0,
+        type: formData.get('type') as string,
+        status: formData.get('status') as string,
         startDate: new Date(formData.get('startDate') as string).toISOString(),
         endDate: formData.get('endDate') ? new Date(formData.get('endDate') as string).toISOString() : null,
       });
@@ -81,7 +79,7 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
             <Activity size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
+            <p className="text-sm font-medium text-slate-500">Active</p>
             <p className="text-2xl font-bold text-slate-800">
               {campaigns.filter(c => c.status === 'ACTIVE').length}
             </p>
@@ -92,9 +90,9 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
             <Calendar size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Paused</p>
+            <p className="text-sm font-medium text-slate-500">Planned</p>
             <p className="text-2xl font-bold text-slate-800">
-              {campaigns.filter(c => c.status === 'PAUSED').length}
+              {campaigns.filter(c => c.status === 'PLANNED').length}
             </p>
           </div>
         </Card>
@@ -151,17 +149,17 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
                   {campaign.status}
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">{campaign.title}</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">{campaign.name}</h3>
               <p className="text-sm text-slate-500 mb-4 line-clamp-2">{campaign.description}</p>
               
               <div className="space-y-2 text-sm text-slate-600">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Raised:</span>
-                  <span className="font-bold">NPR {campaign.currentAmount.toLocaleString()}</span>
+                  <span className="text-slate-500">Type:</span>
+                  <span className="font-bold">{campaign.type}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Goal:</span>
-                  <span className="font-bold">NPR {campaign.goalAmount.toLocaleString()}</span>
+                  <span className="text-slate-500">Phase:</span>
+                  <span className="font-bold">{campaign.phase}</span>
                 </div>
               </div>
             </Card>
@@ -192,8 +190,8 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
               </div>
               <form onSubmit={handleCreateCampaign} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Campaign Title</label>
-                  <input name="title" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                  <label className="text-sm font-semibold text-slate-700">Campaign Name</label>
+                  <input name="name" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-slate-700">Description</label>
@@ -201,16 +199,22 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Status</label>
-                    <select name="status" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
-                      <option value="ACTIVE">Active</option>
-                      <option value="PAUSED">Paused</option>
-                      <option value="COMPLETED">Completed</option>
+                    <label className="text-sm font-semibold text-slate-700">Type</label>
+                    <select name="type" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                      <option value="ELECTION">Election</option>
+                      <option value="MEMBERSHIP_DRIVE">Membership Drive</option>
+                      <option value="AWARENESS">Awareness</option>
+                      <option value="FUNDRAISING">Fundraising (Outreach)</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Goal Amount (NPR)</label>
-                    <input type="number" name="goalAmount" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                    <label className="text-sm font-semibold text-slate-700">Status</label>
+                    <select name="status" required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                      <option value="PLANNED">Planned</option>
+                      <option value="ACTIVE">Active</option>
+                      <option value="COMPLETED">Completed</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-semibold text-slate-700">Start Date</label>
