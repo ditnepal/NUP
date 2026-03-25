@@ -62,11 +62,15 @@ export class CommunicationService {
     const criteria = JSON.parse(campaign.segment.criteria);
     
     // Find users matching criteria
+    const whereClause: any = { isActive: true };
+    if (criteria.roles && Array.isArray(criteria.roles) && criteria.roles.length > 0) {
+      whereClause.role = { in: criteria.roles };
+    } else if (criteria.role) {
+      whereClause.role = criteria.role;
+    }
+
     const users = await prisma.user.findMany({
-      where: {
-        role: criteria.role,
-        isActive: true,
-      },
+      where: whereClause,
     });
 
     // Batching logic
@@ -150,21 +154,21 @@ export class CommunicationService {
   }
 
   /**
-   * Create a public alert (Banner/Notice)
+   * Create a public alert (Notice)
    */
   async createPublicAlert(data: { title: string; content: string; priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' }) {
     const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
     if (!admin) throw new Error('Admin user not found');
 
-    return await prisma.cmsPost.create({
+    return await prisma.notice.create({
       data: {
         title: data.title,
         content: data.content,
-        slug: `alert-${Date.now()}`,
-        type: 'ALERT',
+        audience: 'PUBLIC',
         status: 'PUBLISHED',
+        isPinned: data.priority === 'CRITICAL' || data.priority === 'HIGH',
         authorId: admin.id,
-        publishedAt: new Date(),
+        publishAt: new Date(),
       },
     });
   }

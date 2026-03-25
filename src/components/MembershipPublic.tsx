@@ -4,6 +4,7 @@ import MembershipPublicVideo from './MembershipPublicVideo';
 import MembershipPublicAssisted from './MembershipPublicAssisted';
 import { api } from '../lib/api';
 import { MessageSquare, Megaphone } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MembershipPublicProps {
   onStatusClick?: (trackingCode?: string, mobile?: string) => void;
@@ -21,8 +22,8 @@ const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick }) =>
   const fetchRegistrationSurveysAndPolls = async () => {
     try {
       const [surveysData, pollsData] = await Promise.all([
-        api.get('/v1/public/surveys?placementType=REGISTRATION_PRE_FORM'),
-        api.get('/v1/public/polls?placementType=REGISTRATION_PRE_FORM')
+        api.get('/public/surveys?placementType=REGISTRATION_PRE_FORM'),
+        api.get('/public/polls?placementType=REGISTRATION_PRE_FORM')
       ]);
       setSurveys(surveysData);
       setPolls(pollsData);
@@ -48,7 +49,7 @@ const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick }) =>
                   <div key={survey.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                     <h3 className="font-bold text-slate-800">{survey.title}</h3>
                     <p className="text-sm text-slate-600 mb-3">{survey.description}</p>
-                    <button onClick={() => alert('Please log in or complete registration to participate.')} className="text-sm font-bold text-emerald-600 hover:text-emerald-700">Take Survey →</button>
+                    <button onClick={() => toast.info('Please log in or complete registration to participate.')} className="text-sm font-bold text-emerald-600 hover:text-emerald-700">Take Survey →</button>
                   </div>
                 ))}
                 {polls.map(poll => (
@@ -56,7 +57,7 @@ const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick }) =>
                     <h3 className="font-bold text-slate-800 mb-3">{poll.title}</h3>
                     <div className="grid gap-2">
                       {poll.options?.map((opt: string, idx: number) => (
-                        <button key={idx} onClick={() => alert('Please log in or complete registration to participate.')} className="w-full py-2 px-4 bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-emerald-50 hover:border-emerald-200 transition-all text-left">
+                        <button key={idx} onClick={() => toast.info('Please log in or complete registration to participate.')} className="w-full py-2 px-4 bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-emerald-50 hover:border-emerald-200 transition-all text-left">
                           {opt}
                         </button>
                       ))}

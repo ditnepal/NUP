@@ -9,7 +9,7 @@ export class CmsService extends BaseService {
       where: { status: 'PUBLISHED', language },
       orderBy: [
         { isPinned: 'desc' },
-        { updatedAt: 'desc' }
+        { publishedAt: 'desc' }
       ]
     });
   }

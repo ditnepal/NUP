@@ -5,21 +5,27 @@ import { FileText, Video, User } from 'lucide-react';
 interface MemberDetailModalProps {
   member: Member;
   onClose: () => void;
-  onVerify: (id: string) => void;
-  onApprove: (id: string) => void;
+  onVerify: (id: string, note?: string) => void;
+  onApprove: (id: string, note?: string) => void;
   onReject: (id: string, reason?: string) => void;
+  onEscalate?: (id: string, note?: string) => void;
 }
 
-export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, onClose, onVerify, onApprove, onReject }) => {
-  const [rejectReason, setRejectReason] = useState('');
-  const [showRejectInput, setShowRejectInput] = useState(false);
+export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, onClose, onVerify, onApprove, onReject, onEscalate }) => {
+  const [note, setNote] = useState('');
+  const [showNoteInput, setShowNoteInput] = useState<'VERIFY' | 'APPROVE' | 'REJECT' | 'ESCALATE' | null>(null);
 
-  const handleReject = () => {
-    if (!showRejectInput) {
-      setShowRejectInput(true);
+  const handleAction = (action: 'VERIFY' | 'APPROVE' | 'REJECT' | 'ESCALATE') => {
+    if (showNoteInput !== action) {
+      setShowNoteInput(action);
+      setNote('');
       return;
     }
-    onReject(member.id, rejectReason);
+    
+    if (action === 'VERIFY') onVerify(member.id, note);
+    if (action === 'APPROVE') onApprove(member.id, note);
+    if (action === 'REJECT') onReject(member.id, note);
+    if (action === 'ESCALATE' && onEscalate) onEscalate(member.id, note);
     onClose();
   };
 
@@ -32,6 +38,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
             member.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
             member.status === 'VERIFIED' ? 'bg-blue-100 text-blue-700' :
             member.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
+            member.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
             'bg-slate-100 text-slate-700'
           }`}>
             {member.status}
@@ -49,18 +56,51 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
               <p className="font-bold text-slate-800 font-mono">{member.citizenshipNumber || 'N/A'}</p>
             </div>
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Organization Unit</p>
+              <p className="font-bold text-slate-800">{member.orgUnit?.name || 'N/A'} ({member.orgUnit?.level || 'N/A'})</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Contact Information</p>
               <p className="font-bold text-slate-800">{member.email || 'No Email'}</p>
               <p className="text-sm text-slate-600">{member.phone || member.mobile || 'No Phone'}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Application Mode</p>
-              <p className="font-bold text-slate-800">{member.applicationMode}</p>
-            </div>
-            {member.paymentMethod && (
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment Method</p>
-                <p className="font-bold text-slate-800">{member.paymentMethod}</p>
+            
+            {/* Accountability Info */}
+            {(member.verifiedBy || member.approvedBy || member.reviewNote) && (
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-3">
+                <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Review Accountability</h3>
+                
+                {member.verifiedBy && (
+                  <div>
+                    <p className="text-[9px] font-bold text-blue-300 uppercase">Verified By</p>
+                    <p className="text-xs font-bold text-blue-800">{member.verifiedBy.displayName}</p>
+                    {member.verifiedAt && <p className="text-[9px] text-blue-500">{new Date(member.verifiedAt).toLocaleString()}</p>}
+                  </div>
+                )}
+
+                {member.approvedBy && (
+                  <div>
+                    <p className="text-[9px] font-bold text-blue-300 uppercase">Approved By</p>
+                    <p className="text-xs font-bold text-blue-800">{member.approvedBy.displayName}</p>
+                    {member.approvedAt && <p className="text-[9px] text-blue-500">{new Date(member.approvedAt).toLocaleString()}</p>}
+                  </div>
+                )}
+
+                {member.reviewNote && (
+                  <div>
+                    <p className="text-[9px] font-bold text-blue-300 uppercase">Latest Review Note</p>
+                    <p className="text-xs italic text-blue-700">"{member.reviewNote}"</p>
+                  </div>
+                )}
+
+                {member.isEscalated && (
+                  <div className="pt-2 border-t border-blue-100">
+                    <p className="text-[9px] font-bold text-purple-400 uppercase">Escalation Status</p>
+                    <p className="text-xs font-bold text-purple-800">Escalated to Parent Unit</p>
+                    {member.escalatedAt && <p className="text-[9px] text-purple-500">{new Date(member.escalatedAt).toLocaleString()}</p>}
+                    {member.escalationNote && <p className="text-xs italic text-purple-700 mt-1">"{member.escalationNote}"</p>}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -104,22 +144,31 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                   </div>
                 </div>
               )}
-
-              {!member.profilePhotoUrl && !member.identityDocumentUrl && !member.videoUrl && (
-                <p className="text-sm text-slate-400 italic">No documents uploaded.</p>
-              )}
             </div>
           </div>
         </div>
 
-        {showRejectInput && (
-          <div className="mt-8 p-4 bg-rose-50 rounded-xl border border-rose-100">
-            <label className="block text-xs font-bold text-rose-600 uppercase tracking-widest mb-2">Rejection Reason</label>
+        {showNoteInput && (
+          <div className={`mt-8 p-4 rounded-xl border ${
+            showNoteInput === 'REJECT' ? 'bg-rose-50 border-rose-100' : 
+            showNoteInput === 'ESCALATE' ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'
+          }`}>
+            <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ${
+              showNoteInput === 'REJECT' ? 'text-rose-600' : 
+              showNoteInput === 'ESCALATE' ? 'text-purple-600' : 'text-blue-600'
+            }`}>
+              {showNoteInput === 'REJECT' ? 'Rejection Reason' : 
+               showNoteInput === 'ESCALATE' ? 'Escalation Note' : 'Review Note (Optional)'}
+            </label>
             <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              className="w-full p-3 bg-white border border-rose-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-              placeholder="Explain why this application is being rejected..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className={`w-full p-3 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 ${
+                showNoteInput === 'REJECT' ? 'border-rose-200 focus:ring-rose-500' : 
+                showNoteInput === 'ESCALATE' ? 'border-purple-200 focus:ring-purple-500' : 'border-blue-200 focus:ring-blue-500'
+              }`}
+              placeholder={showNoteInput === 'REJECT' ? "Explain why this application is being rejected..." : 
+                           showNoteInput === 'ESCALATE' ? "Explain why this is being escalated to parent scope..." : "Add a note about this verification/approval..."}
               rows={3}
             />
           </div>
@@ -135,30 +184,45 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
           
           {(member.status === 'PENDING' || member.status === 'VERIFIED') && (
             <button 
-              onClick={handleReject} 
+              onClick={() => handleAction('REJECT')} 
               className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                showRejectInput ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white border border-rose-200 text-rose-600 hover:bg-rose-50'
+                showNoteInput === 'REJECT' ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white border border-rose-200 text-rose-600 hover:bg-rose-50'
               }`}
             >
-              {showRejectInput ? 'Confirm Rejection' : 'Reject Application'}
+              {showNoteInput === 'REJECT' ? 'Confirm Rejection' : 'Reject Application'}
+            </button>
+          )}
+
+          {!member.isEscalated && onEscalate && (member.status === 'PENDING' || member.status === 'VERIFIED' || member.status === 'REJECTED') && (
+            <button 
+              onClick={() => handleAction('ESCALATE')} 
+              className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                showNoteInput === 'ESCALATE' ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-white border border-purple-200 text-purple-600 hover:bg-purple-50'
+              }`}
+            >
+              {showNoteInput === 'ESCALATE' ? 'Confirm Escalation' : 'Escalate to Parent'}
             </button>
           )}
 
           {member.status === 'PENDING' && (
             <button 
-              onClick={() => { onVerify(member.id); onClose(); }} 
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+              onClick={() => handleAction('VERIFY')} 
+              className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg ${
+                showNoteInput === 'VERIFY' ? 'bg-blue-700 text-white' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
+              }`}
             >
-              Verify Application
+              {showNoteInput === 'VERIFY' ? 'Confirm Verification' : 'Verify Application'}
             </button>
           )}
           
           {member.status === 'VERIFIED' && (
             <button 
-              onClick={() => { onApprove(member.id); onClose(); }} 
-              className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
+              onClick={() => handleAction('APPROVE')} 
+              className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg ${
+                showNoteInput === 'APPROVE' ? 'bg-emerald-700 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'
+              }`}
             >
-              Approve Membership
+              {showNoteInput === 'APPROVE' ? 'Confirm Approval' : 'Approve Membership'}
             </button>
           )}
         </div>

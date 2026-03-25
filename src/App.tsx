@@ -11,6 +11,7 @@ import { VolunteerAdmin } from './components/VolunteerAdmin';
 import { DocumentsView } from './components/DocumentsView';
 import { CmsAdmin } from './components/CmsAdmin';
 import { CommunicationAdmin } from './components/CommunicationAdmin';
+import { NoticeAdmin } from './components/NoticeAdmin';
 import { TrainingPortal } from './components/TrainingPortal';
 import { TrainingAdmin } from './components/TrainingAdmin';
 import { NotificationCenter } from './components/NotificationCenter';
@@ -31,11 +32,12 @@ import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { MemberDashboard } from './components/MemberDashboard';
 import { EventDetailView } from './components/EventDetailView';
 import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
+import { Toaster } from 'sonner';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -227,6 +229,7 @@ export default function App() {
     { id: 'cms', label: 'CMS', icon: Layout, roles: ['ADMIN', 'STAFF'] },
     { id: 'documents', label: 'Documents', icon: FileText, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
     { id: 'communication', label: 'Communication', icon: MessageSquare, roles: ['ADMIN', 'STAFF'] },
+    { id: 'notices', label: 'Notice & Popup', icon: Bell, roles: ['ADMIN', 'STAFF'] },
     { id: 'training', label: 'Training', icon: GraduationCap, roles: ['ADMIN', 'STAFF', 'MEMBER', 'FIELD_COORDINATOR'] },
     { id: 'events', label: 'Events', icon: Calendar, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
     { id: 'finance', label: 'Finance', icon: DollarSign, roles: ['ADMIN', 'FINANCE_OFFICER'] },
@@ -241,6 +244,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+      <Toaster position="top-right" richColors />
       {/* Mobile Header */}
       <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2 text-emerald-600">
@@ -394,6 +398,7 @@ export default function App() {
         {currentView === 'cms' && <CmsAdmin />}
         {currentView === 'documents' && <DocumentsView />}
         {currentView === 'communication' && <CommunicationAdmin />}
+        {currentView === 'notices' && <NoticeAdmin />}
         {currentView === 'training' && (
           (user.role === 'ADMIN' || user.role === 'STAFF') ? <TrainingAdmin /> : <TrainingPortal user={user} />
         )}

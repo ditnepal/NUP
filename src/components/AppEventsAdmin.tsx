@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AppEvent } from '../types';
+import { api } from '../lib/api';
 
 export const AppEventsAdmin: React.FC = () => {
   const [events, setEvents] = useState<AppEvent[]>([]);
@@ -11,26 +12,35 @@ export const AppEventsAdmin: React.FC = () => {
     fetchEvents();
   }, []);
 
-  const fetchEvents = () => {
-    fetch('/api/v1/app-events', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
-      .then(res => res.json())
-      .then(data => { setEvents(data); setLoading(false); });
+  const fetchEvents = async () => {
+    try {
+      const data = await api.get('/app-events');
+      setEvents(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreate = () => {
-    fetch('/api/v1/app-events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-      body: JSON.stringify(newEvent)
-    }).then(() => { setShowForm(false); fetchEvents(); });
+  const handleCreate = async () => {
+    try {
+      await api.post('/app-events', newEvent);
+      setShowForm(false);
+      fetchEvents();
+    } catch (error) {
+      console.error('Error creating event:', error);
+    }
   };
 
-  const handleToggle = (id: string, updates: Partial<AppEvent>) => {
-    fetch(`/api/v1/app-events/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-      body: JSON.stringify(updates)
-    }).then(() => fetchEvents());
+  const handleToggle = async (id: string, updates: Partial<AppEvent>) => {
+    try {
+      await api.patch(`/app-events/${id}`, updates);
+      fetchEvents();
+    } catch (error) {
+      console.error('Error updating event:', error);
+    }
   };
 
   if (loading) return <div>Loading...</div>;
@@ -52,9 +62,10 @@ export const AppEventsAdmin: React.FC = () => {
           <input placeholder="Attachment URL" className="border p-2 w-full mb-2" onChange={e => setNewEvent({...newEvent, attachmentUrl: e.target.value})} />
           <input type="date" className="border p-2 w-full mb-2" onChange={e => setNewEvent({...newEvent, eventDate: new Date(e.target.value)})} />
           <input type="time" className="border p-2 w-full mb-2" onChange={e => setNewEvent({...newEvent, startAt: e.target.value})} />
-          <select className="border p-2 w-full mb-2" onChange={e => setNewEvent({...newEvent, audience: e.target.value as 'PUBLIC' | 'MEMBERS'})}>
+          <select className="border p-2 w-full mb-2" onChange={e => setNewEvent({...newEvent, audience: e.target.value as 'PUBLIC' | 'MEMBERS' | 'STAFF'})}>
             <option value="PUBLIC">PUBLIC</option>
             <option value="MEMBERS">MEMBERS</option>
+            <option value="STAFF">STAFF</option>
           </select>
           <button onClick={handleCreate} className="bg-emerald-600 text-white px-4 py-2 rounded">Save</button>
         </div>

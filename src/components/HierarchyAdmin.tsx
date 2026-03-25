@@ -17,6 +17,11 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
   const [selectedUnitForGovernance, setSelectedUnitForGovernance] = useState<OrganizationUnit | null>(null);
   const [isOfficesModalOpen, setIsOfficesModalOpen] = useState(false);
   const [selectedUnitForOffices, setSelectedUnitForOffices] = useState<OrganizationUnit | null>(null);
+  const [isUserScopeModalOpen, setIsUserScopeModalOpen] = useState(false);
+  const [selectedUnitForUserScope, setSelectedUnitForUserScope] = useState<OrganizationUnit | null>(null);
+  const [unitUsers, setUnitUsers] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [offices, setOffices] = useState<Office[]>([]);
   const [loadingOffices, setLoadingOffices] = useState(false);
   const [editingOffice, setEditingOffice] = useState<Office | null>(null);
@@ -81,6 +86,58 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
     setSelectedUnitForOffices(unit);
     setIsOfficesModalOpen(true);
     fetchOffices(unit.id);
+  };
+
+  const fetchUnitUsers = async (unitId: string) => {
+    setLoadingUsers(true);
+    try {
+      const data = await api.get(`/users?orgUnitId=${unitId}`);
+      setUnitUsers(data);
+    } catch (error) {
+      console.error('Error fetching unit users:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      const data = await api.get('/users');
+      setAllUsers(data);
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+    }
+  };
+
+  const openUserScopeModal = (unit: OrganizationUnit) => {
+    setSelectedUnitForUserScope(unit);
+    setIsUserScopeModalOpen(true);
+    fetchUnitUsers(unit.id);
+    fetchAllUsers();
+  };
+
+  const handleAssignUser = async (userId: string) => {
+    if (!selectedUnitForUserScope) return;
+    try {
+      await api.patch(`/users/${userId}/scope`, { orgUnitId: selectedUnitForUserScope.id });
+      fetchUnitUsers(selectedUnitForUserScope.id);
+      setMessage({ type: 'success', text: 'User assigned to unit successfully' });
+    } catch (error) {
+      console.error('Error assigning user:', error);
+      setMessage({ type: 'error', text: 'Failed to assign user' });
+    }
+  };
+
+  const handleRemoveUser = async (userId: string) => {
+    if (!selectedUnitForUserScope) return;
+    try {
+      await api.patch(`/users/${userId}/scope`, { orgUnitId: null });
+      fetchUnitUsers(selectedUnitForUserScope.id);
+      setMessage({ type: 'success', text: 'User removed from unit scope' });
+    } catch (error) {
+      console.error('Error removing user:', error);
+      setMessage({ type: 'error', text: 'Failed to remove user' });
+    }
   };
 
   const handleOfficeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -238,6 +295,13 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
           </div>
           {isAdmin && (
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                onClick={() => openUserScopeModal(unit)}
+                className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
+                title="Manage Scoped Users"
+              >
+                <Users size={16} />
+              </button>
               <button 
                 onClick={() => openOfficesModal(unit)}
                 className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -738,6 +802,101 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
                 <button onClick={() => setIsOfficesModalOpen(false)} className="px-6 py-2 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-colors">Close</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {isUserScopeModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">Manage Unit Scope</h3>
+                  <p className="text-sm text-slate-500">Assign or remove users from {selectedUnitForUserScope?.name}</p>
+                </div>
+                <button onClick={() => setIsUserScopeModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                {/* Add User Section */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <h4 className="text-sm font-bold text-slate-700 uppercase mb-3">Assign New User</h4>
+                  <div className="flex gap-2">
+                    <select 
+                      id="userSelect"
+                      className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">Select a user to assign...</option>
+                      {allUsers
+                        .filter(u => u.orgUnitId !== selectedUnitForUserScope?.id)
+                        .map(u => (
+                          <option key={u.id} value={u.id}>
+                            {u.displayName} ({u.email}) - Current: {u.orgUnit?.name || 'Global'}
+                          </option>
+                        ))
+                      }
+                    </select>
+                    <button 
+                      onClick={() => {
+                        const select = document.getElementById('userSelect') as HTMLSelectElement;
+                        if (select.value) handleAssignUser(select.value);
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-blue-700 flex items-center gap-2"
+                    >
+                      <UserPlus size={18} /> Assign
+                    </button>
+                  </div>
+                </div>
+
+                {/* Current Users Section */}
+                <div>
+                  <h4 className="text-sm font-bold text-slate-700 uppercase mb-3">Users Scoped to this Unit</h4>
+                  {loadingUsers ? (
+                    <div className="flex justify-center py-8"><Loader2 className="animate-spin text-blue-600" size={32} /></div>
+                  ) : unitUsers.length > 0 ? (
+                    <div className="space-y-2">
+                      {unitUsers.map(u => (
+                        <div key={u.id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-100 transition-colors shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold">
+                              {u.displayName.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-800 text-sm">{u.displayName}</p>
+                              <p className="text-xs text-slate-500">{u.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full uppercase">{u.role}</span>
+                            <button 
+                              onClick={() => handleRemoveUser(u.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Remove from scope"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      <p className="text-slate-500">No users are currently scoped to this unit.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button onClick={() => setIsUserScopeModalOpen(false)} className="px-6 py-2 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-colors">Done</button>
               </div>
             </motion.div>
           </div>

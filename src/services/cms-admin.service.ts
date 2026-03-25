@@ -18,6 +18,7 @@ export class CmsAdminService extends BaseService {
     language?: string;
     isSystem?: boolean;
     isPinned?: boolean;
+    publishedAt?: Date;
   }) {
     const { id, ...rest } = data;
     const page = id 
@@ -66,6 +67,7 @@ export class CmsAdminService extends BaseService {
     featuredImage?: string;
     seoTitle?: string;
     seoDescription?: string;
+    seoKeywords?: string;
     language?: string;
     isPinned?: boolean;
     publishedAt?: Date;
@@ -136,6 +138,49 @@ export class CmsAdminService extends BaseService {
    */
   async createDownload(data: { title: string; description?: string; fileUrl: string; fileType: string; category?: string }) {
     return await this.db.cmsDownload.create({ data });
+  }
+
+  /**
+   * Create or update a section
+   */
+  async upsertSection(data: {
+    id?: string;
+    title: string;
+    type: string;
+    order?: number;
+    isEnabled?: boolean;
+    content: string;
+    authorId: string;
+  }) {
+    const { id, ...rest } = data;
+    const section = id 
+      ? await this.db.cmsSection.update({ where: { id }, data: rest })
+      : await this.db.cmsSection.create({ data: rest });
+
+    await auditService.log({
+      action: id ? 'CMS_SECTION_UPDATED' : 'CMS_SECTION_CREATED',
+      userId: data.authorId,
+      entityType: 'CmsSection',
+      entityId: section.id,
+      details: { title: data.title, type: data.type }
+    });
+
+    return section;
+  }
+
+  /**
+   * Delete a section
+   */
+  async deleteSection(id: string, userId: string) {
+    const section = await this.db.cmsSection.delete({ where: { id } });
+    await auditService.log({
+      action: 'CMS_SECTION_DELETED',
+      userId,
+      entityType: 'CmsSection',
+      entityId: id,
+      details: { title: section.title, type: section.type }
+    });
+    return section;
   }
 }
 

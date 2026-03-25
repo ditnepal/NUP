@@ -230,6 +230,17 @@ export interface Member {
   occupation?: string;
   paymentMethod?: string;
   qrCodeData?: string;
+  verifiedById?: string;
+  verifiedAt?: string;
+  verifiedBy?: { displayName: string };
+  approvedById?: string;
+  approvedAt?: string;
+  approvedBy?: { displayName: string };
+  reviewNote?: string;
+  isEscalated?: boolean;
+  escalatedAt?: string;
+  escalatedToUnitId?: string;
+  escalationNote?: string;
   createdAt: string;
   updatedAt: string;
   verificationStatus?: {
@@ -290,7 +301,7 @@ export interface AppEvent {
   title: string;
   summary?: string | null;
   description: string;
-  audience: 'PUBLIC' | 'MEMBERS';
+  audience: 'PUBLIC' | 'MEMBERS' | 'STAFF';
   status: 'DRAFT' | 'PUBLISHED';
   isPinned: boolean;
   eventDate: Date;
@@ -467,7 +478,7 @@ export interface Notice {
   id: string;
   title: string;
   content: string;
-  audience: 'PUBLIC' | 'MEMBERS';
+  audience: 'PUBLIC' | 'MEMBERS' | 'STAFF';
   status: 'DRAFT' | 'PUBLISHED';
   isPinned: boolean;
   publishAt?: string;
@@ -485,7 +496,7 @@ export interface TrainingProgram {
   description?: string;
   category: string;
   status: 'DRAFT' | 'PUBLISHED';
-  audience: 'PUBLIC' | 'MEMBERS';
+  audience: 'PUBLIC' | 'MEMBERS' | 'STAFF';
   isPinned: boolean;
   externalUrl?: string;
   attachmentUrl?: string;
@@ -537,4 +548,32 @@ export interface Booth {
   coordinatorId?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface CmsSection {
+  id: string;
+  title: string;
+  type: 'HERO' | 'HIGHLIGHT' | 'CTA' | 'CONTENT_BLOCK' | 'NOTICE_BANNER';
+  order: number;
+  isEnabled: boolean;
+  content: string; // JSON string
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+  items?: CmsSectionContent[];
+  author?: {
+    displayName: string;
+  };
+}
+
+export interface CmsSectionContent {
+  id: string;
+  sectionId: string;
+  contentId: string;
+  contentType: 'POST' | 'NOTICE' | 'EVENT';
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  // Included content details
+  content?: any; 
 }

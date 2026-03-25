@@ -11,7 +11,7 @@ const programSchema = z.object({
   description: z.string().optional(),
   category: z.string(),
   status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
-  audience: z.enum(['PUBLIC', 'MEMBERS']).optional(),
+  audience: z.enum(['PUBLIC', 'MEMBERS', 'STAFF']).optional(),
   isPinned: z.boolean().optional(),
   externalUrl: z.string().optional(),
   attachmentUrl: z.string().optional(),

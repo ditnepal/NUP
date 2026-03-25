@@ -138,7 +138,9 @@ export const TrainingAdmin: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      program.audience === 'PUBLIC' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
+                      program.audience === 'PUBLIC' ? 'bg-blue-50 text-blue-600' : 
+                      program.audience === 'STAFF' ? 'bg-amber-50 text-amber-600' :
+                      'bg-purple-50 text-purple-600'
                     }`}>
                       {program.audience}
                     </span>
@@ -232,6 +234,7 @@ export const TrainingAdmin: React.FC = () => {
                   >
                     <option value="PUBLIC">Public</option>
                     <option value="MEMBERS">Members Only</option>
+                    <option value="STAFF">Staff Only</option>
                   </select>
                 </div>
                 <div>

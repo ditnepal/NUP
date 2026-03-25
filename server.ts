@@ -41,6 +41,7 @@ import notificationsRouter from './src/api/notifications';
 import financeRouter from './src/api/finance';
 import electionRouter from './src/api/election';
 import warroomRouter from './src/api/warroom';
+import usersRouter from './src/api/users';
 
 export async function createApp() {
   const app = express();
@@ -120,6 +121,7 @@ export async function createApp() {
   app.use('/api/v1/finance', financeRouter);
   app.use('/api/v1/election', electionRouter);
   app.use('/api/v1/warroom', warroomRouter);
+  app.use('/api/v1/users', usersRouter);
 
   // Catch-all for API routes to return 404 JSON instead of HTML
   app.all('/api/*', (req, res) => {

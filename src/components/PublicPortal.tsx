@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap, Calendar, Tag, Loader2 } from 'lucide-react';
 import { UserProfile } from '../types';
 import Markdown from 'react-markdown';
+import { toast } from 'sonner';
 
 interface PublicPortalProps {
   user?: UserProfile | null;
@@ -23,6 +24,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   const [events, setEvents] = useState<any[]>([]);
   const [surveys, setSurveys] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
+  const [sections, setSections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,8 +46,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   const fetchPublicSurveysAndPolls = async () => {
     try {
       const [surveysData, pollsData] = await Promise.all([
-        api.get('/v1/public/surveys?placementType=PUBLIC_PORTAL'),
-        api.get('/v1/public/polls?placementType=PUBLIC_PORTAL')
+        api.get('/public/surveys?placementType=PUBLIC_PORTAL'),
+        api.get('/public/polls?placementType=PUBLIC_PORTAL')
       ]);
       setSurveys(surveysData);
       setPolls(pollsData);
@@ -60,8 +62,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   const fetchPostSurveysAndPolls = async (slug: string) => {
     try {
       const [surveysData, pollsData] = await Promise.all([
-        api.get(`/v1/public/surveys?placementType=CONTENT_INLINE&targetSlug=${slug}`),
-        api.get(`/v1/public/polls?placementType=CONTENT_INLINE&targetSlug=${slug}`)
+        api.get(`/public/surveys?placementType=CONTENT_INLINE&targetSlug=${slug}`),
+        api.get(`/public/polls?placementType=CONTENT_INLINE&targetSlug=${slug}`)
       ]);
       setPostSurveys(surveysData);
       setPostPolls(pollsData);
@@ -72,14 +74,19 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
 
   const fetchPublicData = async () => {
     try {
-      const [noticesData, eventsData] = await Promise.all([
+      const [noticesData, eventsData, sectionsData] = await Promise.all([
         api.get('/communication/notices/public'),
-        api.get('/v1/app-events/public')
+        api.get('/app-events/public'),
+        api.get('/public/sections')
       ]);
       setNotices(noticesData);
       setEvents(eventsData);
-    } catch (error) {
+      setSections(sectionsData);
+    } catch (error: any) {
       console.error('Error fetching public data:', error);
+      const errorMessage = error.response?.data?.error || 'Error fetching public data';
+      const errorDetails = error.response?.data?.details ? `: ${error.response.data.details}` : '';
+      toast.error(`${errorMessage}${errorDetails}`);
     } finally {
       setLoading(false);
     }
@@ -92,8 +99,11 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
         : '/public/posts?type=NEWS&lang=en';
       const newsData = await api.get(url);
       setNews(newsData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching news:', error);
+      const errorMessage = error.response?.data?.error || 'Error fetching news';
+      const errorDetails = error.response?.data?.details ? `: ${error.response.data.details}` : '';
+      toast.error(`${errorMessage}${errorDetails}`);
     }
   };
 
@@ -101,8 +111,11 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
     try {
       const data = await api.get('/public/categories?type=POST');
       setCategories(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching categories:', error);
+      const errorMessage = error.response?.data?.error || 'Error fetching categories';
+      const errorDetails = error.response?.data?.details ? `: ${error.response.data.details}` : '';
+      toast.error(`${errorMessage}${errorDetails}`);
     }
   };
 
@@ -125,7 +138,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
     setSubmittingVolunteer(true);
     try {
       await api.post('/public/volunteer', volunteerFormData);
-      alert('Thank you for your application! We will contact you soon.');
+      toast.success('Thank you for your application! We will contact you soon.');
       setIsVolunteerModalOpen(false);
       setVolunteerFormData({
         fullName: '',
@@ -136,7 +149,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
       });
     } catch (error) {
       console.error('Error submitting volunteer application:', error);
-      alert('Failed to submit application. Please try again.');
+      toast.error('Failed to submit application. Please try again.');
     } finally {
       setSubmittingVolunteer(false);
     }
@@ -209,88 +222,224 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
         </div>
       )}
 
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-3xl">
-            <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
-              Building the Future of Nepal
-            </span>
-            <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[0.9] mb-8 tracking-tighter">
-              A NEW VISION FOR A <span className="text-emerald-600">PROSPEROUS</span> NATION.
-            </h1>
-            <p className="text-xl text-slate-600 mb-10 leading-relaxed">
-              Join the movement for transparency, accountability, and sustainable development. Together, we can build a stronger Nepal for everyone.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={onJoinClick} className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2">
-                Become a Member <ChevronRight size={20} />
-              </button>
-              <button onClick={onStatusClick} className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                Check Application Status
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        {/* Abstract Background Element */}
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-50 -skew-x-12 translate-x-1/4 z-0 hidden lg:block"></div>
-      </section>
+      {/* Dynamic Sections or Baseline Fallback */}
+      {sections.length > 0 ? (
+        sections.map((section) => {
+          let content: any = {};
+          try {
+            content = JSON.parse(section.content);
+          } catch (e) {
+            console.error('Failed to parse section content:', e);
+          }
 
-      {/* Action Blocks */}
-      <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Heart size={28} />
+          switch (section.type) {
+            case 'HERO':
+              return (
+                <section key={section.id} className="relative py-20 overflow-hidden bg-slate-50">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="max-w-3xl">
+                      {content.badge && (
+                        <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                          {content.badge}
+                        </span>
+                      )}
+                      <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[0.9] mb-8 tracking-tighter">
+                        {content.headline || section.title}
+                      </h1>
+                      <p className="text-xl text-slate-600 mb-10 leading-relaxed">
+                        {content.subheadline}
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        {content.ctaText && (
+                          <button 
+                            onClick={() => content.ctaLink?.startsWith('http') ? window.open(content.ctaLink, '_blank') : onJoinClick?.()} 
+                            className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2"
+                          >
+                            {content.ctaText} <ChevronRight size={20} />
+                          </button>
+                        )}
+                        {content.secondaryCtaText && (
+                          <button 
+                            onClick={onStatusClick}
+                            className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                          >
+                            {content.secondaryCtaText}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-50 -skew-x-12 translate-x-1/4 z-0 hidden lg:block"></div>
+                </section>
+              );
+            case 'HIGHLIGHT':
+              return (
+                <section key={section.id} className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="mb-12">
+                    <h2 className="text-3xl font-black tracking-tight uppercase">{section.title}</h2>
+                    {content.description && <p className="text-slate-500 mt-2">{content.description}</p>}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {content.items?.map((item: any, idx: number) => (
+                      <div key={idx} className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                        <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                        <p className="text-slate-500 mb-6">{item.description}</p>
+                        {item.linkText && (
+                          <a href={item.linkUrl || '#'} className="text-emerald-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">
+                            {item.linkText} <ChevronRight size={16} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            case 'CTA':
+              return (
+                <section key={section.id} className="py-20 bg-emerald-600">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h2 className="text-4xl font-black text-white mb-6">{content.headline || section.title}</h2>
+                    <p className="text-emerald-50 text-xl mb-10 max-w-2xl mx-auto">{content.subheadline}</p>
+                    <button 
+                      onClick={() => content.ctaLink?.startsWith('http') ? window.open(content.ctaLink, '_blank') : onJoinClick?.()}
+                      className="bg-white text-emerald-600 px-10 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-50 transition-all shadow-xl shadow-emerald-900/20"
+                    >
+                      {content.ctaText || 'Get Started'}
+                    </button>
+                  </div>
+                </section>
+              );
+            case 'CONTENT_BLOCK':
+              return (
+                <section key={section.id} className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div className={content.imageLeft ? 'order-last lg:order-first' : ''}>
+                      <h2 className="text-4xl font-black text-slate-900 mb-6 leading-tight">{content.headline || section.title}</h2>
+                      <div className="prose prose-slate max-w-none mb-8">
+                        <Markdown>{content.body || section.content}</Markdown>
+                      </div>
+                      {content.ctaText && (
+                        <button className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all">
+                          {content.ctaText}
+                        </button>
+                      )}
+                    </div>
+                    <div className="bg-slate-100 rounded-3xl aspect-video overflow-hidden">
+                      {content.imageUrl ? (
+                        <img src={content.imageUrl} alt={section.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-300">
+                          <Globe size={80} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              );
+            case 'NOTICE_BANNER':
+              return (
+                <div key={section.id} className="bg-amber-50 border-y border-amber-100 py-3">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center gap-3">
+                    <Megaphone size={18} className="text-amber-600" />
+                    <span className="text-sm font-bold text-amber-900">{content.text || section.title}</span>
+                    {content.linkText && (
+                      <a href={content.linkUrl || '#'} className="text-sm font-black text-amber-600 underline underline-offset-4">
+                        {content.linkText}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            default:
+              return null;
+          }
+        })
+      ) : (
+        <>
+          {/* Hero Section */}
+          <section className="relative py-20 overflow-hidden bg-slate-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              <div className="max-w-3xl">
+                <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                  Building the Future of Nepal
+                </span>
+                <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[0.9] mb-8 tracking-tighter">
+                  A NEW VISION FOR A <span className="text-emerald-600">PROSPEROUS</span> NATION.
+                </h1>
+                <p className="text-xl text-slate-600 mb-10 leading-relaxed">
+                  Join the movement for transparency, accountability, and sustainable development. Together, we can build a stronger Nepal for everyone.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button onClick={onJoinClick} className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2">
+                    Become a Member <ChevronRight size={20} />
+                  </button>
+                  <button onClick={onStatusClick} className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                    Check Application Status
+                  </button>
+                </div>
+              </div>
             </div>
-            <h3 className="text-xl font-bold mb-3">Volunteer</h3>
-            <p className="text-slate-500 mb-6">Contribute your skills and time to our local campaigns and initiatives.</p>
-            <button 
-              onClick={() => setIsVolunteerModalOpen(true)}
-              className="text-blue-600 font-bold flex items-center gap-1 hover:gap-2 transition-all"
-            >
-              Apply Now <ChevronRight size={16} />
-            </button>
-          </div>
+            
+            {/* Abstract Background Element */}
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-50 -skew-x-12 translate-x-1/4 z-0 hidden lg:block"></div>
+          </section>
 
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-            <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Megaphone size={28} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Donate</h3>
-            <p className="text-slate-500 mb-6">Support our mission with a financial contribution. Every rupee counts.</p>
-            <a href="#" className="text-amber-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Contribute <ChevronRight size={16} /></a>
-          </div>
+          {/* Action Blocks */}
+          <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Heart size={28} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Volunteer</h3>
+                <p className="text-slate-500 mb-6">Contribute your skills and time to our local campaigns and initiatives.</p>
+                <button 
+                  onClick={() => setIsVolunteerModalOpen(true)}
+                  className="text-blue-600 font-bold flex items-center gap-1 hover:gap-2 transition-all"
+                >
+                  Apply Now <ChevronRight size={16} />
+                </button>
+              </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-            <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <MessageSquare size={28} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Complaints</h3>
-            <p className="text-slate-500 mb-6">Report issues in your local area or provide feedback to the party.</p>
-            <a href="#" className="text-purple-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Submit Issue <ChevronRight size={16} /></a>
-          </div>
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Megaphone size={28} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Donate</h3>
+                <p className="text-slate-500 mb-6">Support our mission with a financial contribution. Every rupee counts.</p>
+                <a href="#" className="text-amber-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Contribute <ChevronRight size={16} /></a>
+              </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-            <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Download size={28} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Downloads</h3>
-            <p className="text-slate-500 mb-6">Access our manifesto, policy documents, and membership forms.</p>
-            <button onClick={onDocumentsClick} className="text-rose-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Browse Files <ChevronRight size={16} /></button>
-          </div>
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <MessageSquare size={28} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Complaints</h3>
+                <p className="text-slate-500 mb-6">Report issues in your local area or provide feedback to the party.</p>
+                <a href="#" className="text-purple-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Submit Issue <ChevronRight size={16} /></a>
+              </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <GraduationCap size={28} />
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Download size={28} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Downloads</h3>
+                <p className="text-slate-500 mb-6">Access our manifesto, policy documents, and membership forms.</p>
+                <button onClick={onDocumentsClick} className="text-rose-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Browse Files <ChevronRight size={16} /></button>
+              </div>
+
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <GraduationCap size={28} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Training</h3>
+                <p className="text-slate-500 mb-6">Access official party training materials and educational resources.</p>
+                <button onClick={onTrainingClick} className="text-emerald-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">View Programs <ChevronRight size={16} /></button>
+              </div>
             </div>
-            <h3 className="text-xl font-bold mb-3">Training</h3>
-            <p className="text-slate-500 mb-6">Access official party training materials and educational resources.</p>
-            <button onClick={onTrainingClick} className="text-emerald-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">View Programs <ChevronRight size={16} /></button>
-          </div>
-        </div>
-      </section>
+          </section>
+        </>
+      )}
 
       {/* Latest News & Notices */}
       <section id="news" className="py-24 bg-slate-50">
@@ -435,7 +584,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                       </div>
                       <h3 className="text-xl font-bold mb-2">{survey.title}</h3>
                       <p className="text-slate-600 text-sm mb-6">{survey.description}</p>
-                      <button onClick={() => alert('Please log in to participate in this survey.')} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all">
+                      <button onClick={() => toast.info('Please log in to participate in this survey.')} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all">
                         Take Survey
                       </button>
                     </div>
@@ -449,7 +598,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                       <h3 className="text-xl font-bold mb-2">{poll.title}</h3>
                       <div className="space-y-3 mt-4">
                         {poll.options?.map((opt: string, idx: number) => (
-                          <button key={idx} onClick={() => alert('Please log in to vote in this poll.')} className="w-full py-2 px-4 bg-white border border-blue-100 text-slate-700 text-sm font-medium rounded-xl hover:bg-blue-100 transition-all text-left">
+                          <button key={idx} onClick={() => toast.info('Please log in to vote in this poll.')} className="w-full py-2 px-4 bg-white border border-blue-100 text-slate-700 text-sm font-medium rounded-xl hover:bg-blue-100 transition-all text-left">
                             {opt}
                           </button>
                         ))}
@@ -521,7 +670,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                       <div key={survey.id} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                         <h4 className="font-bold mb-2">{survey.title}</h4>
                         <p className="text-sm text-slate-600 mb-4">{survey.description}</p>
-                        <button onClick={() => alert('Please log in to participate in this survey.')} className="px-6 py-2 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 transition-all">
+                        <button onClick={() => toast.info('Please log in to participate in this survey.')} className="px-6 py-2 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 transition-all">
                           Start Survey
                         </button>
                       </div>
@@ -531,7 +680,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                         <h4 className="font-bold mb-4">{poll.title}</h4>
                         <div className="grid gap-2">
                           {poll.options?.map((opt: string, idx: number) => (
-                            <button key={idx} onClick={() => alert('Please log in to vote in this poll.')} className="w-full py-2 px-4 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-emerald-50 hover:border-emerald-200 transition-all text-left">
+                            <button key={idx} onClick={() => toast.info('Please log in to vote in this poll.')} className="w-full py-2 px-4 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-emerald-50 hover:border-emerald-200 transition-all text-left">
                               {opt}
                             </button>
                           ))}

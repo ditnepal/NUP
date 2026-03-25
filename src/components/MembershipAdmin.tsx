@@ -11,10 +11,13 @@ import { Users, UserPlus, RefreshCw, CreditCard, ShieldAlert, CheckCircle, XCirc
 export const MembershipAdmin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'intake' | 'members' | 'renewals'>('overview');
   const [members, setMembers] = useState<Member[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
   const [renewals, setRenewals] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('PENDING');
+  const [unitFilter, setUnitFilter] = useState<string>('');
+  const [escalationFilter, setEscalationFilter] = useState<'ALL' | 'ESCALATED' | 'LOCAL'>('ALL');
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -24,6 +27,10 @@ export const MembershipAdmin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    fetchUnits();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 'overview') {
       fetchMetrics();
     } else if (activeTab === 'intake' || activeTab === 'members') {
@@ -31,7 +38,16 @@ export const MembershipAdmin: React.FC = () => {
     } else if (activeTab === 'renewals') {
       fetchRenewals();
     }
-  }, [activeTab, filter]);
+  }, [activeTab, filter, unitFilter]);
+
+  const fetchUnits = async () => {
+    try {
+      const data = await api.get('/hierarchy');
+      setUnits(data);
+    } catch (error) {
+      console.error('Error fetching units:', error);
+    }
+  };
 
   const fetchMetrics = async () => {
     setLoading(true);
@@ -51,7 +67,16 @@ export const MembershipAdmin: React.FC = () => {
     setError(null);
     try {
       const currentFilter = activeTab === 'intake' ? 'PENDING' : filter === 'PENDING' ? 'ACTIVE' : filter;
-      const data = await api.get(`/members?status=${currentFilter}`);
+      let url = `/members?status=${currentFilter}`;
+      if (unitFilter) {
+        url += `&unitId=${unitFilter}`;
+      }
+      if (escalationFilter === 'ESCALATED') {
+        url += `&isEscalated=true`;
+      } else if (escalationFilter === 'LOCAL') {
+        url += `&isEscalated=false`;
+      }
+      const data = await api.get(url);
       setMembers(data);
     } catch (error: any) {
       console.error('Error fetching members:', error);
@@ -103,18 +128,18 @@ export const MembershipAdmin: React.FC = () => {
     }
   };
 
-  const handleVerify = async (id: string) => {
+  const handleVerify = async (id: string, note?: string) => {
     try {
-      await api.post(`/members/${id}/verify`, {});
+      await api.post(`/members/${id}/verify`, { note });
       await fetchMembers();
     } catch (error) {
       console.error('Error verifying member:', error);
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, note?: string) => {
     try {
-      await api.post(`/members/${id}/approve`, {});
+      await api.post(`/members/${id}/approve`, { note });
       await api.post(`/members/${id}/generate-card`, {});
       await fetchMembers();
     } catch (error) {
@@ -128,6 +153,15 @@ export const MembershipAdmin: React.FC = () => {
       await fetchMembers();
     } catch (error) {
       console.error('Error rejecting member:', error);
+    }
+  };
+
+  const handleEscalate = async (id: string, note?: string) => {
+    try {
+      await api.post(`/members/${id}/escalate`, { note });
+      await fetchMembers();
+    } catch (error) {
+      console.error('Error escalating member:', error);
     }
   };
 
@@ -204,32 +238,52 @@ export const MembershipAdmin: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl mb-8 overflow-x-auto">
-        {[
-          { id: 'overview', label: 'Overview', icon: Users },
-          { id: 'intake', label: 'Applications', icon: UserPlus },
-          { id: 'members', label: 'Active Members', icon: ShieldAlert },
-          { id: 'renewals', label: 'Renewals', icon: RefreshCw },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id as any);
-                if (tab.id === 'members') setFilter('ACTIVE');
-              }}
-              className={`flex items-center px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-              }`}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
+        <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+          {[
+            { id: 'overview', label: 'Overview', icon: Users },
+            { id: 'intake', label: 'Applications', icon: UserPlus },
+            { id: 'members', label: 'Active Members', icon: ShieldAlert },
+            { id: 'renewals', label: 'Renewals', icon: RefreshCw },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id as any);
+                  if (tab.id === 'members') setFilter('ACTIVE');
+                }}
+                className={`flex items-center px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                }`}
+              >
+                <Icon className="w-4 h-4 mr-2" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {(activeTab === 'intake' || activeTab === 'members') && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-500">Unit:</span>
+            <select
+              value={unitFilter}
+              onChange={(e) => setUnitFilter(e.target.value)}
+              className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <Icon className="w-4 h-4 mr-2" />
-              {tab.label}
-            </button>
-          );
-        })}
+              <option value="">All Accessible Units</option>
+              {units.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name} ({unit.level})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Overview Tab */}
@@ -438,6 +492,7 @@ export const MembershipAdmin: React.FC = () => {
           onVerify={handleVerify}
           onApprove={handleApprove}
           onReject={handleReject}
+          onEscalate={handleEscalate}
         />
       )}
 

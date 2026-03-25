@@ -18,8 +18,9 @@ router.get('/pages/:slug', async (req, res) => {
     const page = await cmsService.getPageBySlug(slug, lang as string);
     if (!page) return res.status(404).json({ error: 'Page not found' });
     res.json(page);
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+  } catch (error: any) {
+    console.error('[Public API] Error fetching page by slug:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 
@@ -45,8 +46,9 @@ router.get('/posts', async (req, res) => {
     const { type, lang, categoryId } = req.query;
     const posts = await cmsService.getPosts(type as string, lang as string, categoryId as string);
     res.json(posts);
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+  } catch (error: any) {
+    console.error('[Public API] Error fetching posts:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 
@@ -370,6 +372,27 @@ router.get('/polls', async (req, res) => {
     res.json(polls);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/public/sections
+// @desc    Get all enabled sections for homepage
+// @access  Public
+router.get('/sections', async (req, res) => {
+  try {
+    const sections = await prisma.cmsSection.findMany({
+      where: { isEnabled: true },
+      include: {
+        items: {
+          orderBy: { order: 'asc' }
+        }
+      },
+      orderBy: { order: 'asc' }
+    });
+    res.json(sections);
+  } catch (error: any) {
+    console.error('[Public API] Error fetching sections:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 

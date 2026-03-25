@@ -17,9 +17,13 @@ const templateSchema = z.object({
 const campaignSchema = z.object({
   name: z.string().min(2),
   templateId: z.string().uuid(),
-  segmentId: z.string().uuid().optional(),
-  scheduledAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
-});
+  segmentId: z.string().uuid().optional().or(z.literal('')),
+  scheduledAt: z.string().optional().or(z.literal('')),
+}).transform(data => ({
+  ...data,
+  segmentId: data.segmentId === '' ? null : data.segmentId,
+  scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
+}));
 
 const segmentSchema = z.object({
   name: z.string().min(2),
@@ -54,6 +58,36 @@ router.post('/templates', authenticate, authorize(['ADMIN', 'STAFF']), async (re
   }
 });
 
+// @route   PUT /api/v1/communication/templates/:id
+// @desc    Update a communication template
+// @access  Private (Admin/Staff)
+router.put('/templates/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = templateSchema.partial().parse(req.body);
+    const template = await prisma.communicationTemplate.update({
+      where: { id: req.params.id },
+      data,
+    });
+    res.json(template);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   DELETE /api/v1/communication/templates/:id
+// @desc    Delete a communication template
+// @access  Private (Admin/Staff)
+router.delete('/templates/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    await prisma.communicationTemplate.delete({
+      where: { id: req.params.id },
+    });
+    res.json({ message: 'Template deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // @route   GET /api/v1/communication/segments
 // @desc    Get all audience segments
 // @access  Private (Admin/Staff)
@@ -76,6 +110,36 @@ router.post('/segments', authenticate, authorize(['ADMIN', 'STAFF']), async (req
     const data = segmentSchema.parse(req.body);
     const segment = await prisma.audienceSegment.create({ data });
     res.status(201).json(segment);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   PUT /api/v1/communication/segments/:id
+// @desc    Update an audience segment
+// @access  Private (Admin/Staff)
+router.put('/segments/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = segmentSchema.partial().parse(req.body);
+    const segment = await prisma.audienceSegment.update({
+      where: { id: req.params.id },
+      data,
+    });
+    res.json(segment);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   DELETE /api/v1/communication/segments/:id
+// @desc    Delete an audience segment
+// @access  Private (Admin/Staff)
+router.delete('/segments/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    await prisma.audienceSegment.delete({
+      where: { id: req.params.id },
+    });
+    res.json({ message: 'Segment deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -104,6 +168,36 @@ router.post('/campaigns', authenticate, authorize(['ADMIN', 'STAFF']), async (re
     const data = campaignSchema.parse(req.body);
     const campaign = await prisma.communicationCampaign.create({ data });
     res.status(201).json(campaign);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   PUT /api/v1/communication/campaigns/:id
+// @desc    Update a communication campaign
+// @access  Private (Admin/Staff)
+router.put('/campaigns/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = campaignSchema.parse(req.body);
+    const campaign = await prisma.communicationCampaign.update({
+      where: { id: req.params.id },
+      data,
+    });
+    res.json(campaign);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   DELETE /api/v1/communication/campaigns/:id
+// @desc    Delete a communication campaign
+// @access  Private (Admin/Staff)
+router.delete('/campaigns/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    await prisma.communicationCampaign.delete({
+      where: { id: req.params.id },
+    });
+    res.json({ message: 'Campaign deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -140,7 +234,7 @@ router.get('/delivery-logs', authenticate, authorize(['ADMIN', 'STAFF']), async 
 const noticeSchema = z.object({
   title: z.string().min(2),
   content: z.string().min(5),
-  audience: z.enum(['PUBLIC', 'MEMBERS']),
+  audience: z.enum(['PUBLIC', 'MEMBERS', 'STAFF']),
   status: z.enum(['DRAFT', 'PUBLISHED']),
   isPinned: z.boolean().optional(),
   publishAt: z.string().optional().transform(val => val ? new Date(val) : undefined),

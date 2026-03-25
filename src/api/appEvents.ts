@@ -9,7 +9,7 @@ const appEventSchema = z.object({
   title: z.string().min(2),
   summary: z.string().optional(),
   description: z.string(),
-  audience: z.enum(['PUBLIC', 'MEMBERS']),
+  audience: z.enum(['PUBLIC', 'MEMBERS', 'STAFF']),
   status: z.enum(['DRAFT', 'PUBLISHED']),
   isPinned: z.boolean().default(false),
   eventDate: z.string().transform(val => new Date(val)),

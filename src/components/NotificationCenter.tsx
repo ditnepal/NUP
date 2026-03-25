@@ -16,9 +16,10 @@ export const NotificationCenter: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       const data = await api.get('/user-alerts');
-      setNotifications(data);
+      setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }

@@ -18,6 +18,7 @@ const pageSchema = z.object({
   language: z.enum(['en', 'ne']).optional(),
   isSystem: z.boolean().optional(),
   isPinned: z.boolean().optional(),
+  publishedAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
 });
 
 const postSchema = z.object({
@@ -32,6 +33,7 @@ const postSchema = z.object({
   featuredImage: z.string().optional(),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
+  seoKeywords: z.string().optional(),
   language: z.enum(['en', 'ne']).optional(),
   isPinned: z.boolean().optional(),
   publishedAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
@@ -43,11 +45,13 @@ const postSchema = z.object({
 router.get('/pages', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
   try {
     const pages = await prisma.cmsPage.findMany({
+      include: { author: { select: { displayName: true } } },
       orderBy: { updatedAt: 'desc' }
     });
     res.json(pages);
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+  } catch (error: any) {
+    console.error('[CMS API] Error fetching pages:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 
@@ -85,12 +89,16 @@ router.delete('/pages/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (
 router.get('/posts', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
   try {
     const posts = await prisma.cmsPost.findMany({
-      include: { category: true },
+      include: { 
+        category: true,
+        author: { select: { displayName: true } }
+      },
       orderBy: { updatedAt: 'desc' }
     });
     res.json(posts);
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+  } catch (error: any) {
+    console.error('[CMS API] Error fetching posts:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 
@@ -141,6 +149,67 @@ router.post('/categories', authenticate, authorize(['ADMIN', 'STAFF']), async (r
   try {
     const category = await cmsAdminService.createCategory(req.body);
     res.json(category);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const sectionSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(2),
+  type: z.enum(['HERO', 'HIGHLIGHT', 'CTA', 'CONTENT_BLOCK', 'NOTICE_BANNER']),
+  order: z.number().optional(),
+  isEnabled: z.boolean().optional(),
+  content: z.string().min(2), // JSON string
+});
+
+// --- Sections ---
+
+// @route   GET /api/v1/cms/sections
+// @desc    Get all sections
+// @access  Private (Admin/Staff)
+router.get('/sections', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const sections = await prisma.cmsSection.findMany({
+      include: {
+        author: { select: { displayName: true } },
+        items: true
+      },
+      orderBy: { order: 'asc' }
+    });
+    res.json(sections);
+  } catch (error: any) {
+    console.error('[CMS API] Error fetching sections:', error);
+    res.status(500).json({ error: 'Failed to fetch sections', details: error.message });
+  }
+});
+
+// @route   POST /api/v1/cms/sections
+// @desc    Create or update a section
+// @access  Private (Admin/Staff)
+router.post('/sections', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const data = sectionSchema.parse(req.body);
+    const section = await cmsAdminService.upsertSection({
+      ...data,
+      authorId: req.user?.id!
+    });
+    res.json(section);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: (error as any).errors });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   DELETE /api/v1/cms/sections/:id
+// @desc    Delete a section
+// @access  Private (Admin/Staff)
+router.delete('/sections/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    await cmsAdminService.deleteSection(req.params.id, req.user?.id!);
+    res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

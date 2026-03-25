@@ -49,6 +49,7 @@ model User {
   surveyResponses      SurveyResponse[]
   reviewedTransactions Transaction[]              @relation("TransactionReviewer")
   recordedTransactions Transaction[]              @relation("TransactionRecorder")
+  cmsSections          CmsSection[]               @relation("SectionAuthor")
   roleProfile          Role?                      @relation(fields: [roleId], references: [id])
   orgUnit              OrganizationUnit?          @relation(fields: [orgUnitId], references: [id])
   volunteerProfile     Volunteer?
@@ -265,7 +266,14 @@ model Member {
   suspensionHistory      String?
   terminationHistory     String?
   verifiedById           String?
+  verifiedAt             DateTime?
   approvedById           String?
+  approvedAt             DateTime?
+  reviewNote             String?
+  isEscalated            Boolean           @default(false)
+  escalatedAt            DateTime?
+  escalatedToUnitId      String?
+  escalationNote         String?
   qrCodeData             String?
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
@@ -441,6 +449,7 @@ model CmsPage {
   language       String   @default("en")
   isSystem       Boolean  @default(false)
   isPinned       Boolean  @default(false)
+  publishedAt    DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   author         User     @relation("PageAuthor", fields: [authorId], references: [id])
@@ -459,6 +468,7 @@ model CmsPost {
   featuredImage  String?
   seoTitle       String?
   seoDescription String?
+  seoKeywords    String?
   language       String       @default("en")
   isPinned       Boolean      @default(false)
   publishedAt    DateTime?
@@ -512,6 +522,31 @@ model CmsDownload {
   fileUrl     String
   fileType    String
   category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CmsSection {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // HERO, HIGHLIGHT, CTA, CONTENT_BLOCK, NOTICE_BANNER
+  order       Int      @default(0)
+  isEnabled   Boolean  @default(true)
+  content     String   // JSON string for type-specific content
+  authorId    String
+  author      User     @relation("SectionAuthor", fields: [authorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       CmsSectionContent[]
+}
+
+model CmsSectionContent {
+  id          String   @id @default(cuid())
+  sectionId   String
+  section     CmsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  contentId   String   // ID of the related content (CmsPost, Notice, etc.)
+  contentType String   // POST, NOTICE, EVENT, etc.
+  order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -1316,7 +1351,7 @@ model Notice {
   id            String    @id @default(uuid())
   title         String
   content       String
-  audience      String    @default("PUBLIC")
+  audience      String    @default("PUBLIC") // PUBLIC, MEMBERS, STAFF
   status        String    @default("DRAFT")
   isPinned      Boolean   @default(false)
   publishAt     DateTime?

@@ -62,7 +62,12 @@ router.get('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: Auth
     const { id } = req.params;
     const member = await prisma.member.findUnique({
       where: { id },
-      include: { orgUnit: true, user: { select: { email: true, displayName: true, phoneNumber: true } } }
+      include: { 
+        orgUnit: true, 
+        user: { select: { email: true, displayName: true, phoneNumber: true } },
+        verifiedBy: { select: { displayName: true } },
+        approvedBy: { select: { displayName: true } }
+      }
     });
     if (!member) return res.status(404).json({ error: 'Member not found' });
     res.json(member);
@@ -76,9 +81,11 @@ router.get('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: Auth
 // @access  Private
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { status, unitId } = req.query;
+    const { status, unitId, isEscalated } = req.query;
     const query: any = {};
     if (status) query.status = status;
+    if (isEscalated === 'true') query.isEscalated = true;
+    if (isEscalated === 'false') query.isEscalated = false;
     
     // Hierarchy Scoping
     if (unitId) {
@@ -99,7 +106,9 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
       where: query,
       include: {
         orgUnit: { select: { name: true, level: true } },
-        user: { select: { email: true, displayName: true, phoneNumber: true } }
+        user: { select: { email: true, displayName: true, phoneNumber: true } },
+        verifiedBy: { select: { displayName: true } },
+        approvedBy: { select: { displayName: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -539,8 +548,19 @@ router.post('/:id/reject', authenticate, authorize(['ADMIN', 'STAFF']), async (r
 router.post('/:id/verify', authenticate, authorize(['ADMIN', 'STAFF', 'FIELD_COORDINATOR']), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const member = await membershipService.verify(id, req.user?.id!);
-    res.json(member);
+    const { note } = req.body;
+    
+    // Scoping check
+    const member = await prisma.member.findUnique({ where: { id } });
+    if (!member) return res.status(404).json({ error: 'Member not found' });
+    
+    if (req.user?.role !== 'ADMIN') {
+      const hasAccess = await hierarchyService.hasAccess(req.user?.id!, member.orgUnitId);
+      if (!hasAccess) return res.status(403).json({ error: 'Access denied: Member is outside your assigned unit scope' });
+    }
+
+    const updatedMember = await membershipService.verify(id, req.user?.id!, note);
+    res.json(updatedMember);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -552,8 +572,43 @@ router.post('/:id/verify', authenticate, authorize(['ADMIN', 'STAFF', 'FIELD_COO
 router.post('/:id/approve', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const member = await membershipService.approve(id, req.user?.id!);
-    res.json(member);
+    const { note } = req.body;
+
+    // Scoping check
+    const member = await prisma.member.findUnique({ where: { id } });
+    if (!member) return res.status(404).json({ error: 'Member not found' });
+    
+    if (req.user?.role !== 'ADMIN') {
+      const hasAccess = await hierarchyService.hasAccess(req.user?.id!, member.orgUnitId);
+      if (!hasAccess) return res.status(403).json({ error: 'Access denied: Member is outside your assigned unit scope' });
+    }
+
+    const updatedMember = await membershipService.approve(id, req.user?.id!, note);
+    res.json(updatedMember);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   POST /api/v1/members/:id/escalate
+// @desc    Escalate membership application to parent unit
+// @access  Private (Staff/Admin)
+router.post('/:id/escalate', authenticate, authorize(['ADMIN', 'STAFF', 'FIELD_COORDINATOR']), async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    // Scoping check
+    const member = await prisma.member.findUnique({ where: { id } });
+    if (!member) return res.status(404).json({ error: 'Member not found' });
+    
+    if (req.user?.role !== 'ADMIN') {
+      const hasAccess = await hierarchyService.hasAccess(req.user?.id!, member.orgUnitId);
+      if (!hasAccess) return res.status(403).json({ error: 'Access denied: Member is outside your assigned unit scope' });
+    }
+
+    const updatedMember = await membershipService.escalate(id, note);
+    res.json(updatedMember);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

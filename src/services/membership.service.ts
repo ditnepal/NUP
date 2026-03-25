@@ -113,12 +113,14 @@ export class MembershipService extends BaseService {
   /**
    * Local Unit Verification
    */
-  async verify(memberId: string, verifierId: string) {
+  async verify(memberId: string, verifierId: string, note?: string) {
     const member = await this.db.member.update({
       where: { id: memberId },
       data: {
         status: 'VERIFIED',
-        verifiedById: verifierId
+        verifiedById: verifierId,
+        verifiedAt: new Date(),
+        reviewNote: note || undefined
       }
     });
 
@@ -135,7 +137,7 @@ export class MembershipService extends BaseService {
   /**
    * Final Approval & ID Generation
    */
-  async approve(memberId: string, approverId: string) {
+  async approve(memberId: string, approverId: string, note?: string) {
     const year = new Date().getFullYear();
     
     // Safer ID generation: Find the highest current ID for this year and increment
@@ -171,6 +173,8 @@ export class MembershipService extends BaseService {
             status: 'ACTIVE',
             membershipId,
             approvedById: approverId,
+            approvedAt: new Date(),
+            reviewNote: note || undefined,
             joinedDate: new Date(),
             expiryDate,
             qrCodeData: `QR-${Math.random().toString(36).substring(2, 12).toUpperCase()}` // Auto-generate on approval
@@ -283,7 +287,40 @@ export class MembershipService extends BaseService {
       where: { id: memberId },
       data: {
         status: 'REJECTED',
+        reviewNote: reason || undefined,
         terminationHistory: reason ? JSON.stringify([{ reason, date: new Date() }]) : undefined
+      }
+    });
+  }
+
+  /**
+   * Escalate Membership Application to Parent Unit
+   */
+  async escalate(memberId: string, note?: string) {
+    const member = await this.db.member.findUnique({
+      where: { id: memberId },
+      include: { orgUnit: true }
+    });
+
+    if (!member) throw new Error('Member not found');
+    if (!member.orgUnitId) throw new Error('Member has no assigned unit');
+
+    // Find parent unit
+    const unit = await this.db.organizationUnit.findUnique({
+      where: { id: member.orgUnitId }
+    });
+
+    if (!unit || !unit.parentId) {
+      throw new Error('No parent unit found to escalate to');
+    }
+
+    return await this.db.member.update({
+      where: { id: memberId },
+      data: {
+        isEscalated: true,
+        escalatedAt: new Date(),
+        escalatedToUnitId: unit.parentId,
+        escalationNote: note || undefined
       }
     });
   }
