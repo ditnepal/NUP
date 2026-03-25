@@ -127,11 +127,12 @@ export const FundraiserAdmin: React.FC = () => {
         <>
           {activeTab === 'overview' && analytics && (
             <div className="space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard label="Total Raised" value={`NPR ${analytics.totalRaised.toLocaleString()}`} icon={DollarSign} color="text-emerald-600" bg="bg-emerald-50" trend={{ value: '+12%', positive: true }} />
-                <StatCard label="Total Donors" value={analytics.donorCount || 0} icon={Users} color="text-blue-600" bg="bg-blue-50" trend={{ value: '+5%', positive: true }} />
-                <StatCard label="Avg. Donation" value={`NPR ${((analytics.totalRaised || 0) / (analytics.donorCount || 1)).toFixed(0)}`} icon={TrendingUp} color="text-purple-600" bg="bg-purple-50" trend={{ value: '-2%', positive: false }} />
-                <StatCard label="Active Fundraisers" value={analytics.campaigns.length} icon={PieChart} color="text-amber-600" bg="bg-amber-50" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                <StatCard label="Verified Raised" value={`NPR ${(analytics.totalRaised || 0).toLocaleString()}`} icon={DollarSign} color="text-emerald-600" bg="bg-emerald-50" />
+                <StatCard label="Pending Donations" value={`NPR ${(analytics.pendingDonationsAmount || 0).toLocaleString()}`} icon={RefreshCw} color="text-amber-600" bg="bg-amber-50" />
+                <StatCard label="Total Donors" value={analytics.donorCount || 0} icon={Users} color="text-blue-600" bg="bg-blue-50" />
+                <StatCard label="Active Campaigns" value={analytics.campaigns?.filter(c => c.status === 'ACTIVE').length || 0} icon={TrendingUp} color="text-purple-600" bg="bg-purple-50" />
+                <StatCard label="Total Campaigns" value={analytics.campaigns?.length || 0} icon={PieChart} color="text-indigo-600" bg="bg-indigo-50" />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -141,18 +142,18 @@ export const FundraiserAdmin: React.FC = () => {
                     <h2 className="text-lg font-bold text-gray-900">Recent Donations</h2>
                   </div>
                   <div className="divide-y divide-gray-100">
-                    {analytics.recentDonations.length > 0 ? (
+                    {analytics.recentDonations && analytics.recentDonations.length > 0 ? (
                       analytics.recentDonations.map((donation: any) => (
                         <div key={donation.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><Users size={20} /></div>
                             <div>
-                              <p className="text-sm font-bold text-gray-900">{donation.donor.fullName}</p>
+                              <p className="text-sm font-bold text-gray-900">{donation.donor?.fullName || 'Anonymous'}</p>
                               <p className="text-xs text-gray-500">{donation.campaign?.title || 'General Fund'}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold text-emerald-600">+ NPR {donation.amount.toLocaleString()}</p>
+                            <p className="text-sm font-bold text-emerald-600">+ NPR {(donation.amount || 0).toLocaleString()}</p>
                             <p className="text-[10px] text-gray-400">{donation.paymentMethod || 'N/A'} • {new Date(donation.createdAt).toLocaleDateString()}</p>
                           </div>
                         </div>
@@ -172,15 +173,17 @@ export const FundraiserAdmin: React.FC = () => {
                     <h2 className="text-lg font-bold text-gray-900">Fundraiser Progress</h2>
                   </div>
                   <div className="p-6 space-y-6">
-                    {analytics.campaigns.length > 0 ? (
+                    {analytics.campaigns && analytics.campaigns.length > 0 ? (
                       analytics.campaigns.map((fundraiser) => (
                         <div key={fundraiser.id}>
                           <div className="flex justify-between text-sm mb-2">
                             <span className="font-bold text-gray-900">{fundraiser.title}</span>
-                            <span className="text-gray-500">NPR {fundraiser.currentAmount.toLocaleString()} / {fundraiser.goalAmount.toLocaleString()}</span>
+                            <span className="text-gray-500">
+                              NPR {(fundraiser.currentAmount || 0).toLocaleString()} / {fundraiser.goalAmount > 0 ? fundraiser.goalAmount.toLocaleString() : 'No Goal'}
+                            </span>
                           </div>
                           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${fundraiser.goalAmount > 0 ? Math.min((fundraiser.currentAmount / fundraiser.goalAmount) * 100, 100) : 0}%` }} />
+                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${fundraiser.goalAmount > 0 ? Math.min(((fundraiser.currentAmount || 0) / fundraiser.goalAmount) * 100, 100) : 0}%` }} />
                           </div>
                         </div>
                       ))
@@ -208,7 +211,7 @@ export const FundraiserAdmin: React.FC = () => {
                 <h3 className="text-lg font-bold text-gray-900">Create New Fundraiser</h3>
                 <p className="text-sm text-gray-500 mt-2">Start a new fundraising drive for the party, candidate, or cause.</p>
               </button>
-              {analytics?.campaigns.map((fundraiser) => (
+              {analytics?.campaigns && analytics.campaigns.map((fundraiser) => (
                 <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />
               ))}
             </div>

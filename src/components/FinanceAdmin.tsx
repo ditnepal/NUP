@@ -122,10 +122,10 @@ export const FinanceAdmin: React.FC = () => {
     }
   };
 
-  const filteredTransactions = transactions.filter(tx => 
-    tx.description.toLowerCase().includes(transactionSearch.toLowerCase()) ||
-    tx.category.toLowerCase().includes(transactionSearch.toLowerCase()) ||
-    tx.referenceId.toLowerCase().includes(transactionSearch.toLowerCase())
+  const filteredTransactions = (transactions || []).filter(tx => 
+    (tx.description || '').toLowerCase().includes(transactionSearch.toLowerCase()) ||
+    (tx.category || '').toLowerCase().includes(transactionSearch.toLowerCase()) ||
+    (tx.referenceId || '').toLowerCase().includes(transactionSearch.toLowerCase())
   );
 
   const openModal = (integration?: PaymentIntegration) => {
@@ -214,11 +214,12 @@ export const FinanceAdmin: React.FC = () => {
         <>
           {activeTab === 'overview' && analytics && (
             <div className="space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard label="Total Collections" value={`NPR ${analytics.totalCollections.toLocaleString()}`} icon={DollarSign} color="text-emerald-600" bg="bg-emerald-50" trend={{ value: '+15%', positive: true }} />
-                <StatCard label="Membership Fees" value={`NPR ${analytics.membershipCollections.toLocaleString()}`} icon={Users} color="text-blue-600" bg="bg-blue-50" />
-                <StatCard label="Renewal Fees" value={`NPR ${analytics.renewalCollections.toLocaleString()}`} icon={RefreshCw} color="text-purple-600" bg="bg-purple-50" />
-                <StatCard label="Fundraiser Donations" value={`NPR ${analytics.fundraiserCollections.toLocaleString()}`} icon={TrendingUp} color="text-amber-600" bg="bg-amber-50" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                <StatCard label="Total Collections" value={`NPR ${(analytics.totalCollections || 0).toLocaleString()}`} icon={DollarSign} color="text-emerald-600" bg="bg-emerald-50" />
+                <StatCard label="Membership Fees" value={`NPR ${(analytics.membershipCollections || 0).toLocaleString()}`} icon={Users} color="text-blue-600" bg="bg-blue-50" />
+                <StatCard label="Renewal Fees" value={`NPR ${(analytics.renewalCollections || 0).toLocaleString()}`} icon={RefreshCw} color="text-purple-600" bg="bg-purple-50" />
+                <StatCard label="Fundraiser Donations" value={`NPR ${(analytics.fundraiserCollections || 0).toLocaleString()}`} icon={TrendingUp} color="text-amber-600" bg="bg-amber-50" />
+                <StatCard label="Pending Transactions" value={`NPR ${(analytics.pendingTransactionAmount || 0).toLocaleString()}`} icon={RefreshCw} color="text-rose-600" bg="bg-rose-50" />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -228,36 +229,36 @@ export const FinanceAdmin: React.FC = () => {
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-bold text-gray-900">Membership Collections</span>
-                        <span className="text-sm font-bold text-emerald-600">NPR {analytics.membershipCollections.toLocaleString()}</span>
+                        <span className="text-sm font-bold text-emerald-600">NPR {(analytics.membershipCollections || 0).toLocaleString()}</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-blue-500 transition-all duration-500" 
-                          style={{ width: `${analytics.totalCollections > 0 ? (analytics.membershipCollections / analytics.totalCollections) * 100 : 0}%` }} 
+                          style={{ width: `${analytics.totalCollections > 0 ? ((analytics.membershipCollections || 0) / analytics.totalCollections) * 100 : 0}%` }} 
                         />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-bold text-gray-900">Renewal Collections</span>
-                        <span className="text-sm font-bold text-emerald-600">NPR {analytics.renewalCollections.toLocaleString()}</span>
+                        <span className="text-sm font-bold text-emerald-600">NPR {(analytics.renewalCollections || 0).toLocaleString()}</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-purple-500 transition-all duration-500" 
-                          style={{ width: `${analytics.totalCollections > 0 ? (analytics.renewalCollections / analytics.totalCollections) * 100 : 0}%` }} 
+                          style={{ width: `${analytics.totalCollections > 0 ? ((analytics.renewalCollections || 0) / analytics.totalCollections) * 100 : 0}%` }} 
                         />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-bold text-gray-900">Fundraiser Collections</span>
-                        <span className="text-sm font-bold text-emerald-600">NPR {analytics.fundraiserCollections.toLocaleString()}</span>
+                        <span className="text-sm font-bold text-emerald-600">NPR {(analytics.fundraiserCollections || 0).toLocaleString()}</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-amber-500 transition-all duration-500" 
-                          style={{ width: `${analytics.totalCollections > 0 ? (analytics.fundraiserCollections / analytics.totalCollections) * 100 : 0}%` }} 
+                          style={{ width: `${analytics.totalCollections > 0 ? ((analytics.fundraiserCollections || 0) / analytics.totalCollections) * 100 : 0}%` }} 
                         />
                       </div>
                     </div>
@@ -270,8 +271,8 @@ export const FinanceAdmin: React.FC = () => {
                     <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4">
                       <RefreshCw size={32} />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">NPR {analytics.refundTotal.toLocaleString()}</p>
-                    <p className="text-sm text-gray-500">Total Refunded ({analytics.refundCount} cases)</p>
+                    <p className="text-2xl font-bold text-gray-900">NPR {(analytics.refundTotal || 0).toLocaleString()}</p>
+                    <p className="text-sm text-gray-500">Total Refunded ({analytics.refundCount || 0} cases)</p>
                     <button 
                       onClick={() => setActiveTab('transactions')}
                       className="mt-6 text-xs font-bold text-red-600 hover:underline"
@@ -332,18 +333,18 @@ export const FinanceAdmin: React.FC = () => {
                     <button onClick={() => setActiveTab('transactions')} className="text-xs font-bold text-emerald-600 hover:underline">View All</button>
                   </div>
                   <div className="divide-y divide-gray-100">
-                    {analytics.recentDonations.length > 0 ? (
-                      analytics.recentDonations.map((donation: any) => (
+                    {analytics && analytics.recentDonations && analytics.recentDonations.length > 0 ? (
+                      (analytics.recentDonations || []).map((donation: any) => (
                         <div key={donation.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><Users size={20} /></div>
                             <div>
-                              <p className="text-sm font-bold text-gray-900">{donation.donor.fullName}</p>
+                              <p className="text-sm font-bold text-gray-900">{donation.donor?.fullName || 'Unknown Donor'}</p>
                               <p className="text-xs text-gray-500">{donation.campaign?.title || 'General Fund'}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold text-emerald-600">+ NPR {donation.amount.toLocaleString()}</p>
+                            <p className="text-sm font-bold text-emerald-600">+ NPR {(donation.amount || 0).toLocaleString()}</p>
                             <p className="text-[10px] text-gray-400">{donation.paymentMethod || 'N/A'} • {new Date(donation.createdAt).toLocaleDateString()}</p>
                           </div>
                         </div>
@@ -364,15 +365,15 @@ export const FinanceAdmin: React.FC = () => {
                     <h2 className="text-lg font-bold text-gray-900">Fundraiser Progress</h2>
                   </div>
                   <div className="p-6 space-y-6">
-                    {analytics.campaigns.length > 0 ? (
-                      analytics.campaigns.map((fundraiser) => (
+                    {analytics && analytics.campaigns && analytics.campaigns.length > 0 ? (
+                      (analytics.campaigns || []).map((fundraiser) => (
                         <div key={fundraiser.id}>
                           <div className="flex justify-between text-sm mb-2">
                             <span className="font-bold text-gray-900">{fundraiser.title}</span>
-                            <span className="text-gray-500">NPR {fundraiser.currentAmount.toLocaleString()} / {fundraiser.goalAmount.toLocaleString()}</span>
+                            <span className="text-gray-500">NPR {(fundraiser.currentAmount || 0).toLocaleString()} / {fundraiser.goalAmount > 0 ? fundraiser.goalAmount.toLocaleString() : 'No Goal'}</span>
                           </div>
                           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min((fundraiser.currentAmount / fundraiser.goalAmount) * 100, 100)}%` }} />
+                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${fundraiser.goalAmount > 0 ? Math.min(((fundraiser.currentAmount || 0) / fundraiser.goalAmount) * 100, 100) : 0}%` }} />
                           </div>
                         </div>
                       ))
@@ -426,7 +427,7 @@ export const FinanceAdmin: React.FC = () => {
                 </button>
               </div>
 
-              {integrations.length === 0 ? (
+              {!integrations || integrations.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-500 shadow-sm">
                   <Settings size={48} className="mx-auto mb-4 opacity-20" />
                   <p className="text-lg font-bold text-gray-900">No integrations configured</p>
@@ -434,7 +435,7 @@ export const FinanceAdmin: React.FC = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {integrations.map((integration) => (
+                  {(integrations || []).map((integration) => (
                     <div key={integration.id} className={`bg-white rounded-2xl border border-gray-200 p-6 shadow-sm relative overflow-hidden transition-all hover:shadow-md ${!integration.enabled ? 'opacity-75 grayscale-[0.5]' : ''}`}>
                       <div className="flex justify-between items-start mb-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${integration.enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>

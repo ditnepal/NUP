@@ -409,6 +409,10 @@ export interface FinanceAnalytics {
   refundTotal: number;
   refundCount: number;
   recentTransactionCount: number;
+  pendingDonationsCount?: number;
+  pendingDonationsAmount?: number;
+  pendingTransactionCount?: number;
+  pendingTransactionAmount?: number;
 }
 
 export interface Notice {

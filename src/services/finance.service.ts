@@ -293,6 +293,18 @@ export class FinanceService {
       }
     });
 
+    const pendingDonationsStats = await prisma.donation.aggregate({
+      where: { status: 'PENDING' },
+      _sum: { amount: true },
+      _count: { id: true },
+    });
+
+    const pendingTransactionStats = await prisma.transaction.aggregate({
+      where: { status: 'PENDING' },
+      _sum: { amount: true },
+      _count: { id: true },
+    });
+
     return {
       totalRaised: fundraiserCollections,
       donorCount,
@@ -305,6 +317,10 @@ export class FinanceService {
       refundTotal: refundStats._sum.amount || 0,
       refundCount: refundStats._count.id || 0,
       recentTransactionCount,
+      pendingDonationsCount: pendingDonationsStats._count.id || 0,
+      pendingDonationsAmount: pendingDonationsStats._sum.amount || 0,
+      pendingTransactionCount: pendingTransactionStats._count.id || 0,
+      pendingTransactionAmount: pendingTransactionStats._sum.amount || 0,
     };
   }
 

@@ -10,7 +10,7 @@ interface TransactionTableProps {
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions, onRefund, onVerify, onReject }) => {
-  if (transactions.length === 0) {
+  if (!transactions || transactions.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-500 shadow-sm">
         <Search size={48} className="mx-auto mb-4 opacity-20" />
@@ -35,7 +35,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {transactions.map((tx) => (
+            {(transactions || []).map((tx) => (
               <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{new Date(tx.date).toLocaleDateString()}</td>
                 <td className="px-6 py-4">
@@ -52,7 +52,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`text-sm font-bold ${tx.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {tx.type === 'INCOME' ? '+' : '-'} NPR {tx.amount.toLocaleString()}
+                    {tx.type === 'INCOME' ? '+' : '-'} NPR {(tx.amount || 0).toLocaleString()}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
