@@ -39,26 +39,35 @@ export const DonationPortal: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('payment_status') === 'returned') {
-      const purchaseOrderId = params.get('purchase_order_id');
+    const paymentStatus = params.get('payment_status');
+    const purchaseOrderId = params.get('purchase_order_id') || params.get('moru_purchase_order_id');
+    const method = params.get('method');
+    
+    if (paymentStatus === 'returned' && purchaseOrderId && method) {
       const amount = params.get('amount');
-      const method = params.get('method');
       
-      if (purchaseOrderId && amount && method) {
-        // We returned from a payment provider. 
-        // We need to create the pending donation record in our DB if it doesn't exist.
-        // Actually, it's better to create it BEFORE redirecting, but Khalti/eSewa might fail.
-        // For now, let's just show the success screen.
-        setDonationResult({ status: 'PENDING' });
-        const parsedAmount = parseFloat(amount);
-        if (!isNaN(parsedAmount)) {
-          setAmount(parsedAmount);
+      // We returned from a payment provider. 
+      // Call the backend to capture the return parameters
+      const captureReturn = async () => {
+        try {
+          const result = await api.get(`/finance/donations/return/${method.toLowerCase()}?${params.toString()}`);
+          setDonationResult(result);
+        } catch (error) {
+          console.error('Error capturing payment return:', error);
+          setDonationResult({ status: 'PENDING', message: 'Return captured locally, but server update failed.' });
         }
-        setStep('success');
-        
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+      };
+
+      captureReturn();
+      
+      const parsedAmount = amount ? parseFloat(amount) : NaN;
+      if (!isNaN(parsedAmount)) {
+        setAmount(parsedAmount);
       }
+      setStep('success');
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
@@ -70,8 +79,8 @@ export const DonationPortal: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      // 1. If it's a manual method (has instructions), use the old flow
-      if (selectedMethod.instructions) {
+      // 1. If it's a manual method, use the manual flow
+      if (selectedMethod.isManual) {
         const result = await api.post('/finance/donations', {
           ...donorInfo,
           amount,
@@ -122,6 +131,9 @@ export const DonationPortal: React.FC = () => {
 
         document.body.appendChild(form);
         form.submit();
+      } else if (initiation.type === 'MANUAL') {
+        setDonationResult({ status: 'PENDING', instructions: initiation.instructions });
+        setStep('success');
       }
     } catch (error: any) {
       alert(`Payment initiation failed: ${error.message}`);
@@ -132,6 +144,8 @@ export const DonationPortal: React.FC = () => {
 
   if (step === 'success') {
     const isPending = donationResult?.status === 'PENDING';
+    const isMoru = selectedMethod?.provider === 'MORU' || donationResult?.provider === 'MORU';
+    
     return (
       <div className="max-w-2xl mx-auto py-20 text-center">
         <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-8 ${
@@ -140,19 +154,43 @@ export const DonationPortal: React.FC = () => {
           {isPending ? <Info size={48} /> : <CheckCircle size={48} />}
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
-          {isPending ? 'Donation Initiated' : 'Thank You for Your Support!'}
+          {isPending ? 'Verification Pending' : 'Thank You for Your Support!'}
         </h1>
-        <p className="text-xl text-gray-500 mb-12 leading-relaxed">
-          {isPending 
-            ? `Your donation of NPR ${amount.toLocaleString()} has been initiated. Please follow the payment instructions provided. Our finance team will verify your payment soon.`
-            : `Your contribution of NPR ${amount.toLocaleString()} has been received. A receipt has been sent to your email.`
-          }
-        </p>
+        <div className="text-xl text-gray-500 mb-12 leading-relaxed space-y-4">
+          <p>
+            {isPending 
+              ? `Your donation of NPR ${amount.toLocaleString()} is currently being processed.`
+              : `Your contribution of NPR ${amount.toLocaleString()} has been received. A receipt has been sent to your email.`
+            }
+          </p>
+          {isPending && (
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 text-sm text-amber-800 text-left">
+              <h4 className="font-bold mb-2 flex items-center gap-2">
+                <Shield size={16} /> Honest Accounting Notice
+              </h4>
+              <p className="mb-4">
+                We have recorded your payment attempt. To ensure financial integrity, your donation will remain in <strong>PENDING</strong> status until our finance team verifies the transaction with the provider.
+              </p>
+              {donationResult?.instructions && (
+                <div className="mt-4 pt-4 border-t border-amber-200">
+                  <p className="font-bold mb-1 uppercase text-[10px] tracking-widest opacity-60">Next Steps:</p>
+                  <p className="whitespace-pre-wrap">{donationResult.instructions}</p>
+                </div>
+              )}
+              {isMoru && (
+                <p className="mt-4 italic opacity-80">
+                  MORU payments are manually reconciled daily. You will receive a confirmation email once verified.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
         <button 
           onClick={() => { 
             setStep('browse'); 
             setDonorInfo({ fullName: '', email: '', phone: '', isAnonymous: false }); 
             setDonationResult(null);
+            setSelectedMethod(null);
           }}
           className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-xl ${
             isPending 

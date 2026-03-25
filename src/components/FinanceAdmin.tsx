@@ -13,7 +13,18 @@ export const FinanceAdmin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'integrations'>('overview');
   const [transactionSearch, setTransactionSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [reconciliationNote, setReconciliationNote] = useState('');
   const [editingIntegration, setEditingIntegration] = useState<PaymentIntegration | null>(null);
+  const [transactionFormData, setTransactionFormData] = useState({
+    type: 'INCOME' as 'INCOME' | 'EXPENSE',
+    category: 'OTHER',
+    amount: 0,
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+  });
   const [formData, setFormData] = useState({
     provider: 'KHALTI',
     displayName: '',
@@ -52,12 +63,13 @@ export const FinanceAdmin: React.FC = () => {
     fetchData();
   }, [activeTab, fetchData]);
 
-  const handleRefund = async (donationId: string) => {
-    const reason = prompt('Reason for refund:');
+  const handleRefund = async (donationId: string, note?: string) => {
+    const reason = note || prompt('Reason for refund:');
     if (!reason) return;
     try {
       await api.post(`/finance/donations/${donationId}/refund`, { reason });
       alert('Refund processed successfully');
+      setShowDetailModal(false);
       fetchData();
     } catch (error: any) {
       alert(`Refund failed: ${error.message}`);
@@ -69,21 +81,55 @@ export const FinanceAdmin: React.FC = () => {
     try {
       await api.post(`/finance/transactions/${id}/verify`, {});
       alert('Payment verified successfully');
+      setShowDetailModal(false);
       fetchData();
     } catch (error: any) {
       alert(`Verification failed: ${error.message}`);
     }
   };
 
-  const handleReject = async (id: string) => {
-    const reason = prompt('Reason for rejection:');
+  const handleReject = async (id: string, note?: string) => {
+    const reason = note || prompt('Reason for rejection:');
     if (!reason) return;
     try {
       await api.post(`/finance/transactions/${id}/reject`, { reason });
       alert('Payment rejected');
+      setShowDetailModal(false);
       fetchData();
     } catch (error: any) {
       alert(`Rejection failed: ${error.message}`);
+    }
+  };
+
+  const handleUpdateNote = async () => {
+    if (!selectedTransaction) return;
+    try {
+      await api.patch(`/transactions/${selectedTransaction.id}/note`, { note: reconciliationNote });
+      alert('Note updated');
+      fetchData();
+    } catch (error: any) {
+      alert(`Update failed: ${error.message}`);
+    }
+  };
+
+  const handleSaveTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/transactions', {
+        ...transactionFormData,
+        date: new Date(transactionFormData.date).toISOString(),
+      });
+      setShowTransactionModal(false);
+      setTransactionFormData({
+        type: 'INCOME',
+        category: 'OTHER',
+        amount: 0,
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+      });
+      fetchData();
+    } catch (error: any) {
+      alert(`Error recording transaction: ${error.message}`);
     }
   };
 
@@ -234,7 +280,7 @@ export const FinanceAdmin: React.FC = () => {
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-blue-500 transition-all duration-500" 
-                          style={{ width: `${analytics.totalCollections > 0 ? ((analytics.membershipCollections || 0) / analytics.totalCollections) * 100 : 0}%` }} 
+                          style={{ width: `${(analytics.totalCollections || 0) > 0 ? ((analytics.membershipCollections || 0) / (analytics.totalCollections || 1)) * 100 : 0}%` }} 
                         />
                       </div>
                     </div>
@@ -246,7 +292,7 @@ export const FinanceAdmin: React.FC = () => {
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-purple-500 transition-all duration-500" 
-                          style={{ width: `${analytics.totalCollections > 0 ? ((analytics.renewalCollections || 0) / analytics.totalCollections) * 100 : 0}%` }} 
+                          style={{ width: `${(analytics.totalCollections || 0) > 0 ? ((analytics.renewalCollections || 0) / (analytics.totalCollections || 1)) * 100 : 0}%` }} 
                         />
                       </div>
                     </div>
@@ -258,7 +304,7 @@ export const FinanceAdmin: React.FC = () => {
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-amber-500 transition-all duration-500" 
-                          style={{ width: `${analytics.totalCollections > 0 ? ((analytics.fundraiserCollections || 0) / analytics.totalCollections) * 100 : 0}%` }} 
+                          style={{ width: `${(analytics.totalCollections || 0) > 0 ? ((analytics.fundraiserCollections || 0) / (analytics.totalCollections || 1)) * 100 : 0}%` }} 
                         />
                       </div>
                     </div>
@@ -283,6 +329,29 @@ export const FinanceAdmin: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Total Logs</h3>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.totalTransactionCount || 0}</p>
+                  <p className="text-xs text-gray-500">All-time transactions</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Recent Activity</h3>
+                  <p className="text-2xl font-bold text-emerald-600">{analytics.recentTransactionCount || 0}</p>
+                  <p className="text-xs text-gray-500">Last 30 days</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Pending Audit</h3>
+                  <p className="text-2xl font-bold text-rose-600">{analytics.pendingTransactionCount || 0}</p>
+                  <p className="text-xs text-gray-500">Requires verification</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Rejected/Failed</h3>
+                  <p className="text-2xl font-bold text-gray-400">{analytics.rejectedTransactionCount || 0}</p>
+                  <p className="text-xs text-gray-500">Unsuccessful attempts</p>
+                </div>
+              </div>
+
               <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Financial Controls</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -299,7 +368,7 @@ export const FinanceAdmin: React.FC = () => {
                     </div>
                   </button>
                   <button 
-                    onClick={() => alert('Manual transaction recording coming soon')}
+                    onClick={() => setShowTransactionModal(true)}
                     className="flex items-center gap-4 p-4 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all hover:scale-[1.02] active:scale-95 text-left group"
                   >
                     <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
@@ -391,6 +460,25 @@ export const FinanceAdmin: React.FC = () => {
 
           {activeTab === 'transactions' && (
             <div className="space-y-4">
+              {transactions.some(tx => tx.status === 'PENDING' && tx.reconciliationNote?.includes('Captured')) && (
+                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center">
+                      <RefreshCw size={20} className="animate-spin-slow" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-amber-900">Payment Evidence Captured</p>
+                      <p className="text-xs text-amber-700">There are pending transactions with captured provider evidence that require manual review.</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setTransactionSearch('Captured')}
+                    className="text-xs font-bold text-amber-600 hover:underline px-4 py-2 bg-white rounded-lg border border-amber-200 shadow-sm"
+                  >
+                    Filter for Review
+                  </button>
+                </div>
+              )}
               <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                 <div className="relative w-full max-w-md">
                   <input
@@ -408,6 +496,11 @@ export const FinanceAdmin: React.FC = () => {
                 onRefund={handleRefund} 
                 onVerify={handleVerify}
                 onReject={handleReject}
+                onViewDetails={(tx) => {
+                  setSelectedTransaction(tx);
+                  setReconciliationNote(tx.reconciliationNote || '');
+                  setShowDetailModal(true);
+                }}
               />
             </div>
           )}
@@ -418,6 +511,7 @@ export const FinanceAdmin: React.FC = () => {
                 <div>
                   <h2 className="text-lg font-bold text-emerald-900 mb-2">Payment Integrations</h2>
                   <p className="text-emerald-700">Manage how the party receives digital payments across all modules (Membership, Renewals, Fundraisers).</p>
+                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mt-2">Note: Live gateway completion is pending provider-specific API key configuration.</p>
                 </div>
                 <button 
                   onClick={() => openModal()}
@@ -439,7 +533,7 @@ export const FinanceAdmin: React.FC = () => {
                     <div key={integration.id} className={`bg-white rounded-2xl border border-gray-200 p-6 shadow-sm relative overflow-hidden transition-all hover:shadow-md ${!integration.enabled ? 'opacity-75 grayscale-[0.5]' : ''}`}>
                       <div className="flex justify-between items-start mb-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${integration.enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
-                          {['KHALTI', 'ESEWA', 'IME_PAY', 'QR_PAYMENT', 'CASH_RECORD', 'BANK_TRANSFER'].includes(integration.provider) ? <Smartphone size={24} /> : <Landmark size={24} />}
+                          {['KHALTI', 'ESEWA', 'MORU', 'IME_PAY', 'QR_PAYMENT', 'CASH_RECORD', 'BANK_TRANSFER'].includes(integration.provider) ? <Smartphone size={24} /> : <Landmark size={24} />}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${integration.mode === 'LIVE' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
@@ -485,6 +579,284 @@ export const FinanceAdmin: React.FC = () => {
                 </div>
               )}
 
+              {showDetailModal && selectedTransaction && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden">
+                    <div className="p-8">
+                      <div className="flex justify-between items-start mb-8">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Transaction Details</h2>
+                          <p className="text-gray-500 text-sm">Review and reconcile this financial record.</p>
+                        </div>
+                        <button onClick={() => setShowDetailModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                          <XCircle size={24} className="text-gray-400" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Source / Module</label>
+                            <div className="text-sm font-bold text-gray-900">
+                              {selectedTransaction.category === 'DONATION' ? 'Fundraiser' : 
+                               selectedTransaction.category === 'MEMBERSHIP_FEE' ? 'Membership' : 
+                               selectedTransaction.category === 'RENEWAL_FEE' ? 'Renewals' : 'General'}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Category & Type</label>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-bold uppercase">{selectedTransaction.category}</span>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${selectedTransaction.type === 'INCOME' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                {selectedTransaction.type}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Amount</label>
+                            <div className="text-xl font-black text-gray-900">NPR {selectedTransaction.amount.toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Status</label>
+                            <span className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${
+                              selectedTransaction.status === 'COMPLETED' ? 'bg-green-50 text-green-600' :
+                              selectedTransaction.status === 'PENDING' ? 'bg-blue-50 text-blue-600' :
+                              selectedTransaction.status === 'REFUNDED' ? 'bg-amber-50 text-amber-600' :
+                              selectedTransaction.status === 'REJECTED' ? 'bg-red-50 text-red-600' :
+                              'bg-red-50 text-red-600'
+                            }`}>
+                              {selectedTransaction.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Recorded By</label>
+                            <div className="text-sm text-gray-900">{selectedTransaction.recordedBy?.displayName || 'System'}</div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Payment Method</label>
+                            <div className="text-sm text-gray-900 font-medium">{selectedTransaction.paymentMethod || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Reference ID</label>
+                            <div className="text-sm font-mono text-gray-600">{selectedTransaction.referenceId || 'No Reference'}</div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Date</label>
+                            <div className="text-sm text-gray-900">{new Date(selectedTransaction.date).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-6 border-t border-gray-100 pt-8">
+                        {selectedTransaction.reconciliationNote?.includes('Captured') && (
+                          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+                            <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2">
+                              <RefreshCw size={12} className="animate-spin-slow" />
+                              Captured Provider Evidence
+                            </h4>
+                            <div className="space-y-2">
+                              {selectedTransaction.reconciliationNote.split('\n').filter(line => line.includes('Captured')).map((line, idx) => {
+                                try {
+                                  const jsonPart = line.split(': ').slice(1).join(': ');
+                                  const data = JSON.parse(jsonPart);
+                                  return (
+                                    <div key={idx} className="bg-white/50 rounded-lg p-3 text-[10px] font-mono border border-amber-200/50">
+                                      <div className="text-amber-600 mb-2 opacity-70">{line.split(']')[0] + ']'}</div>
+                                      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                        {Object.entries(data).map(([key, val]) => (
+                                          <React.Fragment key={key}>
+                                            <span className="text-gray-400">{key}:</span>
+                                            <span className="text-gray-900 font-bold truncate">{String(val)}</span>
+                                          </React.Fragment>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                } catch (e) {
+                                  return <div key={idx} className="text-[10px] text-amber-700 italic">{line}</div>;
+                                }
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                            <Landmark size={14} className="text-emerald-600" />
+                            Reconciliation Note
+                          </label>
+                          <textarea 
+                            rows={3}
+                            placeholder="Add internal notes for audit trail..."
+                            value={reconciliationNote}
+                            onChange={(e) => setReconciliationNote(e.target.value)}
+                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                          />
+                          <div className="flex justify-end">
+                            <button 
+                              onClick={handleUpdateNote}
+                              className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-widest"
+                            >
+                              Save Note Only
+                            </button>
+                          </div>
+                        </div>
+
+                        {selectedTransaction.reviewedBy && (
+                          <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
+                            <div className="text-[10px] text-gray-500 font-medium">
+                              Reviewed by <span className="font-bold text-gray-900">{selectedTransaction.reviewedBy.displayName}</span> on {new Date(selectedTransaction.reviewedAt!).toLocaleDateString()}
+                            </div>
+                            <CheckCircle size={16} className="text-emerald-500" />
+                          </div>
+                        )}
+
+                        <div className="flex gap-4 pt-4">
+                          {selectedTransaction.status === 'PENDING' && (
+                            <>
+                              <button 
+                                onClick={() => handleReject(selectedTransaction.id, reconciliationNote)}
+                                className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-bold hover:bg-rose-100 transition-all active:scale-95"
+                              >
+                                Reject Transaction
+                              </button>
+                              <button 
+                                onClick={() => handleVerify(selectedTransaction.id)}
+                                className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 active:scale-95"
+                              >
+                                Verify & Complete
+                              </button>
+                            </>
+                          )}
+                          {selectedTransaction.status === 'COMPLETED' && selectedTransaction.category === 'DONATION' && selectedTransaction.donation?.id && (
+                            <button 
+                              onClick={() => handleRefund(selectedTransaction.donation!.id, reconciliationNote)}
+                              className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-200 active:scale-95"
+                            >
+                              Refund Transaction
+                            </button>
+                          )}
+                          {(selectedTransaction.status !== 'PENDING' && (selectedTransaction.status !== 'COMPLETED' || selectedTransaction.category !== 'DONATION')) && (
+                            <button 
+                              onClick={() => setShowDetailModal(false)}
+                              className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all active:scale-95"
+                            >
+                              Close Details
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showTransactionModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+                    <div className="p-8">
+                      <div className="flex justify-between items-center mb-8">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Record Transaction</h2>
+                          <p className="text-gray-500 text-sm">Manually record income or expenses.</p>
+                        </div>
+                        <button onClick={() => setShowTransactionModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                          <XCircle size={24} className="text-gray-400" />
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSaveTransaction} className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Type</label>
+                            <select 
+                              value={transactionFormData.type}
+                              onChange={(e) => setTransactionFormData({...transactionFormData, type: e.target.value as any})}
+                              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold"
+                            >
+                              <option value="INCOME">Income</option>
+                              <option value="EXPENSE">Expense</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Category</label>
+                            <select 
+                              value={transactionFormData.category}
+                              onChange={(e) => setTransactionFormData({...transactionFormData, category: e.target.value})}
+                              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold"
+                            >
+                              <option value="MEMBERSHIP_FEE">Membership Fee</option>
+                              <option value="RENEWAL_FEE">Renewal Fee</option>
+                              <option value="DONATION">Donation</option>
+                              <option value="EVENT_TICKET">Event Ticket</option>
+                              <option value="MERCHANDISE">Merchandise</option>
+                              <option value="CAMPAIGN_EXPENSE">Campaign Expense</option>
+                              <option value="OFFICE_EXPENSE">Office Expense</option>
+                              <option value="SALARY">Salary</option>
+                              <option value="OTHER">Other</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Amount (NPR)</label>
+                          <input 
+                            type="number"
+                            required
+                            min="1"
+                            value={transactionFormData.amount}
+                            onChange={(e) => setTransactionFormData({...transactionFormData, amount: Number(e.target.value)})}
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-lg"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Date</label>
+                          <input 
+                            type="date"
+                            required
+                            value={transactionFormData.date}
+                            onChange={(e) => setTransactionFormData({...transactionFormData, date: e.target.value})}
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Description</label>
+                          <textarea 
+                            rows={3}
+                            required
+                            placeholder="Details about this transaction..."
+                            value={transactionFormData.description}
+                            onChange={(e) => setTransactionFormData({...transactionFormData, description: e.target.value})}
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                          />
+                        </div>
+
+                        <div className="flex gap-4 pt-4">
+                          <button 
+                            type="button"
+                            onClick={() => setShowTransactionModal(false)}
+                            className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all active:scale-95"
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            type="submit"
+                            className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95"
+                          >
+                            Record Transaction
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {showModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                   <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -510,6 +882,7 @@ export const FinanceAdmin: React.FC = () => {
                             >
                               <option value="KHALTI">Khalti</option>
                               <option value="ESEWA">eSewa</option>
+                              <option value="MORU">Moru</option>
                               <option value="IME_PAY">IME Pay</option>
                               <option value="BANK_TRANSFER">Bank Transfer</option>
                               <option value="QR_PAYMENT">QR Payment</option>
@@ -599,6 +972,17 @@ export const FinanceAdmin: React.FC = () => {
                             className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm"
                           />
                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Note: This should be the name of the environment variable, not the actual secret.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Metadata (JSON Config - Optional)</label>
+                          <textarea 
+                            rows={3}
+                            placeholder='{"merchant_id": "...", "api_version": "v1"}'
+                            value={formData.metadata}
+                            onChange={(e) => setFormData({...formData, metadata: e.target.value})}
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm"
+                          />
                         </div>
 
                         <div className="space-y-2">

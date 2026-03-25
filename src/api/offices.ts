@@ -13,9 +13,17 @@ const officeSchema = z.object({
   orgUnitId: z.string(),
   address: z.string(),
   contactNumber: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().email().optional().or(z.literal('')),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  isActive: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
+  description: z.string().optional(),
+  province: z.string().optional(),
+  district: z.string().optional(),
+  locality: z.string().optional(),
+  ward: z.number().optional(),
+  municipality: z.string().optional(),
 });
 
 // @route   GET /api/v1/offices
@@ -30,12 +38,13 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
     }
 
     // If no unitId, return all offices (Admin only)
-    if (req.user?.role !== 'ADMIN') {
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'STAFF') {
       return res.status(403).json({ error: 'Access denied' });
     }
 
     const offices = await prisma.office.findMany({
-      include: { orgUnit: true }
+      include: { orgUnit: true },
+      orderBy: { createdAt: 'desc' }
     });
     res.json(offices);
   } catch (error) {
@@ -60,6 +69,31 @@ router.post('/', authenticate, authorize(['ADMIN']), async (req: AuthRequest, re
     });
 
     res.status(201).json(office);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: (error as any).errors });
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   PUT /api/v1/offices/:id
+// @desc    Update an office
+// @access  Private (Admin)
+router.put('/:id', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
+  try {
+    const data = officeSchema.partial().parse(req.body);
+    const office = await officeService.updateOffice(req.params.id, data);
+
+    await auditService.log({
+      action: 'OFFICE_UPDATED',
+      userId: req.user?.id,
+      entityType: 'Office',
+      entityId: office.id,
+      details: office
+    });
+
+    res.json(office);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });

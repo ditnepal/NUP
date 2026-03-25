@@ -10,8 +10,40 @@ export class OfficeService extends BaseService {
     email?: string;
     latitude?: number;
     longitude?: number;
+    isActive?: boolean;
+    isPublic?: boolean;
+    description?: string;
+    province?: string;
+    district?: string;
+    locality?: string;
+    ward?: number;
+    municipality?: string;
   }) {
     return await this.db.office.create({
+      data
+    });
+  }
+
+  async updateOffice(id: string, data: Partial<{
+    name: string;
+    type: string;
+    orgUnitId: string;
+    address: string;
+    contactNumber?: string;
+    email?: string;
+    latitude?: number;
+    longitude?: number;
+    isActive: boolean;
+    isPublic: boolean;
+    description?: string;
+    province?: string;
+    district?: string;
+    locality?: string;
+    ward?: number;
+    municipality?: string;
+  }>) {
+    return await this.db.office.update({
+      where: { id },
       data
     });
   }

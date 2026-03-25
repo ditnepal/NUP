@@ -219,7 +219,7 @@ export default function App() {
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
     { id: 'supporters', label: 'Supporters', icon: Users, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
     { id: 'booths', label: 'Booths', icon: MapPin, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR'] },
-    { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph, roles: ['ADMIN'] },
+    { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph, roles: ['ADMIN', 'STAFF'] },
     { id: 'membership', label: 'Membership', icon: UserPlus, roles: ['ADMIN', 'STAFF'] },
     { id: 'renewals', label: 'Renewals', icon: Clock, roles: ['ADMIN', 'STAFF'] },
     { id: 'fundraiser', label: 'Fundraiser', icon: Heart, roles: ['ADMIN', 'STAFF', 'FINANCE_OFFICER'] },
@@ -387,7 +387,7 @@ export default function App() {
         {currentView === 'campaigns' && <CampaignsView campaigns={campaigns} />}
         {currentView === 'supporters' && <SupportersView supporters={supporters} onRefresh={fetchData} />}
         {currentView === 'booths' && <BoothsView booths={booths} onRefresh={fetchData} />}
-        {currentView === 'hierarchy' && <HierarchyAdmin />}
+        {currentView === 'hierarchy' && <HierarchyAdmin user={user} />}
         {currentView === 'membership' && <MembershipAdmin />}
         {currentView === 'renewals' && <RenewalsManagement />}
         {currentView === 'volunteers' && <VolunteerAdmin />}

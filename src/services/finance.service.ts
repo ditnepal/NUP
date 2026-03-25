@@ -1,6 +1,50 @@
 import prisma from '../lib/prisma';
 import { auditService } from './audit.service';
 
+/**
+ * MORU PAYMENT INTEGRATION AUDIT - PHASE 2A
+ * 
+ * Current Reality:
+ * - Moru is onboarded as a provider in the database and UI.
+ * - Configuration fields (publicKey, secretRef, metadata) are available.
+ * - Public exposure is limited to safe fields (isManual: true for now).
+ * - Initiation logic is a placeholder throwing an error.
+ * 
+ * Missing for Execution:
+ * - Official API Endpoints (Test/Live).
+ * - Request Payload Schema (Moru-specific fields).
+ * - Signature/HMAC Algorithm details.
+ * - Return/Callback URL parameter mapping.
+ * - Server-to-server verification API details.
+ * 
+ * Safe Phase 2A Step:
+ * - Define the internal adapter contract.
+ * - Harden initiation with better error handling.
+ * - Prepare for metadata-driven configuration.
+ */
+
+interface PaymentInitiationData {
+  amount: number;
+  paymentMethod: string;
+  purchaseOrderId: string;
+  purchaseOrderName: string;
+  customerInfo: { fullName: string; email: string; phone?: string };
+  returnUrl: string;
+}
+
+interface PaymentInitiationResult {
+  type: 'REDIRECT' | 'FORM' | 'MANUAL';
+  url?: string;
+  params?: Record<string, any>;
+  pidx?: string;
+  instructions?: string;
+}
+
+interface PaymentAdapter {
+  initiate(data: PaymentInitiationData, integration: any): Promise<PaymentInitiationResult>;
+  verify?(id: string, integration: any): Promise<boolean>;
+}
+
 export class FinanceService {
   async createFundraisingCampaign(data: {
     title: string;
@@ -80,8 +124,8 @@ export class FinanceService {
 
     // 2. Create transaction
     // If it's a manual payment or a public donation, it starts as PENDING
-    // For online payment methods (Khalti, eSewa), it MUST start as PENDING until verified
-    const isOnlinePayment = ['KHALTI', 'ESEWA'].includes(data.paymentMethod);
+    // For online payment methods (Khalti, eSewa, Moru), it MUST start as PENDING until verified
+    const isOnlinePayment = ['KHALTI', 'ESEWA', 'MORU'].includes(data.paymentMethod.toUpperCase());
     const isPending = data.isManual || isOnlinePayment || !data.recordedById;
     
     const transaction = await prisma.transaction.create({
@@ -198,7 +242,12 @@ export class FinanceService {
     // 2. Update transaction status
     await prisma.transaction.update({
       where: { id: donation.transactionId },
-      data: { status: 'REFUNDED', description: `REFUND: ${donation.transaction.description} - ${reason}` },
+      data: { 
+        status: 'REFUNDED', 
+        reconciliationNote: reason,
+        reviewedById: recordedById,
+        reviewedAt: new Date(),
+      },
     });
 
     // 3. Create a balancing expense transaction for audit
@@ -210,6 +259,9 @@ export class FinanceService {
         description: `Refund for donation ${donationId} - ${reason}`,
         status: 'COMPLETED',
         recordedById,
+        reviewedById: recordedById,
+        reviewedAt: new Date(),
+        reconciliationNote: `Automated balancing entry for refund of donation ${donationId}`,
       },
     });
 
@@ -293,6 +345,11 @@ export class FinanceService {
       }
     });
 
+    const totalTransactionCount = await prisma.transaction.count();
+    const rejectedTransactionCount = await prisma.transaction.count({
+      where: { status: 'REJECTED' }
+    });
+
     const pendingDonationsStats = await prisma.donation.aggregate({
       where: { status: 'PENDING' },
       _sum: { amount: true },
@@ -317,6 +374,8 @@ export class FinanceService {
       refundTotal: refundStats._sum.amount || 0,
       refundCount: refundStats._count.id || 0,
       recentTransactionCount,
+      totalTransactionCount,
+      rejectedTransactionCount,
       pendingDonationsCount: pendingDonationsStats._count.id || 0,
       pendingDonationsAmount: pendingDonationsStats._sum.amount || 0,
       pendingTransactionCount: pendingTransactionStats._count.id || 0,
@@ -337,16 +396,45 @@ export class FinanceService {
         sortOrder: true,
         supportedModules: true,
         instructions: true,
+        publicKey: true, // Needed for some frontends, but we'll be careful
+        metadata: true,
       }
     });
     
-    let parsed = integrations.map(i => ({
-      ...i,
-      supportedModules: i.supportedModules.split(',').filter(Boolean),
-    }));
+    const parsed = integrations.map(i => {
+      const modules = i.supportedModules.split(',').map(m => m.trim().toUpperCase()).filter(Boolean);
+      
+      // MORU is considered automated only if it has an initiation URL in metadata
+      let isMoruReady = false;
+      if (i.provider.toUpperCase() === 'MORU' && i.metadata) {
+        try {
+          const meta = JSON.parse(i.metadata);
+          isMoruReady = !!meta.initiation_url && !!meta.payload_schema;
+        } catch (e) {
+          isMoruReady = false;
+        }
+      }
+
+      const isManual = !['KHALTI', 'ESEWA', 'STRIPE'].includes(i.provider.toUpperCase()) && !isMoruReady;
+      
+      return {
+        id: i.id,
+        provider: i.provider,
+        displayName: i.displayName,
+        region: i.region,
+        mode: i.mode,
+        sortOrder: i.sortOrder,
+        supportedModules: modules,
+        instructions: i.instructions,
+        isManual,
+        // Only expose publicKey if it's actually set and not a secret
+        publicKey: i.publicKey && !i.publicKey.startsWith('SEC_') ? i.publicKey : null,
+      };
+    });
 
     if (module) {
-      parsed = parsed.filter(i => i.supportedModules.includes(module));
+      const targetModule = module.toUpperCase();
+      return parsed.filter(i => i.supportedModules.includes(targetModule));
     }
 
     return parsed;
@@ -419,14 +507,7 @@ export class FinanceService {
     return { success: true };
   }
 
-  async initiatePayment(data: {
-    amount: number;
-    paymentMethod: string;
-    purchaseOrderId: string;
-    purchaseOrderName: string;
-    customerInfo: { fullName: string; email: string; phone?: string };
-    returnUrl: string;
-  }) {
+  async initiatePayment(data: PaymentInitiationData) {
     const integration = await prisma.paymentIntegration.findFirst({
       where: { provider: data.paymentMethod, enabled: true },
     });
@@ -441,6 +522,7 @@ export class FinanceService {
       ? `${data.returnUrl}&purchase_order_id=${data.purchaseOrderId}`
       : `${data.returnUrl}?purchase_order_id=${data.purchaseOrderId}`;
 
+    // Adapter Dispatcher
     if (data.paymentMethod === 'KHALTI') {
       const secretKey = process.env[integration.secretRef || 'KHALTI_SECRET_KEY'] || integration.secretRef;
       if (!secretKey) {
@@ -480,13 +562,12 @@ export class FinanceService {
         type: 'REDIRECT',
         url: result.payment_url,
         pidx: result.pidx,
-      };
+      } as PaymentInitiationResult;
     }
 
     if (data.paymentMethod === 'ESEWA') {
       let secretKey = process.env[integration.secretRef || 'ESEWA_SECRET_KEY'] || integration.secretRef;
       
-      // Use standard eSewa test secret key if in TEST mode and no valid key is provided
       if (isTest && (!secretKey || secretKey === 'ESEWA_SECRET_KEY_TEST')) {
         secretKey = '8gBm/:&EnhH.1/q';
       }
@@ -500,8 +581,6 @@ export class FinanceService {
         ? 'https://rc-epay.esewa.com.np/api/epay/main/v2/form'
         : 'https://epay.esewa.com.np/api/epay/main/v2/form';
 
-      // eSewa v2 signature: total_amount,transaction_uuid,product_code
-      // amount, tax_amount, product_service_charge, product_delivery_charge, total_amount, transaction_uuid, product_code
       const totalAmount = data.amount;
       const transactionUuid = data.purchaseOrderId;
       
@@ -528,10 +607,84 @@ export class FinanceService {
           signed_field_names: 'total_amount,transaction_uuid,product_code',
           signature: signature,
         },
-      };
+      } as PaymentInitiationResult;
+    }
+
+    if (data.paymentMethod === 'MORU') {
+      /**
+       * MORU CONTROLLED INITIATION (PHASE 2B)
+       * 
+       * This block implements a metadata-driven initiation attempt.
+       * If initiation_url and payload_schema are provided in the integration metadata,
+       * it will attempt to prepare the request.
+       */
+      let metadata: any = {};
+      try {
+        metadata = integration.metadata ? JSON.parse(integration.metadata) : {};
+      } catch (e) {
+        throw new Error('MORU integration metadata is not a valid JSON object.');
+      }
+
+      const initiationUrl = metadata.initiation_url;
+      const payloadSchema = metadata.payload_schema;
+
+      if (!initiationUrl || !payloadSchema) {
+        // Return MANUAL type if not fully configured for automation
+        // This allows the frontend to show instructions instead of crashing
+        return {
+          type: 'MANUAL',
+          instructions: integration.instructions || 'MORU automated initiation is pending configuration. Please use manual verification mode for now.',
+          pidx: data.purchaseOrderId,
+        } as PaymentInitiationResult;
+      }
+
+      // If we have config, we report that we are ready for the next step (Signature logic)
+      throw new Error('MORU automated initiation is pending official signature/HMAC verification logic. Please use manual mode or provide signature_type in metadata.');
     }
 
     throw new Error(`Provider ${data.paymentMethod} initiation not implemented`);
+  }
+
+  /**
+   * MORU RETURN + VERIFICATION HANDLING (PHASE 2C)
+   * 
+   * This method captures the return parameters from a provider callback.
+   * It does NOT mark the transaction as COMPLETED unless verified.
+   * For MORU, it currently just records the parameters for manual review.
+   */
+  async capturePaymentReturn(purchaseOrderId: string, provider: string, params: any) {
+    const transaction = await prisma.transaction.findFirst({
+      where: { 
+        referenceId: purchaseOrderId,
+        paymentMethod: provider.toUpperCase()
+      },
+    });
+
+    if (!transaction) {
+      throw new Error(`Transaction with reference ${purchaseOrderId} for ${provider} not found`);
+    }
+
+    // Record the return parameters in the reconciliation note for manual review
+    const existingNote = transaction.reconciliationNote || '';
+    const returnData = JSON.stringify(params);
+    const newNote = `${existingNote}\n[${new Date().toISOString()}] Captured ${provider} Return: ${returnData}`.trim();
+
+    await prisma.transaction.update({
+      where: { id: transaction.id },
+      data: { reconciliationNote: newNote },
+    });
+
+    await auditService.log({
+      action: 'PAYMENT_RETURN_CAPTURED',
+      entityType: 'Transaction',
+      entityId: transaction.id,
+      details: { provider, purchaseOrderId, params },
+    });
+
+    return { 
+      status: transaction.status,
+      message: 'Payment return captured. Verification is pending.' 
+    };
   }
 
   async verifyTransaction(id: string, reviewerId: string) {
@@ -557,6 +710,8 @@ export class FinanceService {
       where: { id },
       data: {
         status: 'COMPLETED',
+        reviewedById: reviewerId,
+        reviewedAt: new Date(),
         updatedAt: new Date(),
       }
     });
@@ -626,11 +781,16 @@ export class FinanceService {
     if (!transaction) throw new Error('Transaction not found');
     if (transaction.status !== 'PENDING') throw new Error('Transaction is not pending');
 
+    const existingNote = transaction.reconciliationNote || '';
+    const newNote = `${existingNote}\n[${new Date().toISOString()}] REJECTED: ${reason}`.trim();
+
     await prisma.transaction.update({
       where: { id },
       data: {
         status: 'REJECTED',
-        description: `${transaction.description || ''} (REJECTED: ${reason})`,
+        reconciliationNote: newNote,
+        reviewedById: reviewerId,
+        reviewedAt: new Date(),
         updatedAt: new Date(),
       }
     });

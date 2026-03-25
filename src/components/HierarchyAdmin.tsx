@@ -1,18 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { OrganizationUnit } from '../types';
-import { Plus, ChevronRight, ChevronDown, MapPin, Building2, Users, Edit2, Trash2, X, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { OrganizationUnit, OrgCommittee, OrgOfficeBearer, Office } from '../types';
+import { Plus, ChevronRight, ChevronDown, MapPin, Building2, Users, Edit2, Trash2, X, Loader2, AlertCircle, CheckCircle2, Shield, UserPlus, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-export const HierarchyAdmin: React.FC = () => {
+interface HierarchyAdminProps {
+  user?: any;
+}
+
+export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
   const [units, setUnits] = useState<OrganizationUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGovernanceModalOpen, setIsGovernanceModalOpen] = useState(false);
+  const [selectedUnitForGovernance, setSelectedUnitForGovernance] = useState<OrganizationUnit | null>(null);
+  const [isOfficesModalOpen, setIsOfficesModalOpen] = useState(false);
+  const [selectedUnitForOffices, setSelectedUnitForOffices] = useState<OrganizationUnit | null>(null);
+  const [offices, setOffices] = useState<Office[]>([]);
+  const [loadingOffices, setLoadingOffices] = useState(false);
+  const [editingOffice, setEditingOffice] = useState<Office | null>(null);
+  const [isOfficeFormOpen, setIsOfficeFormOpen] = useState(false);
+  const [committees, setCommittees] = useState<OrgCommittee[]>([]);
+  const [loadingCommittees, setLoadingCommittees] = useState(false);
   const [editingUnit, setEditingUnit] = useState<OrganizationUnit | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchHierarchy();
@@ -20,12 +36,93 @@ export const HierarchyAdmin: React.FC = () => {
 
   const fetchHierarchy = async () => {
     try {
-      const data = await api.get('/hierarchy');
+      // Use /scoped for non-admins to get their root, or / for admins to get all
+      const endpoint = isAdmin ? '/hierarchy' : '/hierarchy/scoped';
+      const data = await api.get(endpoint);
       setUnits(data);
     } catch (error) {
       console.error('Error fetching hierarchy:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCommittees = async (unitId: string) => {
+    setLoadingCommittees(true);
+    try {
+      const data = await api.get(`/hierarchy/${unitId}/committees`);
+      setCommittees(data);
+    } catch (error) {
+      console.error('Error fetching committees:', error);
+    } finally {
+      setLoadingCommittees(false);
+    }
+  };
+
+  const openGovernanceModal = (unit: OrganizationUnit) => {
+    setSelectedUnitForGovernance(unit);
+    setIsGovernanceModalOpen(true);
+    fetchCommittees(unit.id);
+  };
+
+  const fetchOffices = async (unitId: string) => {
+    setLoadingOffices(true);
+    try {
+      const data = await api.get(`/offices?unitId=${unitId}`);
+      setOffices(data);
+    } catch (error) {
+      console.error('Error fetching offices:', error);
+    } finally {
+      setLoadingOffices(false);
+    }
+  };
+
+  const openOfficesModal = (unit: OrganizationUnit) => {
+    setSelectedUnitForOffices(unit);
+    setIsOfficesModalOpen(true);
+    fetchOffices(unit.id);
+  };
+
+  const handleOfficeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedUnitForOffices) return;
+
+    setIsSubmitting(true);
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: formData.get('name') as string,
+      type: formData.get('type') as string,
+      address: formData.get('address') as string,
+      contactNumber: formData.get('contactNumber') as string || null,
+      email: formData.get('email') as string || null,
+      latitude: formData.get('latitude') ? parseFloat(formData.get('latitude') as string) : null,
+      longitude: formData.get('longitude') ? parseFloat(formData.get('longitude') as string) : null,
+      description: formData.get('description') as string || null,
+      province: formData.get('province') as string || null,
+      district: formData.get('district') as string || null,
+      locality: formData.get('locality') as string || null,
+      ward: formData.get('ward') ? parseInt(formData.get('ward') as string) : null,
+      municipality: formData.get('municipality') as string || null,
+      isActive: formData.get('isActive') === 'on',
+      isPublic: formData.get('isPublic') === 'on',
+      orgUnitId: selectedUnitForOffices.id
+    };
+
+    try {
+      if (editingOffice) {
+        await api.put(`/offices/${editingOffice.id}`, data);
+        setMessage({ type: 'success', text: 'Office updated successfully' });
+      } else {
+        await api.post('/offices', data);
+        setMessage({ type: 'success', text: 'Office created successfully' });
+      }
+      setIsOfficeFormOpen(false);
+      fetchOffices(selectedUnitForOffices.id);
+    } catch (error: any) {
+      console.error('Error saving office:', error);
+      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to save office' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -70,8 +167,13 @@ export const HierarchyAdmin: React.FC = () => {
     const data = {
       name: formData.get('name') as string,
       level: formData.get('level') as string,
-      code: formData.get('code') as string || undefined,
-      parentId: parentId || undefined,
+      code: formData.get('code') as string || null,
+      parentId: parentId || null,
+      isActive: formData.get('isActive') === 'on',
+      description: formData.get('description') as string || null,
+      sortOrder: parseInt(formData.get('sortOrder') as string) || 0,
+      contactEmail: formData.get('contactEmail') as string || null,
+      contactPhone: formData.get('contactPhone') as string || null,
     };
 
     try {
@@ -116,39 +218,63 @@ export const HierarchyAdmin: React.FC = () => {
                 <span className="ml-2 px-2 py-0.5 text-[10px] bg-blue-50 text-blue-600 rounded-full font-bold uppercase">
                   {unit.level}
                 </span>
+                {!unit.isActive && (
+                  <span className="ml-2 px-2 py-0.5 text-[10px] bg-red-50 text-red-600 rounded-full font-bold uppercase">
+                    Inactive
+                  </span>
+                )}
                 {unit.code && (
                   <span className="ml-2 text-[10px] text-gray-400 font-mono">#{unit.code}</span>
                 )}
               </div>
+              {unit.description && (
+                <p className="text-[10px] text-gray-400 mt-0.5 italic line-clamp-1">{unit.description}</p>
+              )}
               <div className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-3">
                 <span className="flex items-center gap-1"><Building2 size={10} /> Offices: {unit.offices?.length || 0}</span>
                 <span className="flex items-center gap-1"><Users size={10} /> Users: {unit.users?.length || 0}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button 
-              onClick={() => openAddModal(unit.id)}
-              className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg"
-              title="Add Sub-unit"
-            >
-              <Plus size={16} />
-            </button>
-            <button 
-              onClick={() => openEditModal(unit)}
-              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-              title="Edit Unit"
-            >
-              <Edit2 size={16} />
-            </button>
-            <button 
-              onClick={() => handleDelete(unit.id)}
-              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-              title="Delete Unit"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                onClick={() => openOfficesModal(unit)}
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                title="Manage Offices"
+              >
+                <MapPin size={16} />
+              </button>
+              <button 
+                onClick={() => openGovernanceModal(unit)}
+                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                title="Manage Governance"
+              >
+                <Shield size={16} />
+              </button>
+              <button 
+                onClick={() => openAddModal(unit.id)}
+                className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                title="Add Sub-unit"
+              >
+                <Plus size={16} />
+              </button>
+              <button 
+                onClick={() => openEditModal(unit)}
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                title="Edit Unit"
+              >
+                <Edit2 size={16} />
+              </button>
+              <button 
+                onClick={() => handleDelete(unit.id)}
+                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                title="Delete Unit"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          )}
         </div>
         {isExpanded && hasChildren && (
           <div className="border-l-2 border-gray-100 ml-2">
@@ -174,13 +300,15 @@ export const HierarchyAdmin: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Organization Hierarchy</h1>
           <p className="text-gray-500 text-sm">Manage structural units and geographic organizational scope.</p>
         </div>
-        <button 
-          onClick={() => openAddModal(null)}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 shadow-sm transition-all"
-        >
-          <Plus size={20} />
-          Add Root Unit
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={() => openAddModal(null)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 shadow-sm transition-all"
+          >
+            <Plus size={20} />
+            Add Root Unit
+          </button>
+        )}
       </div>
 
       {message && (
@@ -267,6 +395,61 @@ export const HierarchyAdmin: React.FC = () => {
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                   />
                 </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-700">Description</label>
+                  <textarea 
+                    name="description" 
+                    defaultValue={editingUnit?.description} 
+                    placeholder="Brief description of the unit's purpose..."
+                    rows={2}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Contact Email</label>
+                    <input 
+                      type="email"
+                      name="contactEmail" 
+                      defaultValue={editingUnit?.contactEmail} 
+                      placeholder="unit@party.org"
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Contact Phone</label>
+                    <input 
+                      type="tel"
+                      name="contactPhone" 
+                      defaultValue={editingUnit?.contactPhone} 
+                      placeholder="+1234567890"
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-700">Sort Order</label>
+                  <input 
+                    type="number"
+                    name="sortOrder" 
+                    defaultValue={editingUnit?.sortOrder || 0} 
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2 py-2">
+                  <input 
+                    type="checkbox" 
+                    id="isActive" 
+                    name="isActive" 
+                    defaultChecked={editingUnit ? editingUnit.isActive : true}
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor="isActive" className="text-sm font-semibold text-slate-700">Active Unit</label>
+                </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
                   <button 
@@ -285,6 +468,277 @@ export const HierarchyAdmin: React.FC = () => {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isGovernanceModalOpen && selectedUnitForGovernance && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">Unit Governance</h3>
+                  <p className="text-sm text-slate-500">{selectedUnitForGovernance.name} ({selectedUnitForGovernance.level})</p>
+                </div>
+                <button onClick={() => setIsGovernanceModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* Committees Section */}
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      <Shield className="text-indigo-600" size={20} />
+                      Committees
+                    </h4>
+                    {isAdmin && (
+                      <button 
+                        onClick={() => {
+                          const name = window.prompt('Enter Committee Name:');
+                          const type = window.prompt('Enter Committee Type (e.g. EXECUTIVE, ADVISORY):');
+                          if (name && type) {
+                            api.post(`/hierarchy/${selectedUnitForGovernance.id}/committees`, { name, type })
+                              .then(() => fetchCommittees(selectedUnitForGovernance.id));
+                          }
+                        }}
+                        className="text-sm flex items-center gap-1 text-indigo-600 font-bold hover:underline"
+                      >
+                        <Plus size={16} /> Add Committee
+                      </button>
+                    )}
+                  </div>
+
+                  {loadingCommittees ? (
+                    <div className="flex justify-center py-8"><Loader2 className="animate-spin text-indigo-600" /></div>
+                  ) : committees.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {committees.map(committee => (
+                        <div key={committee.id} className="border border-slate-200 rounded-xl p-4 hover:border-indigo-200 transition-colors">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h5 className="font-bold text-slate-800">{committee.name}</h5>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{committee.type}</span>
+                            </div>
+                            {isAdmin && (
+                              <button 
+                                onClick={() => {
+                                  const fullName = window.prompt('Enter Office Bearer Full Name:');
+                                  const position = window.prompt('Enter Position (e.g. President, Secretary):');
+                                  if (fullName && position) {
+                                    api.post(`/hierarchy/committees/${committee.id}/bearers`, { 
+                                      fullName, 
+                                      position,
+                                      termStart: new Date().toISOString()
+                                    }).then(() => fetchCommittees(selectedUnitForGovernance.id));
+                                  }
+                                }}
+                                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded"
+                                title="Add Office Bearer"
+                              >
+                                <UserPlus size={16} />
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            {committee.bearers && committee.bearers.length > 0 ? (
+                              committee.bearers.map(bearer => (
+                                <div key={bearer.id} className="flex items-center justify-between text-sm p-2 bg-slate-50 rounded-lg">
+                                  <div>
+                                    <p className="font-semibold text-slate-700">{bearer.fullName}</p>
+                                    <p className="text-xs text-slate-500">{bearer.position}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                      bearer.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                                    }`}>
+                                      {bearer.status}
+                                    </span>
+                                    <p className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-1">
+                                      <Calendar size={10} /> {new Date(bearer.termStart).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-slate-400 italic text-center py-2">No office bearers assigned</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      <p className="text-slate-500">No committees found for this unit.</p>
+                    </div>
+                  )}
+                </section>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button 
+                  onClick={() => setIsGovernanceModalOpen(false)}
+                  className="px-6 py-2 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {isOfficesModalOpen && selectedUnitForOffices && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">Unit Offices</h3>
+                  <p className="text-sm text-slate-500">{selectedUnitForOffices.name} ({selectedUnitForOffices.level})</p>
+                </div>
+                <button onClick={() => setIsOfficesModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                {isOfficeFormOpen ? (
+                  <form onSubmit={handleOfficeSubmit} className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <h4 className="font-bold text-slate-800">{editingOffice ? 'Edit Office' : 'Add New Office'}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Office Name</label>
+                        <input name="name" defaultValue={editingOffice?.name} required className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Type</label>
+                        <select name="type" defaultValue={editingOffice?.type || 'CONTACT_POINT'} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                          <option value="HEADQUARTERS">Headquarters</option>
+                          <option value="REGIONAL">Regional</option>
+                          <option value="CONTACT_POINT">Contact Point</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Address</label>
+                        <input name="address" defaultValue={editingOffice?.address} required className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Contact Number</label>
+                        <input name="contactNumber" defaultValue={editingOffice?.contactNumber || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Email</label>
+                        <input name="email" type="email" defaultValue={editingOffice?.email || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Latitude (Optional)</label>
+                        <input name="latitude" type="number" step="any" defaultValue={editingOffice?.latitude || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Longitude (Optional)</label>
+                        <input name="longitude" type="number" step="any" defaultValue={editingOffice?.longitude || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Province</label>
+                        <input name="province" defaultValue={editingOffice?.province || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">District</label>
+                        <input name="district" defaultValue={editingOffice?.district || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Municipality</label>
+                        <input name="municipality" defaultValue={editingOffice?.municipality || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6 py-2">
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" id="officeIsActive" name="isActive" defaultChecked={editingOffice ? editingOffice.isActive : true} className="w-4 h-4 text-blue-600 rounded border-slate-300" />
+                        <label htmlFor="officeIsActive" className="text-sm font-semibold text-slate-700">Active</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" id="officeIsPublic" name="isPublic" defaultChecked={editingOffice ? editingOffice.isPublic : true} className="w-4 h-4 text-blue-600 rounded border-slate-300" />
+                        <label htmlFor="officeIsPublic" className="text-sm font-semibold text-slate-700">Publicly Visible</label>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4">
+                      <button type="button" onClick={() => setIsOfficeFormOpen(false)} className="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors">Cancel</button>
+                      <button type="submit" disabled={isSubmitting} className="bg-blue-600 text-white px-6 py-2 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 transition-all">
+                        {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : (editingOffice ? 'Update Office' : 'Save Office')}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-lg font-bold text-slate-800">Offices List</h4>
+                      <button onClick={() => { setEditingOffice(null); setIsOfficeFormOpen(true); }} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-sm transition-all">
+                        <Plus size={16} /> Add Office
+                      </button>
+                    </div>
+
+                    {loadingOffices ? (
+                      <div className="flex justify-center py-12"><Loader2 className="animate-spin text-blue-600" size={32} /></div>
+                    ) : offices.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-4">
+                        {offices.map(office => (
+                          <div key={office.id} className="border border-slate-200 rounded-2xl p-4 hover:border-blue-200 transition-colors bg-white shadow-sm">
+                            <div className="flex justify-between items-start">
+                              <div className="flex gap-3">
+                                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                                  <Building2 size={20} />
+                                </div>
+                                <div>
+                                  <h5 className="font-bold text-slate-800">{office.name}</h5>
+                                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                    <MapPin size={12} /> {office.address}
+                                  </p>
+                                  <div className="flex gap-2 mt-2">
+                                    <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full uppercase tracking-wider">{office.type}</span>
+                                    {office.isPublic && <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full uppercase tracking-wider">Public</span>}
+                                    {!office.isActive && <span className="text-[10px] font-bold px-2 py-0.5 bg-red-50 text-red-600 rounded-full uppercase tracking-wider">Inactive</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <button onClick={() => { setEditingOffice(office); setIsOfficeFormOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                  <Edit2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <p className="text-slate-500">No offices found for this unit.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button onClick={() => setIsOfficesModalOpen(false)} className="px-6 py-2 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-colors">Close</button>
+              </div>
             </motion.div>
           </div>
         )}

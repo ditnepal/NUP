@@ -27,6 +27,11 @@ export interface OrganizationUnit {
   level: 'NATIONAL' | 'PROVINCE' | 'DISTRICT' | 'CONSTITUENCY' | 'MUNICIPALITY' | 'WARD' | 'BOOTH';
   code?: string;
   parentId?: string;
+  isActive: boolean;
+  description?: string;
+  sortOrder: number;
+  contactEmail?: string;
+  contactPhone?: string;
   children?: OrganizationUnit[];
   offices?: Office[];
   users?: UserProfile[];
@@ -43,6 +48,15 @@ export interface Office {
   latitude?: number;
   longitude?: number;
   isActive: boolean;
+  isPublic: boolean;
+  description?: string;
+  province?: string;
+  district?: string;
+  locality?: string;
+  ward?: number;
+  municipality?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Committee {
@@ -54,6 +68,32 @@ export interface Committee {
   localLevel?: string;
   ward?: number;
   parentId?: string;
+}
+
+export interface OrgCommittee {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  isActive: boolean;
+  orgUnitId: string;
+  bearers?: OrgOfficeBearer[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrgOfficeBearer {
+  id: string;
+  committeeId: string;
+  userId?: string;
+  fullName: string;
+  position: string;
+  termStart: string;
+  termEnd?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  createdAt: string;
+  updatedAt: string;
+  user?: UserProfile;
 }
 
 export interface PartyMember {
@@ -82,6 +122,12 @@ export interface Transaction {
   status: 'PENDING' | 'COMPLETED' | 'REFUNDED' | 'FAILED' | 'REJECTED';
   paymentMethod: string;
   referenceId: string;
+  recordedById?: string;
+  recordedBy?: { displayName: string };
+  reviewedById?: string;
+  reviewedBy?: { displayName: string };
+  reviewedAt?: string;
+  reconciliationNote?: string;
   donation?: {
     id: string;
     donor: { fullName: string };
@@ -409,6 +455,8 @@ export interface FinanceAnalytics {
   refundTotal: number;
   refundCount: number;
   recentTransactionCount: number;
+  totalTransactionCount?: number;
+  rejectedTransactionCount?: number;
   pendingDonationsCount?: number;
   pendingDonationsAmount?: number;
   pendingTransactionCount?: number;

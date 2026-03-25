@@ -39,6 +39,17 @@ export class HierarchyService extends BaseService {
   }
 
   /**
+   * Get all unit IDs accessible to a user based on their role and orgUnitId
+   * Returns null for global access (ADMIN)
+   */
+  async getAccessibleUnitIds(user: { id: string; role: string; orgUnitId?: string }): Promise<string[] | null> {
+    if (user.role === 'ADMIN') return null;
+    if (!user.orgUnitId) return [];
+
+    return this.getSubUnitIds(user.orgUnitId);
+  }
+
+  /**
    * Get the full path from root to a specific unit
    */
   async getPath(unitId: string): Promise<any[]> {

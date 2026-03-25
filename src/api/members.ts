@@ -427,7 +427,7 @@ router.post('/me/renewals', authenticate, async (req: AuthRequest, res) => {
       const integrations = await financeService.listPublicPaymentIntegrations('RENEWALS');
       const selectedMethod = integrations.find(i => i.provider === paymentMethod);
       
-      if (selectedMethod && selectedMethod.instructions) {
+      if (selectedMethod && selectedMethod.isManual) {
         // For now, use a default renewal fee if not specified, or fetch it
         // In a real app, we'd look up the fee from MembershipType
         const membershipType = member.membershipTypeId 
@@ -497,7 +497,7 @@ router.post('/apply', upload.fields([
       const integrations = await financeService.listPublicPaymentIntegrations('MEMBERSHIP');
       const selectedMethod = integrations.find(i => i.provider === validatedData.paymentMethod);
       
-      if (selectedMethod && selectedMethod.instructions) {
+      if (selectedMethod && selectedMethod.isManual) {
         // In a real app, we'd fetch the fee from the selected MembershipType
         // For now, we'll use a placeholder or look it up if we had the ID
         await financeService.initiateManualPayment({

@@ -20,6 +20,18 @@ router.get('/', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (re
   try {
     const transactions = await prisma.transaction.findMany({
       orderBy: { date: 'desc' },
+      include: {
+        recordedBy: { select: { displayName: true } },
+        reviewedBy: { select: { displayName: true } },
+        donation: {
+          include: {
+            donor: { select: { fullName: true } },
+            campaign: { select: { title: true } },
+          }
+        },
+        member: { select: { fullName: true } },
+        renewalRequest: { select: { id: true } },
+      }
     });
     res.json(transactions);
   } catch (error) {
@@ -52,6 +64,22 @@ router.post('/', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (r
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   PATCH /api/v1/transactions/:id/note
+// @desc    Update reconciliation note
+// @access  Private (Admin/Finance)
+router.patch('/:id/note', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+  try {
+    const { note } = req.body;
+    const transaction = await prisma.transaction.update({
+      where: { id: req.params.id },
+      data: { reconciliationNote: note }
+    });
+    res.json(transaction);
+  } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
 });

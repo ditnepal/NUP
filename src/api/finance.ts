@@ -30,15 +30,25 @@ const donationSchema = z.object({
 });
 
 // @route   GET /api/v1/finance/campaigns
-// @desc    Get all fundraising campaigns
+// @desc    Get all active fundraising campaigns
 // @access  Public
 router.get('/campaigns', async (req, res) => {
   try {
     const campaigns = await prisma.fundraisingCampaign.findMany({
-      orderBy: { startDate: 'desc' },
-      include: {
+      where: { status: 'ACTIVE' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        fundraiserType: true,
+        beneficiaryType: true,
+        goalAmount: true,
+        currentAmount: true,
+        startDate: true,
+        endDate: true,
         _count: { select: { donations: true } },
       },
+      orderBy: { startDate: 'desc' },
     });
     res.json(campaigns);
   } catch (error) {
@@ -91,6 +101,26 @@ router.post('/donations/initiate', async (req, res) => {
     res.json({ ...result, purchaseOrderId });
   } catch (error: any) {
     console.error('Payment initiation error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/finance/donations/return/:provider
+// @desc    Capture return parameters from a payment provider
+// @access  Public
+router.get('/donations/return/:provider', async (req, res) => {
+  try {
+    const { provider } = req.params;
+    const purchaseOrderId = req.query.purchase_order_id as string || req.query.moru_purchase_order_id as string;
+    
+    if (!purchaseOrderId) {
+      return res.status(400).json({ error: 'Missing purchase_order_id' });
+    }
+
+    const result = await financeService.capturePaymentReturn(purchaseOrderId, provider, req.query);
+    res.json(result);
+  } catch (error: any) {
+    console.error(`Error capturing ${req.params.provider} return:`, error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -167,6 +197,7 @@ router.get('/transactions', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_
         member: true,
         renewalRequest: true,
         recordedBy: true,
+        reviewedBy: true,
       },
     });
     res.json(transactions);
