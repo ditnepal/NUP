@@ -514,6 +514,44 @@ export default function App() {
                 </div>
               )}
             </div>
+
+            {summary.childUnits && summary.childUnits.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <GitGraph size={20} className="text-emerald-600" />
+                  Child Unit Breakdown
+                </h3>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
+                        <tr>
+                          <th className="px-6 py-4">Unit Name</th>
+                          <th className="px-6 py-4 text-right">Members</th>
+                          <th className="px-6 py-4 text-right">Supporters</th>
+                          <th className="px-6 py-4 text-right">Booths</th>
+                          <th className="px-6 py-4 text-right">Open Grievances</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {summary.childUnits.map((unit: any) => (
+                          <tr key={unit.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-semibold text-slate-800">{unit.name}</div>
+                              <div className="text-xs text-slate-500 uppercase tracking-wider">{unit.level}</div>
+                            </td>
+                            <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.members.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.supporters.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.booths.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right font-medium text-rose-600">{unit.openGrievances > 0 ? unit.openGrievances.toLocaleString() : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

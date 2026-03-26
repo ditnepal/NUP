@@ -55,7 +55,53 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
         prisma.grievance.count({ where: grievanceWhere }),
         prisma.survey.count({ where: surveyWhere })
       ]);
-      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys };
+
+      // Phase 2A: Child-Unit Breakdown
+      let childUnitsSummary: any[] = [];
+      let parentIdForChildren = req.user?.orgUnitId;
+      
+      if (!parentIdForChildren) {
+        const nationalUnit = await prisma.organizationUnit.findFirst({ where: { level: 'NATIONAL' } });
+        if (nationalUnit) {
+          parentIdForChildren = nationalUnit.id;
+        }
+      }
+      
+      if (parentIdForChildren) {
+        const immediateChildren = await prisma.organizationUnit.findMany({
+          where: { parentId: parentIdForChildren, isActive: true },
+          select: { id: true, name: true, level: true },
+          orderBy: { name: 'asc' }
+        });
+        
+        if (immediateChildren.length > 0) {
+          const childPromises = immediateChildren.map(async (child) => {
+            const descendantIds = await hierarchyService.getSubUnitIds(child.id);
+            
+            const [members, supporters, booths, grievances] = await Promise.all([
+              prisma.member.count({ where: { orgUnitId: { in: descendantIds }, status: 'ACTIVE' } }),
+              prisma.supporter.count({ where: { booth: { orgUnitId: { in: descendantIds } } } }),
+              prisma.booth.count({ where: { orgUnitId: { in: descendantIds } } }),
+              prisma.grievance.count({ where: { orgUnitId: { in: descendantIds }, status: { not: 'closed' } } })
+            ]);
+            
+            return {
+              id: child.id,
+              name: child.name,
+              level: child.level,
+              members,
+              supporters,
+              booths,
+              openGrievances: grievances
+            };
+          });
+          
+          childUnitsSummary = await Promise.all(childPromises);
+          childUnitsSummary.sort((a, b) => b.members - a.members);
+        }
+      }
+
+      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, childUnits: childUnitsSummary };
     } else if (role === 'FINANCE_OFFICER') {
       const transactionWhere: any = {};
       const donationWhere: any = { status: 'COMPLETED' };

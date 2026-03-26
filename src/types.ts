@@ -10,6 +10,16 @@ export type TransactionCategory = 'fee' | 'donation' | 'campaign' | 'administrat
 export type GrievanceStatus = 'pending' | 'in-review' | 'resolved' | 'closed';
 export type GrievancePriority = 'low' | 'medium' | 'high';
 
+export interface ChildUnitSummary {
+  id: string;
+  name: string;
+  level: string;
+  members: number;
+  supporters: number;
+  booths: number;
+  openGrievances: number;
+}
+
 export interface DashboardSummary {
   scopeName?: string;
   totalMembers?: number;
@@ -30,6 +40,7 @@ export interface DashboardSummary {
   activeSurveys?: number;
   totalDonations?: number;
   activeFundCampaigns?: number;
+  childUnits?: ChildUnitSummary[];
 }
 
 export interface UserProfile {
