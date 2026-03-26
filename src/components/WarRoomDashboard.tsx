@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldAlert, 
   TrendingUp, 
@@ -16,7 +17,9 @@ import {
   RefreshCw,
   ChevronRight,
   Target,
-  Globe
+  Globe,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -102,6 +105,10 @@ export function WarRoomDashboard() {
 
   // Prepare chart data
   const boothData = analytics.booths.map((b: any) => ({ name: b.status, value: b._count.id }));
+  const totalBooths = analytics.booths.reduce((acc: number, curr: any) => acc + curr._count.id, 0);
+  const readyBooths = analytics.booths.find((b: any) => b.status === 'READY')?._count.id || 0;
+  const readinessPercent = totalBooths > 0 ? Math.round((readyBooths / totalBooths) * 100) : 0;
+
   const grievanceData = analytics.grievances.map((g: any) => ({ name: `${g.status} (${g.priority})`, value: g._count.id }));
   const areaScores = analytics.areaScores.map((s: any) => ({ 
     name: s.orgUnit.name, 
@@ -110,10 +117,32 @@ export function WarRoomDashboard() {
     swing: s.swingVoters
   }));
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 sm:p-6 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 sm:p-6 font-sans selection:bg-emerald-500 selection:text-white">
       {/* Header */}
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6 border-b border-slate-800 pb-6">
+      <motion.header 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6 border-b border-slate-800 pb-6"
+      >
         <div className="w-full lg:w-auto">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg border border-emerald-500/20 flex-shrink-0">
@@ -141,38 +170,43 @@ export function WarRoomDashboard() {
             <FileText size={18} /> <span className="hidden sm:inline">Generate Executive Report</span><span className="sm:hidden">Report</span>
           </button>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 xl:grid-cols-12 gap-6"
+      >
         {/* Left Column: Core Metrics & Charts */}
         <div className="xl:col-span-8 space-y-6">
           {/* Top Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <motion.div variants={itemVariants} className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl hover:border-emerald-500/30 transition-all group">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg">
+                <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg group-hover:scale-110 transition-transform">
                   <Users size={20} />
                 </div>
                 <TrendingUp size={16} className="text-emerald-500" />
               </div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Volunteers</p>
               <p className="text-2xl font-black text-white">{analytics.volunteers.toLocaleString()}</p>
-            </div>
-            <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl">
+            </motion.div>
+            <motion.div variants={itemVariants} className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl hover:border-emerald-500/30 transition-all group">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-purple-500/10 text-purple-500 rounded-lg">
+                <div className="p-2 bg-purple-500/10 text-purple-500 rounded-lg group-hover:scale-110 transition-transform">
                   <Target size={20} />
                 </div>
-                <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded uppercase">82% Goal</span>
+                <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded uppercase">{readinessPercent}% Goal</span>
               </div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Booth Readiness</p>
               <p className="text-2xl font-black text-white">
-                {analytics.booths.find((b: any) => b.status === 'READY')?._count.id || 0} / {analytics.booths.reduce((acc: number, curr: any) => acc + curr._count.id, 0)}
+                {readyBooths} / {totalBooths}
               </p>
-            </div>
-            <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl">
+            </motion.div>
+            <motion.div variants={itemVariants} className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl hover:border-emerald-500/30 transition-all group">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg">
+                <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg group-hover:scale-110 transition-transform">
                   <DollarSign size={20} />
                 </div>
                 <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded uppercase">Active</span>
@@ -181,10 +215,10 @@ export function WarRoomDashboard() {
               <p className="text-2xl font-black text-white">
                 {Math.round((analytics.fundraising.reduce((acc: number, curr: any) => acc + curr.currentAmount, 0) / analytics.fundraising.reduce((acc: number, curr: any) => acc + curr.goalAmount, 1)) * 100)}%
               </p>
-            </div>
-            <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl">
+            </motion.div>
+            <motion.div variants={itemVariants} className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl hover:border-red-500/30 transition-all group">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-red-500/10 text-red-500 rounded-lg">
+                <div className="p-2 bg-red-500/10 text-red-500 rounded-lg group-hover:scale-110 transition-transform">
                   <AlertTriangle size={20} />
                 </div>
                 <span className="text-[10px] font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded uppercase">Critical</span>
@@ -193,11 +227,45 @@ export function WarRoomDashboard() {
               <p className="text-2xl font-black text-white">
                 {analytics.incidents.find((i: any) => i.status === 'REPORTED')?._count.id || 0}
               </p>
-            </div>
+            </motion.div>
           </div>
 
+          {/* Unified Ground Signals Feed */}
+          <motion.div variants={itemVariants} className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+              <h3 className="font-black text-white uppercase tracking-wider flex items-center gap-2 italic">
+                <Zap size={20} className="text-amber-500" />
+                Unified Ground Signals
+              </h3>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Real-time Intelligence Feed</span>
+            </div>
+            <div className="divide-y divide-slate-800 max-h-[400px] overflow-y-auto scrollbar-hide">
+              {analytics.recentSignals && analytics.recentSignals.length > 0 ? (
+                analytics.recentSignals.map((signal: any, idx: number) => (
+                  <div key={idx} className="p-4 hover:bg-slate-800/30 transition-colors flex gap-4">
+                    <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${
+                      signal.priority === 'CRITICAL' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 
+                      signal.priority === 'HIGH' ? 'bg-amber-500' : 'bg-blue-500'
+                    }`} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{signal.source} • {signal.type}</span>
+                        <span className="text-[10px] font-mono text-slate-600">{new Date(signal.timestamp).toLocaleTimeString()}</span>
+                      </div>
+                      <p className="text-xs text-slate-300 font-medium leading-relaxed">{signal.content}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-12 text-center">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No active signals detected</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
           {/* District Strength Chart */}
-          <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
+          <motion.div variants={itemVariants} className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-black text-white uppercase tracking-wider flex items-center gap-2 italic">
                 <BarChart3 size={20} className="text-emerald-500" />
@@ -231,7 +299,7 @@ export function WarRoomDashboard() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Booth Status Pie */}
@@ -382,36 +450,30 @@ export function WarRoomDashboard() {
                     strokeWidth="12"
                     fill="transparent"
                     strokeDasharray={440}
-                    strokeDashoffset={440 - (440 * 76) / 100}
+                    strokeDashoffset={440 - (440 * readinessPercent) / 100}
                     strokeLinecap="round"
-                    className="text-emerald-500"
+                    className="text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]"
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl font-black text-white">76%</span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ready</span>
+                  <span className="text-3xl font-black text-white">{readinessPercent}%</span>
+                  <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Operational</span>
                 </div>
               </div>
-              <div className="mt-6 w-full space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Voter Outreach</span>
-                  <span className="text-[10px] font-mono text-emerald-500">64%</span>
+              <div className="grid grid-cols-2 gap-4 w-full mt-6">
+                <div className="p-3 bg-slate-800/30 rounded-xl border border-slate-800">
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Booths Ready</p>
+                  <p className="text-sm font-black text-white">{readyBooths}</p>
                 </div>
-                <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full w-[64%]"></div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Booth Verification</span>
-                  <span className="text-[10px] font-mono text-blue-500">89%</span>
-                </div>
-                <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full w-[89%]"></div>
+                <div className="p-3 bg-slate-800/30 rounded-xl border border-slate-800">
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Volunteers</p>
+                  <p className="text-sm font-black text-white">{analytics.volunteers}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

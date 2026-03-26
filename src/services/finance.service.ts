@@ -55,6 +55,7 @@ export class FinanceService {
     goalAmount: number;
     startDate: Date;
     endDate?: Date;
+    orgUnitId?: string;
   }) {
     let candidateSnapshot = null;
     if (data.candidateId) {
@@ -101,6 +102,7 @@ export class FinanceService {
     referenceId: string;
     recordedById?: string;
     isManual?: boolean;
+    orgUnitId?: string;
   }) {
     // 1. Get or create donor profile
     const donor = await prisma.donorProfile.upsert({
@@ -138,6 +140,7 @@ export class FinanceService {
         paymentMethod: data.paymentMethod,
         referenceId: data.referenceId,
         recordedById: data.recordedById,
+        orgUnitId: data.orgUnitId,
       },
     });
 
@@ -198,6 +201,7 @@ export class FinanceService {
     memberId?: string;
     renewalRequestId?: string;
     recordedById?: string;
+    orgUnitId?: string;
   }) {
     const transaction = await prisma.transaction.create({
       data: {
@@ -210,6 +214,7 @@ export class FinanceService {
         memberId: data.memberId,
         renewalRequestId: data.renewalRequestId,
         recordedById: data.recordedById,
+        orgUnitId: data.orgUnitId,
       },
     });
 
@@ -262,6 +267,7 @@ export class FinanceService {
         reviewedById: recordedById,
         reviewedAt: new Date(),
         reconciliationNote: `Automated balancing entry for refund of donation ${donationId}`,
+        orgUnitId: donation.transaction.orgUnitId, // Inherit orgUnitId from original transaction
       },
     });
 
@@ -295,9 +301,20 @@ export class FinanceService {
     return { success: true };
   }
 
-  async getFinanceAnalytics() {
+  async getFinanceAnalytics(orgUnitIds?: string[] | null) {
+    const transactionWhere: any = {};
+    const donationWhere: any = {};
+    const campaignWhere: any = {};
+
+    if (orgUnitIds) {
+      transactionWhere.orgUnitId = { in: orgUnitIds };
+      // For donations, we filter by the related transaction's orgUnitId
+      donationWhere.transaction = { orgUnitId: { in: orgUnitIds } };
+      campaignWhere.orgUnitId = { in: orgUnitIds };
+    }
+
     const totalRaised = await prisma.donation.aggregate({
-      where: { status: 'VERIFIED' },
+      where: { status: 'VERIFIED', ...donationWhere },
       _sum: { amount: true },
     });
 
@@ -305,11 +322,13 @@ export class FinanceService {
     
     const recentDonations = await prisma.donation.findMany({
       take: 10,
+      where: donationWhere,
       orderBy: { createdAt: 'desc' },
       include: { donor: true, campaign: true },
     });
 
     const campaigns = await prisma.fundraisingCampaign.findMany({
+      where: campaignWhere,
       include: {
         _count: { select: { donations: true } },
       },
@@ -317,12 +336,12 @@ export class FinanceService {
 
     // Consolidated Metrics
     const membershipCollections = await prisma.transaction.aggregate({
-      where: { category: 'MEMBERSHIP_FEE', type: 'INCOME', status: 'COMPLETED' },
+      where: { category: 'MEMBERSHIP_FEE', type: 'INCOME', status: 'COMPLETED', ...transactionWhere },
       _sum: { amount: true },
     });
 
     const renewalCollections = await prisma.transaction.aggregate({
-      where: { category: 'RENEWAL_FEE', type: 'INCOME', status: 'COMPLETED' },
+      where: { category: 'RENEWAL_FEE', type: 'INCOME', status: 'COMPLETED', ...transactionWhere },
       _sum: { amount: true },
     });
 
@@ -332,32 +351,33 @@ export class FinanceService {
                              fundraiserCollections;
 
     const refundStats = await prisma.transaction.aggregate({
-      where: { category: 'REFUND', type: 'EXPENSE', status: 'COMPLETED' },
+      where: { category: 'REFUND', type: 'EXPENSE', status: 'COMPLETED', ...transactionWhere },
       _sum: { amount: true },
       _count: { id: true },
     });
 
     const recentTransactionCount = await prisma.transaction.count({
       where: {
+        ...transactionWhere,
         date: {
           gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
         }
       }
     });
 
-    const totalTransactionCount = await prisma.transaction.count();
+    const totalTransactionCount = await prisma.transaction.count({ where: transactionWhere });
     const rejectedTransactionCount = await prisma.transaction.count({
-      where: { status: 'REJECTED' }
+      where: { status: 'REJECTED', ...transactionWhere }
     });
 
     const pendingDonationsStats = await prisma.donation.aggregate({
-      where: { status: 'PENDING' },
+      where: { status: 'PENDING', ...donationWhere },
       _sum: { amount: true },
       _count: { id: true },
     });
 
     const pendingTransactionStats = await prisma.transaction.aggregate({
-      where: { status: 'PENDING' },
+      where: { status: 'PENDING', ...transactionWhere },
       _sum: { amount: true },
       _count: { id: true },
     });

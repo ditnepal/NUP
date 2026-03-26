@@ -3,9 +3,15 @@ import { api } from '../lib/api';
 import { TrendingUp, Users, Plus, FileText, RefreshCw, DollarSign, PieChart } from 'lucide-react';
 import { FundraiserCard } from './ui/FundraiserCard';
 import { StatCard } from './ui/StatCard';
-import { Fundraiser, FinanceAnalytics } from '../types';
+import { Fundraiser, FinanceAnalytics, UserProfile } from '../types';
+import { usePermissions } from '../hooks/usePermissions';
 
-export const FundraiserAdmin: React.FC = () => {
+interface FundraiserAdminProps {
+  user: UserProfile | null;
+}
+
+export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [analytics, setAnalytics] = useState<FinanceAnalytics | null>(null);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +93,12 @@ export const FundraiserAdmin: React.FC = () => {
           </button>
           <button 
             onClick={() => setIsFundraiserModalOpen(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-bold"
+            disabled={!can('FUNDRAISING', 'CREATE')}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm font-bold ${
+              can('FUNDRAISING', 'CREATE') 
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
           >
             <Plus size={20} /> New Fundraiser
           </button>
@@ -102,19 +113,22 @@ export const FundraiserAdmin: React.FC = () => {
       </div>
 
       <div className="flex bg-gray-100 p-1.5 rounded-xl mb-8 w-full md:w-fit overflow-x-auto no-scrollbar shadow-inner border border-gray-200">
-        {(['overview', 'manage'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 md:flex-none px-8 py-2.5 rounded-lg text-sm font-bold transition-all capitalize whitespace-nowrap tracking-wide ${
-              activeTab === tab 
-                ? 'bg-white text-emerald-600 shadow-md ring-1 ring-black/5' 
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
-            }`}
-          >
-            {tab === 'manage' ? 'Manage Campaigns' : tab}
-          </button>
-        ))}
+        {(['overview', 'manage'] as const).map((tab) => {
+          if (tab === 'manage' && !can('FUNDRAISING', 'VIEW')) return null;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 md:flex-none px-8 py-2.5 rounded-lg text-sm font-bold transition-all capitalize whitespace-nowrap tracking-wide ${
+                activeTab === tab 
+                  ? 'bg-white text-emerald-600 shadow-md ring-1 ring-black/5' 
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+              }`}
+            >
+              {tab === 'manage' ? 'Manage Campaigns' : tab}
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
@@ -201,16 +215,18 @@ export const FundraiserAdmin: React.FC = () => {
 
           {activeTab === 'manage' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <button 
-                onClick={() => setIsFundraiserModalOpen(true)}
-                className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-8 flex flex-col items-center justify-center text-center hover:border-emerald-500 hover:bg-emerald-50 transition-all group"
-              >
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors mb-4">
-                  <Plus size={32} />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">Create New Fundraiser</h3>
-                <p className="text-sm text-gray-500 mt-2">Start a new fundraising drive for the party, candidate, or cause.</p>
-              </button>
+              {can('FUNDRAISING', 'CREATE') && (
+                <button 
+                  onClick={() => setIsFundraiserModalOpen(true)}
+                  className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-8 flex flex-col items-center justify-center text-center hover:border-emerald-500 hover:bg-emerald-50 transition-all group"
+                >
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors mb-4">
+                    <Plus size={32} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">Create New Fundraiser</h3>
+                  <p className="text-sm text-gray-500 mt-2">Start a new fundraising drive for the party, candidate, or cause.</p>
+                </button>
+              )}
               {analytics?.campaigns && analytics.campaigns.map((fundraiser) => (
                 <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />
               ))}

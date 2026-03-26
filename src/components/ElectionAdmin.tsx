@@ -19,8 +19,10 @@ import {
 } from 'lucide-react';
 import { Candidate, Constituency } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { usePermissions } from '../hooks/usePermissions';
 
-export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overview' | 'candidates' | 'incidents' | 'results' | 'readiness' | 'constituencies' | 'cycles' }) {
+export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, defaultTab?: 'overview' | 'candidates' | 'incidents' | 'results' | 'readiness' | 'constituencies' | 'cycles' }) {
+  const { can } = usePermissions(user);
   const [cycles, setCycles] = useState<any[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<any>(null);
   const [constituencies, setConstituencies] = useState<Constituency[]>([]);
@@ -534,7 +536,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
               <option key={c.id} value={c.id}>{c.name} ({c.year})</option>
             ))}
           </select>
-          {activeTab !== 'overview' && activeTab !== 'readiness' && (
+          {activeTab !== 'overview' && activeTab !== 'readiness' && can('ELECTION', 'CREATE') && (
             <button 
               onClick={() => {
                 if (activeTab === 'candidates') openCandidateModal();
@@ -728,12 +730,16 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                       <td className="py-4 text-slate-500">{con.province} / {con.district}</td>
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => openConstituencyModal(con)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
-                            <Edit2 size={16} />
-                          </button>
-                          <button onClick={() => confirmDelete(con.id, 'constituency')} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
-                            <Trash2 size={16} />
-                          </button>
+                          {can('ELECTION', 'UPDATE') && (
+                            <button onClick={() => openConstituencyModal(con)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                              <Edit2 size={16} />
+                            </button>
+                          )}
+                          {can('ELECTION', 'DELETE') && (
+                            <button onClick={() => confirmDelete(con.id, 'constituency')} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -768,12 +774,16 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                       <td className="py-4 text-slate-500">{station._count?.booths || 0}</td>
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => openPollingStationModal(station)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
-                            <Edit2 size={16} />
-                          </button>
-                          <button onClick={() => confirmDelete(station.id, 'pollingStation')} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
-                            <Trash2 size={16} />
-                          </button>
+                          {can('ELECTION', 'UPDATE') && (
+                            <button onClick={() => openPollingStationModal(station)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                              <Edit2 size={16} />
+                            </button>
+                          )}
+                          {can('ELECTION', 'DELETE') && (
+                            <button onClick={() => confirmDelete(station.id, 'pollingStation')} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -801,7 +811,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                     <th className="pb-3 font-bold text-slate-900">Year</th>
                     <th className="pb-3 font-bold text-slate-900">Type</th>
                     <th className="pb-3 font-bold text-slate-900">Status</th>
-                    <th className="pb-3 font-bold text-slate-900 text-right">Actions</th>
+                    {can('ELECTION', 'UPDATE') && <th className="pb-3 font-bold text-slate-900 text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -821,16 +831,20 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                           {cyc.status}
                         </span>
                       </td>
-                      <td className="py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => openCycleModal(cyc)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
-                            <Edit2 size={16} />
-                          </button>
-                          <button onClick={() => confirmDelete(cyc.id, 'cycle')} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
+                      {can('ELECTION', 'UPDATE') && (
+                        <td className="py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => openCycleModal(cyc)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                              <Edit2 size={16} />
+                            </button>
+                            {can('ELECTION', 'DELETE') && (
+                              <button onClick={() => confirmDelete(cyc.id, 'cycle')} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -848,7 +862,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Constituency</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documents</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                  {can('ELECTION', 'UPDATE') && <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -878,24 +892,28 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                         <span className="text-xs text-slate-500">{cand.documents?.length || 0}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => openCandidateModal(cand)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Edit Candidate"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button 
-                          onClick={() => confirmDelete(cand.id, 'candidate')}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Delete Candidate"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+                    {can('ELECTION', 'UPDATE') && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={() => openCandidateModal(cand)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            title="Edit Candidate"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          {can('ELECTION', 'DELETE') && (
+                            <button 
+                              onClick={() => confirmDelete(cand.id, 'candidate')}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                              title="Delete Candidate"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
                 {candidates.length === 0 && (
@@ -946,12 +964,18 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                       }`}>
                         {inc.status}
                       </span>
-                      <button onClick={() => openIncidentModal(inc)} className="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors">
-                        <Edit2 size={14} />
-                      </button>
-                      <button onClick={() => confirmDelete(inc.id, 'incident')} className="p-1.5 text-slate-400 hover:text-red-600 transition-colors">
-                        <Trash2 size={14} />
-                      </button>
+                      {can('ELECTION', 'UPDATE') && (
+                        <>
+                          <button onClick={() => openIncidentModal(inc)} className="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors">
+                            <Edit2 size={14} />
+                          </button>
+                          {can('ELECTION', 'DELETE') && (
+                            <button onClick={() => confirmDelete(inc.id, 'incident')} className="p-1.5 text-slate-400 hover:text-red-600 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                   <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl">{inc.description}</p>
@@ -985,14 +1009,20 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                         <p className="text-xs text-slate-500">{res.constituency?.name || 'Global'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => openResultModal(res)} className="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors">
-                        <Edit2 size={14} />
-                      </button>
-                      <button onClick={() => confirmDelete(res.id, 'result')} className="p-1.5 text-slate-400 hover:text-red-600 transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                      <div className="flex items-center gap-1">
+                        {can('ELECTION', 'UPDATE') && (
+                          <>
+                            <button onClick={() => openResultModal(res)} className="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors">
+                              <Edit2 size={14} />
+                            </button>
+                            {can('ELECTION', 'DELETE') && (
+                              <button onClick={() => confirmDelete(res.id, 'result')} className="p-1.5 text-slate-400 hover:text-red-600 transition-colors">
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                   </div>
                   <div className="flex justify-between items-end">
                     <div>
@@ -1028,7 +1058,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Deployments</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Outreach</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Readiness</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                  {can('ELECTION', 'APPROVE') && <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -1063,15 +1093,17 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                       </div>
                       <span className="text-[10px] font-bold text-slate-500 mt-1 block">{booth.readinessScore}% Ready</span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => openReadinessModal(booth)}
-                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
-                        title="Update Readiness"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                    </td>
+                    {can('ELECTION', 'APPROVE') && (
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => openReadinessModal(booth)}
+                          className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                          title="Update Readiness"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

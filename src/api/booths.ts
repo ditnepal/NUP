@@ -1,7 +1,10 @@
 import express from 'express';
 import prisma from '../lib/prisma';
-import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { authenticate, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
 import { z } from 'zod';
+import { hierarchyService } from '../services/hierarchy.service';
+import { permissionService } from '../services/permission.service';
 
 const router = express.Router();
 
@@ -21,13 +24,23 @@ const boothSchema = z.object({
 // @route   GET /api/v1/booths
 // @desc    Get all booths
 // @access  Private
-router.get('/', authenticate, async (req: AuthRequest, res) => {
+router.get('/', authenticate, checkPermission('BOOTHS', 'VIEW'), async (req: AuthRequest, res) => {
   try {
+    const where: any = {};
+    
+    // Hierarchy Scoping
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    if (accessibleUnitIds) {
+      where.orgUnitId = { in: accessibleUnitIds };
+    }
+
     const booths = await prisma.booth.findMany({
+      where,
       orderBy: { ward: 'asc' },
     });
     res.json(booths);
   } catch (error) {
+    console.error('Booths fetch error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -35,7 +48,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
 // @route   POST /api/v1/booths
 // @desc    Create a new booth
 // @access  Private (Admin/Staff)
-router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/', authenticate, checkPermission('BOOTHS', 'CREATE'), async (req: AuthRequest, res) => {
   try {
     const data = boothSchema.parse(req.body);
     const coordinatorId = req.user?.id;
@@ -64,7 +77,7 @@ router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRe
 // @route   PUT /api/v1/booths/:id
 // @desc    Update a booth
 // @access  Private (Admin/Staff)
-router.put('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.put('/:id', authenticate, checkPermission('BOOTHS', 'UPDATE'), async (req: AuthRequest, res) => {
   try {
     const data = boothSchema.parse(req.body);
     const { id } = req.params;
@@ -89,7 +102,7 @@ router.put('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: Auth
 // @route   DELETE /api/v1/booths/:id
 // @desc    Delete a booth
 // @access  Private (Admin/Staff)
-router.delete('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.delete('/:id', authenticate, checkPermission('BOOTHS', 'DELETE'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     await prisma.booth.delete({ where: { id } });

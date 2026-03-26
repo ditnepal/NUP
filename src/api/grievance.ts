@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { grievanceService } from '../services/grievance.service';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
+import { permissionService } from '../services/permission.service';
 import prisma from '../lib/prisma';
 
 const router = Router();
@@ -36,7 +38,7 @@ router.get('/categories', authenticate, async (req, res) => {
   }
 });
 
-router.get('/staff', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.get('/staff', authenticate, checkPermission('GRIEVANCES', 'VIEW'), async (req, res) => {
   try {
     const staff = await prisma.user.findMany({
       where: { role: { in: ['ADMIN', 'STAFF'] } },
@@ -48,7 +50,7 @@ router.get('/staff', authenticate, authorize(['ADMIN', 'STAFF']), async (req, re
   }
 });
 
-router.post('/categories', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/categories', authenticate, checkPermission('GRIEVANCES', 'CREATE'), async (req, res) => {
   try {
     const data = z.object({
       name: z.string().min(2),
@@ -63,13 +65,17 @@ router.post('/categories', authenticate, authorize(['ADMIN', 'STAFF']), async (r
 });
 
 // Grievances
-router.get('/', authenticate, async (req: AuthRequest, res) => {
+router.get('/', authenticate, checkPermission('GRIEVANCES', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const filters: any = {};
     if (req.query.status) filters.status = req.query.status as string;
     if (req.query.priority) filters.priority = req.query.priority as string;
     if (req.query.orgUnitId) filters.orgUnitId = req.query.orgUnitId as string;
     if (req.query.reporterId) filters.reporterId = req.query.reporterId as string;
+
+    // Hierarchy Scope Enforcement
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    filters.orgUnitIds = accessibleUnitIds;
 
     // Confidentiality: Non-admin/staff can only see their own grievances
     if (req.user?.role !== 'ADMIN' && req.user?.role !== 'STAFF') {
@@ -91,7 +97,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-router.post('/', authenticate, async (req: AuthRequest, res) => {
+router.post('/', authenticate, checkPermission('GRIEVANCES', 'CREATE', (req) => req.body.orgUnitId), async (req: AuthRequest, res) => {
   try {
     const data = grievanceSchema.parse(req.body);
     const grievance = await grievanceService.createGrievance({
@@ -105,7 +111,10 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
 });
 
 // Assignments
-router.post('/:id/assign', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/assign', authenticate, checkPermission('GRIEVANCES', 'UPDATE', async (req) => {
+  const grievance = await prisma.grievance.findUnique({ where: { id: req.params.id } });
+  return grievance?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { userId } = assignmentSchema.parse(req.body);
     const assignment = await grievanceService.assignGrievance(
@@ -120,7 +129,10 @@ router.post('/:id/assign', authenticate, authorize(['ADMIN', 'STAFF']), async (r
 });
 
 // Responses
-router.post('/:id/responses', authenticate, async (req: AuthRequest, res) => {
+router.post('/:id/responses', authenticate, checkPermission('GRIEVANCES', 'UPDATE', async (req) => {
+  const grievance = await prisma.grievance.findUnique({ where: { id: req.params.id } });
+  return grievance?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const data = responseSchema.parse(req.body);
     
@@ -148,7 +160,10 @@ router.post('/:id/responses', authenticate, async (req: AuthRequest, res) => {
 });
 
 // Actions
-router.post('/:id/resolve', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/resolve', authenticate, checkPermission('GRIEVANCES', 'UPDATE', async (req) => {
+  const grievance = await prisma.grievance.findUnique({ where: { id: req.params.id } });
+  return grievance?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const grievance = await grievanceService.resolveGrievance(req.params.id, req.user?.id as string);
     res.json(grievance);
@@ -157,7 +172,10 @@ router.post('/:id/resolve', authenticate, authorize(['ADMIN', 'STAFF']), async (
   }
 });
 
-router.post('/:id/escalate', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/escalate', authenticate, checkPermission('GRIEVANCES', 'ESCALATE', async (req) => {
+  const grievance = await prisma.grievance.findUnique({ where: { id: req.params.id } });
+  return grievance?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const grievance = await grievanceService.escalateGrievance(req.params.id, req.user?.id as string);
     res.json(grievance);

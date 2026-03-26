@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Member } from '../types';
+import { Member, UserProfile } from '../types';
 import { FileText, Video, User } from 'lucide-react';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface MemberDetailModalProps {
   member: Member;
+  user: UserProfile | null;
   onClose: () => void;
   onVerify: (id: string, note?: string) => void;
   onApprove: (id: string, note?: string) => void;
@@ -11,7 +13,8 @@ interface MemberDetailModalProps {
   onEscalate?: (id: string, note?: string) => void;
 }
 
-export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, onClose, onVerify, onApprove, onReject, onEscalate }) => {
+export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, user, onClose, onVerify, onApprove, onReject, onEscalate }) => {
+  const { can } = usePermissions(user);
   const [note, setNote] = useState('');
   const [showNoteInput, setShowNoteInput] = useState<'VERIFY' | 'APPROVE' | 'REJECT' | 'ESCALATE' | null>(null);
 
@@ -182,7 +185,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
             Close
           </button>
           
-          {(member.status === 'PENDING' || member.status === 'VERIFIED') && (
+          {(member.status === 'PENDING' || member.status === 'VERIFIED') && can('MEMBERSHIP', 'APPROVE') && (
             <button 
               onClick={() => handleAction('REJECT')} 
               className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
@@ -193,7 +196,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
             </button>
           )}
 
-          {!member.isEscalated && onEscalate && (member.status === 'PENDING' || member.status === 'VERIFIED' || member.status === 'REJECTED') && (
+          {!member.isEscalated && onEscalate && (member.status === 'PENDING' || member.status === 'VERIFIED' || member.status === 'REJECTED') && can('MEMBERSHIP', 'APPROVE') && (
             <button 
               onClick={() => handleAction('ESCALATE')} 
               className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
@@ -204,7 +207,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
             </button>
           )}
 
-          {member.status === 'PENDING' && (
+          {member.status === 'PENDING' && can('MEMBERSHIP', 'APPROVE') && (
             <button 
               onClick={() => handleAction('VERIFY')} 
               className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg ${
@@ -215,7 +218,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
             </button>
           )}
           
-          {member.status === 'VERIFIED' && (
+          {member.status === 'VERIFIED' && can('MEMBERSHIP', 'APPROVE') && (
             <button 
               onClick={() => handleAction('APPROVE')} 
               className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg ${

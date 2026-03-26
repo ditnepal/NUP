@@ -1,6 +1,8 @@
 import express from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
+import { permissionService } from '../services/permission.service';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -14,14 +16,22 @@ const campaignSchema = z.object({
   status: z.enum(['PLANNED', 'ACTIVE', 'COMPLETED', 'CANCELLED']).optional(),
   targetAudience: z.string().optional(),
   budget: z.number().optional(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 // @route   GET /api/v1/campaigns
 // @desc    Get all campaigns
 // @access  Private
-router.get('/', authenticate, async (req: AuthRequest, res) => {
+router.get('/', authenticate, checkPermission('FUNDRAISING', 'VIEW'), async (req: AuthRequest, res) => {
   try {
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const where: any = {};
+    if (accessibleUnitIds) {
+      where.orgUnitId = { in: accessibleUnitIds };
+    }
+
     const campaigns = await prisma.campaign.findMany({
+      where,
       orderBy: { startDate: 'desc' },
     });
     res.json(campaigns);
@@ -33,7 +43,7 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
 // @route   POST /api/v1/campaigns
 // @desc    Create a new campaign
 // @access  Private (Admin/Staff)
-router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/', authenticate, checkPermission('FUNDRAISING', 'CREATE', (req) => req.body.orgUnitId), async (req: AuthRequest, res) => {
   try {
     const data = campaignSchema.parse(req.body);
     const managerId = req.user?.id;
@@ -49,6 +59,7 @@ router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRe
         startDate: new Date(data.startDate),
         endDate: data.endDate ? new Date(data.endDate) : null,
         status: data.status || 'PLANNED',
+        orgUnitId: data.orgUnitId,
       }
     });
 

@@ -1,6 +1,8 @@
 import express from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
+import { permissionService } from '../services/permission.service';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -11,14 +13,22 @@ const transactionSchema = z.object({
   amount: z.number().positive(),
   description: z.string(),
   date: z.string().datetime().optional(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 // @route   GET /api/v1/transactions
 // @desc    Get all transactions
 // @access  Private (Admin/Finance)
-router.get('/', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.get('/', authenticate, checkPermission('FINANCE', 'VIEW'), async (req: AuthRequest, res) => {
   try {
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const where: any = {};
+    if (accessibleUnitIds) {
+      where.orgUnitId = { in: accessibleUnitIds };
+    }
+
     const transactions = await prisma.transaction.findMany({
+      where,
       orderBy: { date: 'desc' },
       include: {
         recordedBy: { select: { displayName: true } },
@@ -42,7 +52,7 @@ router.get('/', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (re
 // @route   POST /api/v1/transactions
 // @desc    Create a new transaction
 // @access  Private (Admin/Finance)
-router.post('/', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.post('/', authenticate, checkPermission('FINANCE', 'CREATE', (req) => req.body.orgUnitId), async (req: AuthRequest, res) => {
   try {
     const data = transactionSchema.parse(req.body);
     const recordedById = req.user?.id;
@@ -56,6 +66,7 @@ router.post('/', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (r
         ...data,
         recordedById,
         date: data.date ? new Date(data.date) : new Date(),
+        orgUnitId: data.orgUnitId,
       }
     });
 
@@ -71,7 +82,10 @@ router.post('/', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (r
 // @route   PATCH /api/v1/transactions/:id/note
 // @desc    Update reconciliation note
 // @access  Private (Admin/Finance)
-router.patch('/:id/note', authenticate, authorize(['ADMIN', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.patch('/:id/note', authenticate, checkPermission('FINANCE', 'UPDATE', async (req) => {
+  const transaction = await prisma.transaction.findUnique({ where: { id: req.params.id } });
+  return transaction?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { note } = req.body;
     const transaction = await prisma.transaction.update({

@@ -3,9 +3,15 @@ import { api } from '../lib/api';
 import { DollarSign, TrendingUp, Users, PieChart, FileText, Search, RefreshCw, Smartphone, Landmark, Plus, Edit2, Trash2, CheckCircle, XCircle, Globe, Settings } from 'lucide-react';
 import { StatCard } from './ui/StatCard';
 import { TransactionTable } from './ui/TransactionTable';
-import { FinanceAnalytics, Transaction, PaymentIntegration } from '../types';
+import { FinanceAnalytics, Transaction, PaymentIntegration, UserProfile } from '../types';
+import { usePermissions } from '../hooks/usePermissions';
 
-export const FinanceAdmin: React.FC = () => {
+interface FinanceAdminProps {
+  user: UserProfile | null;
+}
+
+export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [analytics, setAnalytics] = useState<FinanceAnalytics | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [integrations, setIntegrations] = useState<PaymentIntegration[]>([]);
@@ -367,30 +373,34 @@ export const FinanceAdmin: React.FC = () => {
                       <p className="text-[10px] opacity-70 uppercase font-bold tracking-wider">Review all logs</p>
                     </div>
                   </button>
-                  <button 
-                    onClick={() => setShowTransactionModal(true)}
-                    className="flex items-center gap-4 p-4 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all hover:scale-[1.02] active:scale-95 text-left group"
-                  >
-                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
-                      <DollarSign size={24} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">Record Transaction</p>
-                      <p className="text-[10px] opacity-70 uppercase font-bold tracking-wider">Manual entry</p>
-                    </div>
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('integrations')}
-                    className="flex items-center gap-4 p-4 bg-amber-50 text-amber-700 rounded-2xl hover:bg-amber-100 transition-all hover:scale-[1.02] active:scale-95 text-left group"
-                  >
-                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
-                      <RefreshCw size={24} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">Payment Gateways</p>
-                      <p className="text-[10px] opacity-70 uppercase font-bold tracking-wider">Khalti, eSewa, Bank</p>
-                    </div>
-                  </button>
+                  {can('FINANCE', 'CREATE') && (
+                    <button 
+                      onClick={() => setShowTransactionModal(true)}
+                      className="flex items-center gap-4 p-4 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all hover:scale-[1.02] active:scale-95 text-left group"
+                    >
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
+                        <DollarSign size={24} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm">Record Transaction</p>
+                        <p className="text-[10px] opacity-70 uppercase font-bold tracking-wider">Manual entry</p>
+                      </div>
+                    </button>
+                  )}
+                  {can('FINANCE', 'UPDATE') && (
+                    <button 
+                      onClick={() => setActiveTab('integrations')}
+                      className="flex items-center gap-4 p-4 bg-amber-50 text-amber-700 rounded-2xl hover:bg-amber-100 transition-all hover:scale-[1.02] active:scale-95 text-left group"
+                    >
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
+                        <RefreshCw size={24} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm">Payment Gateways</p>
+                        <p className="text-[10px] opacity-70 uppercase font-bold tracking-wider">Khalti, eSewa, Bank</p>
+                      </div>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -696,12 +706,14 @@ export const FinanceAdmin: React.FC = () => {
                             className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
                           />
                           <div className="flex justify-end">
-                            <button 
-                              onClick={handleUpdateNote}
-                              className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-widest"
-                            >
-                              Save Note Only
-                            </button>
+                            {can('FINANCE', 'UPDATE') && (
+                              <button 
+                                onClick={handleUpdateNote}
+                                className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-widest"
+                              >
+                                Save Note Only
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -717,21 +729,25 @@ export const FinanceAdmin: React.FC = () => {
                         <div className="flex gap-4 pt-4">
                           {selectedTransaction.status === 'PENDING' && (
                             <>
-                              <button 
-                                onClick={() => handleReject(selectedTransaction.id, reconciliationNote)}
-                                className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-bold hover:bg-rose-100 transition-all active:scale-95"
-                              >
-                                Reject Transaction
-                              </button>
-                              <button 
-                                onClick={() => handleVerify(selectedTransaction.id)}
-                                className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 active:scale-95"
-                              >
-                                Verify & Complete
-                              </button>
+                              {can('FINANCE', 'APPROVE') && (
+                                <button 
+                                  onClick={() => handleReject(selectedTransaction.id, reconciliationNote)}
+                                  className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-bold hover:bg-rose-100 transition-all active:scale-95"
+                                >
+                                  Reject Transaction
+                                </button>
+                              )}
+                              {can('FINANCE', 'APPROVE') && (
+                                <button 
+                                  onClick={() => handleVerify(selectedTransaction.id)}
+                                  className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 active:scale-95"
+                                >
+                                  Verify & Complete
+                                </button>
+                              )}
                             </>
                           )}
-                          {selectedTransaction.status === 'COMPLETED' && selectedTransaction.category === 'DONATION' && selectedTransaction.donation?.id && (
+                          {selectedTransaction.status === 'COMPLETED' && selectedTransaction.category === 'DONATION' && selectedTransaction.donation?.id && can('FINANCE', 'UPDATE') && (
                             <button 
                               onClick={() => handleRefund(selectedTransaction.donation!.id, reconciliationNote)}
                               className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-200 active:scale-95"
@@ -739,7 +755,7 @@ export const FinanceAdmin: React.FC = () => {
                               Refund Transaction
                             </button>
                           )}
-                          {(selectedTransaction.status !== 'PENDING' && (selectedTransaction.status !== 'COMPLETED' || selectedTransaction.category !== 'DONATION')) && (
+                          {(selectedTransaction.status !== 'PENDING' && (selectedTransaction.status !== 'COMPLETED' || selectedTransaction.category !== 'DONATION' || !can('FINANCE', 'UPDATE'))) && (
                             <button 
                               onClick={() => setShowDetailModal(false)}
                               className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all active:scale-95"

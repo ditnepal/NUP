@@ -1,7 +1,7 @@
 import prisma from '../lib/prisma';
 
 export class SurveyService {
-  async createSurvey(data: { title: string; description?: string; questions: any[]; audience?: string; placementType?: string; targetSlug?: string }) {
+  async createSurvey(data: { title: string; description?: string; questions: any[]; audience?: string; placementType?: string; targetSlug?: string; orgUnitId?: string }) {
     return prisma.survey.create({
       data: {
         title: data.title,
@@ -10,6 +10,7 @@ export class SurveyService {
         audience: data.audience || 'MEMBER',
         placementType: data.placementType || 'GENERAL',
         targetSlug: data.placementType === 'CONTENT_INLINE' && data.targetSlug ? data.targetSlug : null,
+        orgUnitId: data.orgUnitId,
         questions: {
           create: data.questions.map((q, idx) => ({
             text: q.text,
@@ -23,9 +24,13 @@ export class SurveyService {
     });
   }
 
-  async getSurveys(status?: string) {
+  async getSurveys(status?: string, orgUnitIds?: string[] | null) {
+    const where: any = {};
+    if (status) where.status = status;
+    if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+
     return prisma.survey.findMany({
-      where: status ? { status } : {},
+      where,
       include: { _count: { select: { responses: true } } },
       orderBy: { createdAt: 'desc' },
     });
@@ -111,7 +116,7 @@ export class SurveyService {
   }
 
   // --- Polls ---
-  async createPoll(data: { question: string; options: string[]; audience?: string; placementType?: string; targetSlug?: string }) {
+  async createPoll(data: { question: string; options: string[]; audience?: string; placementType?: string; targetSlug?: string; orgUnitId?: string }) {
     return prisma.poll.create({
       data: {
         question: data.question,
@@ -119,6 +124,7 @@ export class SurveyService {
         audience: data.audience || 'MEMBER',
         placementType: data.placementType || 'GENERAL',
         targetSlug: data.placementType === 'CONTENT_INLINE' && data.targetSlug ? data.targetSlug : null,
+        orgUnitId: data.orgUnitId,
         options: {
           create: data.options.map((o) => ({ text: o })),
         },
@@ -127,8 +133,12 @@ export class SurveyService {
     });
   }
 
-  async getPolls() {
+  async getPolls(orgUnitIds?: string[] | null) {
+    const where: any = {};
+    if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+
     return prisma.poll.findMany({
+      where,
       include: {
         options: {
           include: { _count: { select: { votes: true } } },

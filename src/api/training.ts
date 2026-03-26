@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
 import { trainingService } from '../services/training.service';
 import prisma from '../lib/prisma';
 import { z } from 'zod';
@@ -123,7 +124,7 @@ router.get('/programs/public', async (req, res) => {
 // @route   GET /api/v1/training/programs/admin
 // @desc    Get all training programs for management
 // @access  Private (Admin/Staff)
-router.get('/programs/admin', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.get('/programs/admin', authenticate, checkPermission('TRAINING', 'VIEW'), async (req, res) => {
   try {
     const programs = await prisma.trainingProgram.findMany({
       include: { 
@@ -146,7 +147,7 @@ router.get('/programs/admin', authenticate, authorize(['ADMIN', 'STAFF']), async
 // @route   POST /api/v1/training/programs
 // @desc    Create a training program
 // @access  Private (Admin/Staff)
-router.post('/programs', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/programs', authenticate, checkPermission('TRAINING', 'CREATE'), async (req, res) => {
   try {
     const data = programSchema.parse(req.body);
     const program = await prisma.trainingProgram.create({ data });
@@ -159,7 +160,7 @@ router.post('/programs', authenticate, authorize(['ADMIN', 'STAFF']), async (req
 // @route   PUT /api/v1/training/programs/:id
 // @desc    Update a training program
 // @access  Private (Admin/Staff)
-router.put('/programs/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/programs/:id', authenticate, checkPermission('TRAINING', 'UPDATE'), async (req, res) => {
   try {
     const data = programSchema.parse(req.body);
     const program = await prisma.trainingProgram.update({
@@ -175,7 +176,7 @@ router.put('/programs/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (
 // @route   DELETE /api/v1/training/programs/:id
 // @desc    Delete a training program
 // @access  Private (Admin)
-router.delete('/programs/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
+router.delete('/programs/:id', authenticate, checkPermission('TRAINING', 'DELETE'), async (req, res) => {
   try {
     await prisma.trainingProgram.delete({ where: { id: req.params.id } });
     res.json({ message: 'Program deleted' });
@@ -209,7 +210,7 @@ router.get('/courses/:id', async (req, res) => {
 // @route   POST /api/v1/training/courses
 // @desc    Create a course
 // @access  Private (Admin/Staff)
-router.post('/courses', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/courses', authenticate, checkPermission('TRAINING', 'CREATE'), async (req, res) => {
   try {
     const data = courseSchema.parse(req.body);
     const course = await prisma.course.create({ data });
@@ -222,7 +223,7 @@ router.post('/courses', authenticate, authorize(['ADMIN', 'STAFF']), async (req,
 // @route   PUT /api/v1/training/courses/:id
 // @desc    Update a course
 // @access  Private (Admin/Staff)
-router.put('/courses/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/courses/:id', authenticate, checkPermission('TRAINING', 'UPDATE'), async (req, res) => {
   try {
     const data = courseSchema.parse(req.body);
     const course = await prisma.course.update({
@@ -238,7 +239,7 @@ router.put('/courses/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (r
 // @route   DELETE /api/v1/training/courses/:id
 // @desc    Delete a course
 // @access  Private (Admin/Staff)
-router.delete('/courses/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.delete('/courses/:id', authenticate, checkPermission('TRAINING', 'DELETE'), async (req, res) => {
   try {
     await prisma.course.delete({ where: { id: req.params.id } });
     res.json({ message: 'Course deleted' });
@@ -262,7 +263,7 @@ router.post('/courses/:id/enroll', authenticate, async (req: AuthRequest, res) =
 // @route   POST /api/v1/training/lessons
 // @desc    Create a lesson
 // @access  Private (Admin/Staff)
-router.post('/lessons', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/lessons', authenticate, checkPermission('TRAINING', 'CREATE'), async (req, res) => {
   try {
     const data = lessonSchema.parse(req.body);
     const lesson = await prisma.lesson.create({ data });
@@ -275,7 +276,7 @@ router.post('/lessons', authenticate, authorize(['ADMIN', 'STAFF']), async (req,
 // @route   PUT /api/v1/training/lessons/:id
 // @desc    Update a lesson
 // @access  Private (Admin/Staff)
-router.put('/lessons/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/lessons/:id', authenticate, checkPermission('TRAINING', 'UPDATE'), async (req, res) => {
   try {
     const data = lessonSchema.parse(req.body);
     const lesson = await prisma.lesson.update({
@@ -291,7 +292,7 @@ router.put('/lessons/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (r
 // @route   DELETE /api/v1/training/lessons/:id
 // @desc    Delete a lesson
 // @access  Private (Admin/Staff)
-router.delete('/lessons/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.delete('/lessons/:id', authenticate, checkPermission('TRAINING', 'DELETE'), async (req, res) => {
   try {
     await prisma.lesson.delete({ where: { id: req.params.id } });
     res.json({ message: 'Lesson deleted' });
@@ -303,7 +304,7 @@ router.delete('/lessons/:id', authenticate, authorize(['ADMIN', 'STAFF']), async
 // @route   POST /api/v1/training/quizzes
 // @desc    Create a quiz
 // @access  Private (Admin/Staff)
-router.post('/quizzes', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/quizzes', authenticate, checkPermission('TRAINING', 'CREATE'), async (req, res) => {
   try {
     const data = quizSchema.parse(req.body);
     const quiz = await prisma.quiz.create({ data });

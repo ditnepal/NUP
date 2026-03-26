@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { BookOpen, ExternalLink, Paperclip, ChevronRight, Clock, Search, Filter, Pin, GraduationCap, Users, Shield, Layers, FileText, ArrowLeft, PlayCircle } from 'lucide-react';
 import { TrainingProgram, Course, Lesson, UserProfile } from '../types';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface TrainingPortalProps {
   user?: UserProfile | null;
 }
 
 export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
+  const { can } = usePermissions(user || null);
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +28,9 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
     setLoading(true);
     setError(null);
     try {
-      const endpoint = user ? '/training/programs/portal' : '/training/programs/public';
+      const endpoint = user 
+        ? (can('TRAINING', 'CREATE') || can('TRAINING', 'UPDATE') ? '/training/programs/admin' : '/training/programs/portal')
+        : '/training/programs/public';
       const data = await api.get(endpoint);
       setPrograms(data);
     } catch (error) {

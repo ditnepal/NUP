@@ -1,6 +1,8 @@
 import express from 'express';
-import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { authenticate, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
 import { financeService } from '../services/finance.service';
+import { permissionService } from '../services/permission.service';
 import prisma from '../lib/prisma';
 import { z } from 'zod';
 
@@ -15,6 +17,7 @@ const campaignSchema = z.object({
   goalAmount: z.number().positive(),
   startDate: z.string().transform(val => new Date(val)),
   endDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const donationSchema = z.object({
@@ -27,15 +30,26 @@ const donationSchema = z.object({
   campaignId: z.string().uuid().optional(),
   paymentMethod: z.string(),
   referenceId: z.string(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 // @route   GET /api/v1/finance/campaigns
-// @desc    Get all active fundraising campaigns
-// @access  Public
-router.get('/campaigns', async (req, res) => {
+// @desc    Get all active fundraising campaigns (scoped)
+// @access  Public/Private
+router.get('/campaigns', async (req: AuthRequest, res) => {
   try {
+    const where: any = { status: 'ACTIVE' };
+    
+    // If authenticated, scope to accessible units. If public, show all active.
+    if (req.user) {
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user);
+      if (accessibleUnitIds) {
+        where.orgUnitId = { in: accessibleUnitIds };
+      }
+    }
+
     const campaigns = await prisma.fundraisingCampaign.findMany({
-      where: { status: 'ACTIVE' },
+      where,
       select: {
         id: true,
         title: true,
@@ -59,7 +73,7 @@ router.get('/campaigns', async (req, res) => {
 // @route   POST /api/v1/finance/campaigns
 // @desc    Create a fundraising campaign
 // @access  Private (Admin/Staff)
-router.post('/campaigns', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.post('/campaigns', authenticate, checkPermission('FUNDRAISING', 'CREATE', (req) => req.body.orgUnitId), async (req: AuthRequest, res) => {
   try {
     const data = campaignSchema.parse(req.body);
     const campaign = await financeService.createFundraisingCampaign({
@@ -68,6 +82,7 @@ router.post('/campaigns', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OF
       fundraiserType: data.fundraiserType || 'PARTY_FUND',
       beneficiaryType: data.beneficiaryType || 'PARTY',
       candidateId: data.candidateId,
+      orgUnitId: data.orgUnitId,
     } as any);
     res.status(201).json(campaign);
   } catch (error: any) {
@@ -137,6 +152,19 @@ router.post('/donations', async (req: AuthRequest, res) => {
     const selectedMethod = integrations.find(i => i.provider === data.paymentMethod);
     const isManual = selectedMethod?.instructions ? true : false;
 
+    // If it's a manual payment, require authentication and permission
+    if (isManual) {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required for manual donations' });
+      }
+      
+      // Check permission for the target orgUnitId
+      const hasPermission = await permissionService.can(req.user, 'FUNDRAISING', 'CREATE', data.orgUnitId);
+      if (!hasPermission) {
+        return res.status(403).json({ error: 'Insufficient permissions for this organizational unit' });
+      }
+    }
+
     const donation = await financeService.processDonation({
       donorInfo: {
         fullName: data.fullName,
@@ -152,6 +180,7 @@ router.post('/donations', async (req: AuthRequest, res) => {
       referenceId: data.referenceId,
       recordedById: req.user?.id,
       isManual,
+      orgUnitId: data.orgUnitId,
     });
     res.status(201).json(donation);
   } catch (error: any) {
@@ -162,7 +191,13 @@ router.post('/donations', async (req: AuthRequest, res) => {
 // @route   POST /api/v1/finance/donations/:id/refund
 // @desc    Refund a donation
 // @access  Private (Admin/Staff)
-router.post('/donations/:id/refund', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.post('/donations/:id/refund', authenticate, checkPermission('FINANCE', 'UPDATE', async (req) => {
+  const donation = await prisma.donation.findUnique({ 
+    where: { id: req.params.id },
+    include: { transaction: true }
+  });
+  return donation?.transaction?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { reason } = req.body;
     if (!reason) return res.status(400).json({ error: 'Reason for refund is required' });
@@ -176,9 +211,10 @@ router.post('/donations/:id/refund', authenticate, authorize(['ADMIN', 'STAFF', 
 // @route   GET /api/v1/finance/analytics
 // @desc    Get financial analytics
 // @access  Private (Admin/Staff)
-router.get('/analytics', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req, res) => {
+router.get('/analytics', authenticate, checkPermission('FINANCE', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const analytics = await financeService.getFinanceAnalytics();
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const analytics = await financeService.getFinanceAnalytics(accessibleUnitIds);
     res.json(analytics);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -188,9 +224,16 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFF
 // @route   GET /api/v1/finance/transactions
 // @desc    Get all transactions
 // @access  Private (Admin/Staff)
-router.get('/transactions', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req, res) => {
+router.get('/transactions', authenticate, checkPermission('FINANCE', 'VIEW'), async (req: AuthRequest, res) => {
   try {
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const where: any = {};
+    if (accessibleUnitIds) {
+      where.orgUnitId = { in: accessibleUnitIds };
+    }
+
     const transactions = await prisma.transaction.findMany({
+      where,
       orderBy: { date: 'desc' },
       include: {
         donation: { include: { donor: true, campaign: true } },
@@ -209,7 +252,10 @@ router.get('/transactions', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_
 // @route   POST /api/v1/finance/transactions/:id/verify
 // @desc    Verify a pending transaction
 // @access  Private (Admin/Staff)
-router.post('/transactions/:id/verify', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.post('/transactions/:id/verify', authenticate, checkPermission('FINANCE', 'APPROVE', async (req) => {
+  const transaction = await prisma.transaction.findUnique({ where: { id: req.params.id } });
+  return transaction?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const result = await financeService.verifyTransaction(req.params.id, req.user?.id!);
     res.json(result);
@@ -221,7 +267,10 @@ router.post('/transactions/:id/verify', authenticate, authorize(['ADMIN', 'STAFF
 // @route   POST /api/v1/finance/transactions/:id/reject
 // @desc    Reject a pending transaction
 // @access  Private (Admin/Staff)
-router.post('/transactions/:id/reject', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.post('/transactions/:id/reject', authenticate, checkPermission('FINANCE', 'APPROVE', async (req) => {
+  const transaction = await prisma.transaction.findUnique({ where: { id: req.params.id } });
+  return transaction?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { reason } = req.body;
     if (!reason) return res.status(400).json({ error: 'Reason for rejection is required' });
@@ -262,7 +311,7 @@ router.get('/integrations/public', async (req, res) => {
 // @route   GET /api/v1/finance/integrations
 // @desc    Get all payment integrations
 // @access  Private (Admin/Staff)
-router.get('/integrations', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req, res) => {
+router.get('/integrations', authenticate, checkPermission('FINANCE', 'VIEW'), async (req, res) => {
   try {
     const integrations = await financeService.listPaymentIntegrations();
     res.json(integrations);
@@ -274,7 +323,7 @@ router.get('/integrations', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_
 // @route   POST /api/v1/finance/integrations
 // @desc    Create a payment integration
 // @access  Private (Admin/Staff)
-router.post('/integrations', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.post('/integrations', authenticate, checkPermission('FINANCE', 'CREATE'), async (req: AuthRequest, res) => {
   try {
     const data = integrationSchema.parse(req.body);
     const integration = await financeService.createPaymentIntegration(data);
@@ -287,7 +336,7 @@ router.post('/integrations', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE
 // @route   PATCH /api/v1/finance/integrations/:id
 // @desc    Update a payment integration
 // @access  Private (Admin/Staff)
-router.patch('/integrations/:id', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.patch('/integrations/:id', authenticate, checkPermission('FINANCE', 'UPDATE'), async (req: AuthRequest, res) => {
   try {
     const data = integrationSchema.partial().parse(req.body);
     const integration = await financeService.updatePaymentIntegration(req.params.id, data);
@@ -300,7 +349,7 @@ router.patch('/integrations/:id', authenticate, authorize(['ADMIN', 'STAFF', 'FI
 // @route   DELETE /api/v1/finance/integrations/:id
 // @desc    Delete a payment integration
 // @access  Private (Admin/Staff)
-router.delete('/integrations/:id', authenticate, authorize(['ADMIN', 'STAFF', 'FINANCE_OFFICER']), async (req: AuthRequest, res) => {
+router.delete('/integrations/:id', authenticate, checkPermission('FINANCE', 'DELETE'), async (req: AuthRequest, res) => {
   try {
     await financeService.deletePaymentIntegration(req.params.id);
     res.status(204).end();

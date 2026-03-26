@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { surveyService } from '../services/survey.service';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
+import { permissionService } from '../services/permission.service';
+import prisma from '../lib/prisma';
 
 const router = Router();
 
@@ -12,6 +15,7 @@ const surveySchema = z.object({
   audience: z.enum(['PUBLIC', 'MEMBER']).optional(),
   placementType: z.enum(['GENERAL', 'PUBLIC_PORTAL', 'CONTENT_INLINE', 'REGISTRATION_PRE_FORM']).optional(),
   targetSlug: z.string().optional(),
+  orgUnitId: z.string().uuid().optional(),
   questions: z.array(z.object({
     text: z.string().min(3),
     type: z.enum(['TEXT', 'MULTIPLE_CHOICE', 'RATING']),
@@ -33,21 +37,23 @@ const pollSchema = z.object({
   audience: z.enum(['PUBLIC', 'MEMBER']).optional(),
   placementType: z.enum(['GENERAL', 'PUBLIC_PORTAL', 'CONTENT_INLINE', 'REGISTRATION_PRE_FORM']).optional(),
   targetSlug: z.string().optional(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 // --- Routes ---
 
 // Surveys
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, checkPermission('SURVEYS', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const surveys = await surveyService.getSurveys(req.query.status as string);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const surveys = await surveyService.getSurveys(req.query.status as string, accessibleUnitIds);
     res.json(surveys);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/', authenticate, checkPermission('SURVEYS', 'CREATE', (req) => req.body.orgUnitId), async (req, res) => {
   try {
     const data = surveySchema.parse(req.body);
     const survey = await surveyService.createSurvey(data);
@@ -58,16 +64,17 @@ router.post('/', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) =
 });
 
 // Polls
-router.get('/polls', authenticate, async (req, res) => {
+router.get('/polls', authenticate, checkPermission('SURVEYS', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const polls = await surveyService.getPolls();
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const polls = await surveyService.getPolls(accessibleUnitIds);
     res.json(polls);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/polls', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/polls', authenticate, checkPermission('SURVEYS', 'CREATE', (req) => req.body.orgUnitId), async (req, res) => {
   try {
     const data = pollSchema.parse(req.body);
     const poll = await surveyService.createPoll(data);
@@ -77,7 +84,7 @@ router.post('/polls', authenticate, authorize(['ADMIN', 'STAFF']), async (req, r
   }
 });
 
-router.post('/polls/:id/vote', authenticate, async (req: AuthRequest, res) => {
+router.post('/polls/:id/vote', authenticate, checkPermission('SURVEYS', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const { optionId } = z.object({ optionId: z.string().uuid() }).parse(req.body);
     const vote = await surveyService.votePoll(req.params.id, optionId, req.user?.id);
@@ -87,7 +94,10 @@ router.post('/polls/:id/vote', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-router.patch('/polls/:id/status', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.patch('/polls/:id/status', authenticate, checkPermission('SURVEYS', 'UPDATE', async (req) => {
+  const poll = await prisma.poll.findUnique({ where: { id: req.params.id } });
+  return poll?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { status } = z.object({ status: z.string() }).parse(req.body);
     const poll = await surveyService.updatePollStatus(req.params.id, status);
@@ -107,7 +117,7 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.post('/responses', authenticate, async (req: AuthRequest, res) => {
+router.post('/responses', authenticate, checkPermission('SURVEYS', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const data = responseSchema.parse(req.body);
     const response = await surveyService.submitResponse({
@@ -120,7 +130,7 @@ router.post('/responses', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-router.get('/:id/analytics', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.get('/:id/analytics', authenticate, checkPermission('SURVEYS', 'VIEW'), async (req, res) => {
   try {
     const analytics = await surveyService.getSurveyAnalytics(req.params.id);
     res.json(analytics);
@@ -129,7 +139,10 @@ router.get('/:id/analytics', authenticate, authorize(['ADMIN', 'STAFF']), async 
   }
 });
 
-router.patch('/:id/status', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.patch('/:id/status', authenticate, checkPermission('SURVEYS', 'UPDATE', async (req) => {
+  const survey = await prisma.survey.findUnique({ where: { id: req.params.id } });
+  return survey?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { status } = z.object({ status: z.string() }).parse(req.body);
     const survey = await surveyService.updateSurveyStatus(req.params.id, status);

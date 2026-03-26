@@ -105,6 +105,17 @@ model OrganizationUnit {
   children            OrganizationUnit[]         @relation("Hierarchy")
   users               User[]
   wings               Wing[]
+  electionCycles      ElectionCycle[]
+  constituencies      Constituency[]
+  candidates          Candidate[]
+  pollingStations     PollingStation[]
+  incidents           ElectionIncident[]
+  results             ElectionResult[]
+  surveys             Survey[]
+  polls               Poll[]
+  fundraisingCampaigns FundraisingCampaign[]
+  transactions        Transaction[]
+  campaigns           Campaign[]
 }
 
 model Office {
@@ -584,9 +595,11 @@ model Campaign {
   targetAudience       String?
   budget               Float?
   managerId            String?
+  orgUnitId            String?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   volunteerAssignments VolunteerAssignment[]
+  orgUnit              OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
 }
 
 model ElectionCycle {
@@ -597,11 +610,13 @@ model ElectionCycle {
   status     String             @default("UPCOMING")
   startDate  DateTime?
   endDate    DateTime?
+  orgUnitId  String?
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
   candidates Candidate[]
   incidents  ElectionIncident[]
   results    ElectionResult[]
+  orgUnit    OrganizationUnit?  @relation(fields: [orgUnitId], references: [id])
 }
 
 model Constituency {
@@ -612,11 +627,13 @@ model Constituency {
   province        String
   district        String
   totalVoters     Int              @default(0)
+  orgUnitId       String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   candidates      Candidate[]
   results         ElectionResult[]
   pollingStations PollingStation[]
+  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model Candidate {
@@ -633,10 +650,12 @@ model Candidate {
   ward            Int?
   manifesto       String?
   status          String              @default("ACTIVE")
+  orgUnitId       String?
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   electionCycle   ElectionCycle?      @relation(fields: [electionCycleId], references: [id])
   constituency    Constituency?       @relation(fields: [constituencyId], references: [id])
+  orgUnit         OrganizationUnit?   @relation(fields: [orgUnitId], references: [id])
   documents       CandidateDocument[]
   results         ElectionResult[]
 }
@@ -663,11 +682,13 @@ model PollingStation {
   localLevel     String
   district       String
   province       String
+  orgUnitId      String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   booths         Booth[]
   incidents      ElectionIncident[]
   constituency   Constituency?      @relation(fields: [constituencyId], references: [id])
+  orgUnit        OrganizationUnit?  @relation(fields: [orgUnitId], references: [id])
 }
 
 model Booth {
@@ -763,12 +784,14 @@ model ElectionIncident {
   severity         String          @default("MEDIUM")
   description      String
   status           String          @default("REPORTED")
+  orgUnitId        String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   cycle            ElectionCycle   @relation(fields: [cycleId], references: [id])
   pollingStation   PollingStation? @relation(fields: [pollingStationId], references: [id])
   booth            Booth?          @relation(fields: [boothId], references: [id])
   reporter         User            @relation("IncidentReporter", fields: [reporterId], references: [id])
+  orgUnit          OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model ElectionResult {
@@ -781,12 +804,14 @@ model ElectionResult {
   isWinner       Boolean       @default(false)
   verifiedById   String?
   verifiedAt     DateTime?
+  orgUnitId      String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   cycle          ElectionCycle @relation(fields: [cycleId], references: [id])
   constituency   Constituency? @relation(fields: [constituencyId], references: [id])
   booth          Booth?        @relation(fields: [boothId], references: [id])
   candidate      Candidate     @relation(fields: [candidateId], references: [id])
+  orgUnit        OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 
   @@unique([cycleId, boothId, candidateId])
 }
@@ -880,10 +905,12 @@ model FundraisingCampaign {
   startDate         DateTime
   endDate           DateTime?
   status            String              @default("ACTIVE")
+  orgUnitId         String?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   donations         Donation[]
   updates           FundraisingUpdate[]
+  orgUnit           OrganizationUnit?   @relation(fields: [orgUnitId], references: [id])
 }
 
 model FundraisingUpdate {
@@ -958,6 +985,7 @@ model Transaction {
   reviewedById       String?
   reviewedAt         DateTime?
   reconciliationNote String?
+  orgUnitId          String?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   memberId           String?
@@ -967,6 +995,7 @@ model Transaction {
   member             Member?         @relation(fields: [memberId], references: [id])
   reviewedBy         User?           @relation("TransactionReviewer", fields: [reviewedById], references: [id])
   recordedBy         User?           @relation("TransactionRecorder", fields: [recordedById], references: [id])
+  orgUnit            OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model PaymentIntegration {
@@ -1227,10 +1256,12 @@ model Survey {
   audience      String           @default("MEMBER")
   placementType String           @default("GENERAL")
   targetSlug    String?
+  orgUnitId     String?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   questions     SurveyQuestion[]
   responses     SurveyResponse[]
+  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model SurveyQuestion {
@@ -1272,10 +1303,12 @@ model Poll {
   audience      String       @default("MEMBER")
   placementType String       @default("GENERAL")
   targetSlug    String?
+  orgUnitId     String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   options       PollOption[]
   votes         PollVote[]
+  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model PollOption {

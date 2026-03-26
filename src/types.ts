@@ -1,4 +1,6 @@
 export type UserRole = 'ADMIN' | 'STAFF' | 'MEMBER' | 'FIELD_COORDINATOR' | 'BOOTH_COORDINATOR' | 'FINANCE_OFFICER';
+export type AppAction = 'VIEW' | 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'VERIFY' | 'ESCALATE' | 'REJECT' | 'EXPORT' | 'RENEW' | 'TRANSFER' | 'SUSPEND' | 'TERMINATE' | 'GENERATE_CARD';
+export type AppModule = 'DASHBOARD' | 'MEMBERSHIP' | 'SUPPORTERS' | 'BOOTHS' | 'FINANCE' | 'FUNDRAISING' | 'ELECTION' | 'PGIS' | 'WAR_ROOM' | 'COMMUNICATION' | 'CMS' | 'HIERARCHY' | 'NOTICE_POPUP' | 'TRAINING' | 'GRIEVANCES' | 'SURVEYS';
 export type CommitteeLevel = 'central' | 'province' | 'district' | 'municipality' | 'ward' | 'wing';
 export type SupporterLevel = 'strong' | 'leaning' | 'neutral' | 'undecided' | 'volunteer' | 'donor';
 export type IssueCategory = 'road' | 'water' | 'electricity' | 'agriculture' | 'education' | 'health' | 'youth' | 'women' | 'corruption' | 'other';
@@ -7,6 +9,23 @@ export type TransactionType = 'income' | 'expense';
 export type TransactionCategory = 'fee' | 'donation' | 'campaign' | 'administrative' | 'other';
 export type GrievanceStatus = 'pending' | 'in-review' | 'resolved' | 'closed';
 export type GrievancePriority = 'low' | 'medium' | 'high';
+
+export interface DashboardSummary {
+  totalMembers?: number;
+  totalSupporters?: number;
+  totalBooths?: number;
+  activeCampaigns?: number;
+  openIssues?: number;
+  totalIncome?: number;
+  totalExpenses?: number;
+  netBalance?: number;
+  transactionCount?: number;
+  strongSupporters?: number;
+  readyBooths?: number;
+  criticalBooths?: number;
+  myIssues?: number;
+  upcomingEvents?: number;
+}
 
 export interface UserProfile {
   id: string;
@@ -18,6 +37,7 @@ export interface UserProfile {
   committeeId?: string;
   orgUnitId?: string;
   orgUnitLevel?: string;
+  orgUnitName?: string;
   createdAt?: string;
 }
 

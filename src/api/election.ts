@@ -2,6 +2,9 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { electionService } from '../services/election.service';
 import { authenticate, AuthRequest, authorize } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
+import { permissionService } from '../services/permission.service';
+import prisma from '../lib/prisma';
 
 const router = Router();
 
@@ -13,6 +16,7 @@ const electionCycleSchema = z.object({
   status: z.enum(['UPCOMING', 'ACTIVE', 'COMPLETED']).optional(),
   startDate: z.string().optional().transform((val) => (val ? new Date(val) : undefined)),
   endDate: z.string().optional().transform((val) => (val ? new Date(val) : undefined)),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const constituencySchema = z.object({
@@ -22,6 +26,7 @@ const constituencySchema = z.object({
   province: z.string(),
   district: z.string(),
   totalVoters: z.number().int().optional(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const pollingStationSchema = z.object({
@@ -33,6 +38,7 @@ const pollingStationSchema = z.object({
   localLevel: z.string(),
   district: z.string(),
   province: z.string(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const candidateSchema = z.object({
@@ -42,6 +48,7 @@ const candidateSchema = z.object({
   constituencyId: z.string().uuid().optional(),
   status: z.enum(['ACTIVE', 'WITHDRAWN', 'DISQUALIFIED', 'WON', 'LOST']).optional(),
   manifesto: z.string().optional(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const incidentSchema = z.object({
@@ -52,6 +59,7 @@ const incidentSchema = z.object({
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
   status: z.enum(['REPORTED', 'INVESTIGATING', 'RESOLVED', 'DISMISSED']).optional(),
   description: z.string().min(10),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const resultSchema = z.object({
@@ -62,21 +70,23 @@ const resultSchema = z.object({
   votesReceived: z.number().int().min(0),
   isWinner: z.boolean().optional(),
   verified: z.boolean().optional(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 // --- Routes ---
 
 // Election Cycles
-router.get('/cycles', authenticate, async (req, res) => {
+router.get('/cycles', authenticate, checkPermission('ELECTION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const cycles = await electionService.getElectionCycles();
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const cycles = await electionService.getElectionCycles(accessibleUnitIds);
     res.json(cycles);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/cycles', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/cycles', authenticate, checkPermission('ELECTION', 'CREATE', (req) => req.body.orgUnitId), async (req, res) => {
   try {
     const data = electionCycleSchema.parse(req.body);
     const cycle = await electionService.createElectionCycle(data);
@@ -86,7 +96,10 @@ router.post('/cycles', authenticate, authorize(['ADMIN', 'STAFF']), async (req, 
   }
 });
 
-router.put('/cycles/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/cycles/:id', authenticate, checkPermission('ELECTION', 'UPDATE', async (req) => {
+  const cycle = await prisma.electionCycle.findUnique({ where: { id: req.params.id } });
+  return cycle?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     const data = electionCycleSchema.partial().parse(req.body);
@@ -97,7 +110,10 @@ router.put('/cycles/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (re
   }
 });
 
-router.delete('/cycles/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.delete('/cycles/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
+  const cycle = await prisma.electionCycle.findUnique({ where: { id: req.params.id } });
+  return cycle?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     await electionService.deleteElectionCycle(id);
@@ -108,16 +124,17 @@ router.delete('/cycles/:id', authenticate, authorize(['ADMIN', 'STAFF']), async 
 });
 
 // Constituencies
-router.get('/constituencies', authenticate, async (req, res) => {
+router.get('/constituencies', authenticate, checkPermission('ELECTION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const constituencies = await electionService.getConstituencies();
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const constituencies = await electionService.getConstituencies(accessibleUnitIds);
     res.json(constituencies);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/constituencies', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/constituencies', authenticate, checkPermission('ELECTION', 'CREATE', (req) => req.body.orgUnitId), async (req, res) => {
   try {
     const data = constituencySchema.parse(req.body);
     const constituency = await electionService.createConstituency(data);
@@ -127,7 +144,10 @@ router.post('/constituencies', authenticate, authorize(['ADMIN', 'STAFF']), asyn
   }
 });
 
-router.put('/constituencies/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/constituencies/:id', authenticate, checkPermission('ELECTION', 'UPDATE', async (req) => {
+  const constituency = await prisma.constituency.findUnique({ where: { id: req.params.id } });
+  return constituency?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     const data = constituencySchema.partial().parse(req.body);
@@ -138,7 +158,10 @@ router.put('/constituencies/:id', authenticate, authorize(['ADMIN', 'STAFF']), a
   }
 });
 
-router.delete('/constituencies/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.delete('/constituencies/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
+  const constituency = await prisma.constituency.findUnique({ where: { id: req.params.id } });
+  return constituency?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     await electionService.deleteConstituency(id);
@@ -149,17 +172,18 @@ router.delete('/constituencies/:id', authenticate, authorize(['ADMIN', 'STAFF'])
 });
 
 // Polling Stations
-router.get('/polling-stations', authenticate, async (req, res) => {
+router.get('/polling-stations', authenticate, checkPermission('ELECTION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const constituencyId = req.query.constituencyId as string;
-    const stations = await electionService.getPollingStations(constituencyId);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const stations = await electionService.getPollingStations(constituencyId, accessibleUnitIds);
     res.json(stations);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/polling-stations', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/polling-stations', authenticate, checkPermission('ELECTION', 'CREATE', (req) => req.body.orgUnitId), async (req, res) => {
   try {
     const data = pollingStationSchema.parse(req.body);
     const station = await electionService.createPollingStation(data);
@@ -169,7 +193,10 @@ router.post('/polling-stations', authenticate, authorize(['ADMIN', 'STAFF']), as
   }
 });
 
-router.put('/polling-stations/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/polling-stations/:id', authenticate, checkPermission('ELECTION', 'UPDATE', async (req) => {
+  const station = await prisma.pollingStation.findUnique({ where: { id: req.params.id } });
+  return station?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     const data = pollingStationSchema.partial().parse(req.body);
@@ -180,7 +207,10 @@ router.put('/polling-stations/:id', authenticate, authorize(['ADMIN', 'STAFF']),
   }
 });
 
-router.delete('/polling-stations/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.delete('/polling-stations/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
+  const station = await prisma.pollingStation.findUnique({ where: { id: req.params.id } });
+  return station?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     await electionService.deletePollingStation(id);
@@ -191,18 +221,19 @@ router.delete('/polling-stations/:id', authenticate, authorize(['ADMIN', 'STAFF'
 });
 
 // Candidates
-router.get('/candidates', authenticate, async (req, res) => {
+router.get('/candidates', authenticate, checkPermission('ELECTION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const cycleId = req.query.cycleId as string;
     if (!cycleId) return res.status(400).json({ error: 'cycleId is required' });
-    const candidates = await electionService.getCandidates(cycleId);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const candidates = await electionService.getCandidates(cycleId, accessibleUnitIds);
     res.json(candidates);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/candidates', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.post('/candidates', authenticate, checkPermission('ELECTION', 'CREATE', (req) => req.body.orgUnitId), async (req, res) => {
   try {
     const data = candidateSchema.parse(req.body);
     const candidate = await electionService.createCandidate(data);
@@ -212,7 +243,10 @@ router.post('/candidates', authenticate, authorize(['ADMIN', 'STAFF']), async (r
   }
 });
 
-router.put('/candidates/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/candidates/:id', authenticate, checkPermission('ELECTION', 'UPDATE', async (req) => {
+  const candidate = await prisma.candidate.findUnique({ where: { id: req.params.id } });
+  return candidate?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     const data = candidateSchema.partial().parse(req.body);
@@ -223,7 +257,10 @@ router.put('/candidates/:id', authenticate, authorize(['ADMIN', 'STAFF']), async
   }
 });
 
-router.delete('/candidates/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.delete('/candidates/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
+  const candidate = await prisma.candidate.findUnique({ where: { id: req.params.id } });
+  return candidate?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     await electionService.deleteCandidate(id);
@@ -234,18 +271,19 @@ router.delete('/candidates/:id', authenticate, authorize(['ADMIN', 'STAFF']), as
 });
 
 // Incidents
-router.get('/incidents', authenticate, async (req, res) => {
+router.get('/incidents', authenticate, checkPermission('ELECTION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const cycleId = req.query.cycleId as string;
     if (!cycleId) return res.status(400).json({ error: 'cycleId is required' });
-    const incidents = await electionService.getIncidents(cycleId);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const incidents = await electionService.getIncidents(cycleId, accessibleUnitIds);
     res.json(incidents);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/incidents', authenticate, async (req: AuthRequest, res) => {
+router.post('/incidents', authenticate, checkPermission('ELECTION', 'CREATE', (req) => req.body.orgUnitId), async (req: AuthRequest, res) => {
   try {
     const data = incidentSchema.parse(req.body);
     const incident = await electionService.reportIncident({
@@ -258,7 +296,10 @@ router.post('/incidents', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-router.put('/incidents/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/incidents/:id', authenticate, checkPermission('ELECTION', 'UPDATE', async (req) => {
+  const incident = await prisma.electionIncident.findUnique({ where: { id: req.params.id } });
+  return incident?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     const data = incidentSchema.partial().parse(req.body);
@@ -269,7 +310,10 @@ router.put('/incidents/:id', authenticate, authorize(['ADMIN', 'STAFF']), async 
   }
 });
 
-router.delete('/incidents/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.delete('/incidents/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
+  const incident = await prisma.electionIncident.findUnique({ where: { id: req.params.id } });
+  return incident?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     await electionService.deleteIncident(id);
@@ -280,19 +324,20 @@ router.delete('/incidents/:id', authenticate, authorize(['ADMIN', 'STAFF']), asy
 });
 
 // Results
-router.get('/results', authenticate, async (req, res) => {
+router.get('/results', authenticate, checkPermission('ELECTION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const cycleId = req.query.cycleId as string;
     const constituencyId = req.query.constituencyId as string;
     if (!cycleId) return res.status(400).json({ error: 'cycleId is required' });
-    const results = await electionService.getResults(cycleId, constituencyId);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const results = await electionService.getResults(cycleId, constituencyId, accessibleUnitIds);
     res.json(results);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/results', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/results', authenticate, checkPermission('ELECTION', 'CREATE', (req) => req.body.orgUnitId), async (req: AuthRequest, res) => {
   try {
     const data = resultSchema.parse(req.body);
     const result = await electionService.enterResult({
@@ -305,7 +350,10 @@ router.post('/results', authenticate, authorize(['ADMIN', 'STAFF']), async (req:
   }
 });
 
-router.put('/results/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.put('/results/:id', authenticate, checkPermission('ELECTION', 'UPDATE', async (req) => {
+  const result = await prisma.electionResult.findUnique({ where: { id: req.params.id } });
+  return result?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const data = resultSchema.partial().parse(req.body);
@@ -319,7 +367,10 @@ router.put('/results/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (r
   }
 });
 
-router.delete('/results/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.delete('/results/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
+  const result = await prisma.electionResult.findUnique({ where: { id: req.params.id } });
+  return result?.orgUnitId || undefined;
+}), async (req, res) => {
   try {
     const { id } = req.params;
     await electionService.deleteResult(id);
@@ -330,17 +381,18 @@ router.delete('/results/:id', authenticate, authorize(['ADMIN', 'STAFF']), async
 });
 
 // Booth Readiness
-router.get('/booth-readiness', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.get('/booth-readiness', authenticate, checkPermission('ELECTION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const district = req.query.district as string;
-    const readiness = await electionService.getBoothReadiness(district);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const readiness = await electionService.getBoothReadiness(district, accessibleUnitIds);
     res.json(readiness);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.put('/booths/:id/readiness', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+router.put('/booths/:id/readiness', authenticate, checkPermission('ELECTION', 'APPROVE'), async (req, res) => {
   try {
     const { id } = req.params;
     const data = z.object({
@@ -355,7 +407,7 @@ router.put('/booths/:id/readiness', authenticate, authorize(['ADMIN', 'STAFF']),
 });
 
 // Booth Operations (Polling Log)
-router.post('/booths/:id/logs', authenticate, async (req, res) => {
+router.post('/booths/:id/logs', authenticate, checkPermission('ELECTION', 'CREATE'), async (req, res) => {
   try {
     const boothId = req.params.id;
     const data = z.object({

@@ -43,9 +43,16 @@ export class GrievanceService {
     priority?: string;
     orgUnitId?: string;
     reporterId?: string;
+    orgUnitIds?: string[] | null;
   }) {
+    const { orgUnitIds, ...rest } = filters;
+    const where: any = { ...rest };
+    if (orgUnitIds) {
+      where.orgUnitId = { in: orgUnitIds };
+    }
+
     return prisma.grievance.findMany({
-      where: filters,
+      where,
       include: {
         category: true,
         reporter: { select: { displayName: true, email: true } },

@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Member } from '../types';
+import { Member, UserProfile } from '../types';
 import { MemberTable } from './MemberTable';
 import { MemberEditModal } from './MemberEditModal';
 import { MemberDetailModal } from './MemberDetailModal';
 import { MemberCardModal } from './MemberCardModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { Users, UserPlus, RefreshCw, CreditCard, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
+import { usePermissions } from '../hooks/usePermissions';
 
-export const MembershipAdmin: React.FC = () => {
+interface MembershipAdminProps {
+  user: UserProfile | null;
+}
+
+export const MembershipAdmin: React.FC<MembershipAdminProps> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [activeTab, setActiveTab] = useState<'overview' | 'intake' | 'members' | 'renewals'>('overview');
   const [members, setMembers] = useState<Member[]>([]);
   const [units, setUnits] = useState<any[]>([]);
@@ -241,11 +247,11 @@ export const MembershipAdmin: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
         <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
           {[
-            { id: 'overview', label: 'Overview', icon: Users },
-            { id: 'intake', label: 'Applications', icon: UserPlus },
-            { id: 'members', label: 'Active Members', icon: ShieldAlert },
-            { id: 'renewals', label: 'Renewals', icon: RefreshCw },
-          ].map((tab) => {
+            { id: 'overview', label: 'Overview', icon: Users, permission: { module: 'MEMBERSHIP', action: 'VIEW' } },
+            { id: 'intake', label: 'Applications', icon: UserPlus, permission: { module: 'MEMBERSHIP', action: 'APPROVE' } },
+            { id: 'members', label: 'Active Members', icon: ShieldAlert, permission: { module: 'MEMBERSHIP', action: 'VIEW' } },
+            { id: 'renewals', label: 'Renewals', icon: RefreshCw, permission: { module: 'MEMBERSHIP', action: 'UPDATE' } },
+          ].filter(tab => can(tab.permission.module as any, tab.permission.action as any)).map((tab) => {
             const Icon = tab.icon;
             return (
               <button
@@ -355,6 +361,7 @@ export const MembershipAdmin: React.FC = () => {
           ) : (
             <MemberTable 
               members={members} 
+              user={user}
               onVerify={handleVerify} 
               onApprove={handleApprove} 
               onViewCard={handleViewCard} 
@@ -395,6 +402,7 @@ export const MembershipAdmin: React.FC = () => {
           ) : (
             <MemberTable 
               members={members} 
+              user={user}
               onVerify={handleVerify} 
               onApprove={handleApprove} 
               onViewCard={handleViewCard} 
@@ -488,6 +496,7 @@ export const MembershipAdmin: React.FC = () => {
       {showDetailModal && selectedMember && (
         <MemberDetailModal 
           member={selectedMember} 
+          user={user}
           onClose={() => setShowDetailModal(false)}
           onVerify={handleVerify}
           onApprove={handleApprove}

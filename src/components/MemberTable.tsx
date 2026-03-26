@@ -1,9 +1,11 @@
 import React from 'react';
-import { Member } from '../types';
+import { Member, UserProfile } from '../types';
 import { ShieldCheck, UserCheck, CreditCard, RefreshCw, ArrowRightLeft, AlertTriangle, XCircle } from 'lucide-react';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface MemberTableProps {
   members: Member[];
+  user: UserProfile | null;
   onVerify: (id: string, note?: string) => void;
   onApprove: (id: string, note?: string) => void;
   onViewCard: (member: Member) => void;
@@ -19,8 +21,9 @@ interface MemberTableProps {
 }
 
 export const MemberTable: React.FC<MemberTableProps> = ({ 
-  members, onVerify, onApprove, onViewCard, onRegenerateCard, onReissueCard, onRenew, onTransfer, onSuspend, onTerminate, onEdit, onViewDetails, onEscalate 
+  members, user, onVerify, onApprove, onViewCard, onRegenerateCard, onReissueCard, onRenew, onTransfer, onSuspend, onTerminate, onEdit, onViewDetails, onEscalate 
 }) => {
+  const { can } = usePermissions(user);
   console.log('MemberTable members:', members);
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -107,15 +110,17 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                     <button onClick={() => { console.log('Details clicked'); onViewDetails(member); }} className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="View Details">
                       Details
                     </button>
-                    <button onClick={() => { console.log('Edit clicked'); onEdit(member); }} className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Edit">
-                      Edit
-                    </button>
-                    {member.status === 'PENDING' && (
+                    {can('MEMBERSHIP', 'UPDATE') && (
+                      <button onClick={() => { console.log('Edit clicked'); onEdit(member); }} className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Edit">
+                        Edit
+                      </button>
+                    )}
+                    {member.status === 'PENDING' && can('MEMBERSHIP', 'APPROVE') && (
                       <button onClick={() => { console.log('Verify clicked'); onVerify(member.id); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Verify">
                         <ShieldCheck size={20} />
                       </button>
                     )}
-                    {member.status === 'VERIFIED' && (
+                    {member.status === 'VERIFIED' && can('MEMBERSHIP', 'APPROVE') && (
                       <button onClick={() => { console.log('Approve clicked'); onApprove(member.id); }} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Approve">
                         <UserCheck size={20} />
                       </button>
@@ -125,24 +130,28 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                         <button onClick={() => { console.log('View Card clicked'); onViewCard(member); }} className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="View Card">
                           <CreditCard size={20} />
                         </button>
-                        <button onClick={() => { console.log('Regenerate Card clicked'); onRegenerateCard(member); }} className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Regenerate Card">
-                          <RefreshCw size={20} />
-                        </button>
-                        <button onClick={() => { console.log('Reissue Card clicked'); onReissueCard(member); }} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" title="Reissue Card">
-                          <CreditCard size={20} />
-                        </button>
-                        <button onClick={() => { console.log('Renew clicked'); onRenew(member); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Renew">
-                          <RefreshCw size={20} />
-                        </button>
-                        <button onClick={() => { console.log('Transfer clicked'); onTransfer(member); }} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Transfer">
-                          <ArrowRightLeft size={20} />
-                        </button>
-                        <button onClick={() => { console.log('Suspend clicked'); onSuspend(member); }} className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Suspend">
-                          <AlertTriangle size={20} />
-                        </button>
-                        <button onClick={() => { console.log('Terminate clicked'); onTerminate(member); }} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Terminate">
-                          <XCircle size={20} />
-                        </button>
+                        {can('MEMBERSHIP', 'UPDATE') && (
+                          <>
+                            <button onClick={() => { console.log('Regenerate Card clicked'); onRegenerateCard(member); }} className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Regenerate Card">
+                              <RefreshCw size={20} />
+                            </button>
+                            <button onClick={() => { console.log('Reissue Card clicked'); onReissueCard(member); }} className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" title="Reissue Card">
+                              <CreditCard size={20} />
+                            </button>
+                            <button onClick={() => { console.log('Renew clicked'); onRenew(member); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Renew">
+                              <RefreshCw size={20} />
+                            </button>
+                            <button onClick={() => { console.log('Transfer clicked'); onTransfer(member); }} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Transfer">
+                              <ArrowRightLeft size={20} />
+                            </button>
+                            <button onClick={() => { console.log('Suspend clicked'); onSuspend(member); }} className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Suspend">
+                              <AlertTriangle size={20} />
+                            </button>
+                            <button onClick={() => { console.log('Terminate clicked'); onTerminate(member); }} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Terminate">
+                              <XCircle size={20} />
+                            </button>
+                          </>
+                        )}
                       </>
                     )}
                   </div>

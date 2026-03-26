@@ -1,0 +1,60 @@
+import { UserRole, AppAction, AppModule } from '../types';
+
+export const ROLE_PERMISSIONS: Record<UserRole, Partial<Record<AppModule, AppAction[]>>> = {
+  ADMIN: {}, // Handled by special case
+  STAFF: {
+    DASHBOARD: ['VIEW'],
+    MEMBERSHIP: ['VIEW', 'CREATE', 'UPDATE', 'VERIFY', 'APPROVE', 'ESCALATE', 'REJECT', 'RENEW', 'GENERATE_CARD', 'SUSPEND', 'TRANSFER', 'TERMINATE'],
+    SUPPORTERS: ['VIEW', 'CREATE', 'UPDATE', 'DELETE'],
+    BOOTHS: ['VIEW', 'UPDATE', 'CREATE', 'DELETE'],
+    FINANCE: ['VIEW', 'CREATE'],
+    FUNDRAISING: ['VIEW', 'CREATE'],
+    ELECTION: ['VIEW', 'CREATE', 'UPDATE', 'DELETE', 'APPROVE'],
+    PGIS: ['VIEW'],
+    WAR_ROOM: ['VIEW'],
+    COMMUNICATION: ['VIEW', 'CREATE', 'UPDATE', 'DELETE', 'APPROVE'],
+    NOTICE_POPUP: ['VIEW', 'CREATE', 'UPDATE', 'DELETE'],
+    TRAINING: ['VIEW', 'CREATE', 'UPDATE', 'DELETE'],
+    CMS: ['VIEW', 'CREATE', 'UPDATE'],
+    HIERARCHY: ['VIEW'],
+    GRIEVANCES: ['VIEW', 'CREATE', 'UPDATE', 'ESCALATE', 'REJECT'],
+    SURVEYS: ['VIEW', 'CREATE', 'UPDATE', 'DELETE']
+  },
+  FIELD_COORDINATOR: {
+    DASHBOARD: ['VIEW'],
+    MEMBERSHIP: ['VIEW', 'CREATE'],
+    SUPPORTERS: ['VIEW', 'CREATE', 'UPDATE'],
+    BOOTHS: ['VIEW'],
+    ELECTION: ['VIEW', 'CREATE'],
+    PGIS: ['VIEW'],
+    COMMUNICATION: ['VIEW'],
+    TRAINING: ['VIEW'],
+    GRIEVANCES: ['VIEW', 'CREATE', 'UPDATE'],
+    SURVEYS: ['VIEW']
+  },
+  BOOTH_COORDINATOR: {
+    DASHBOARD: ['VIEW'],
+    SUPPORTERS: ['VIEW', 'CREATE', 'UPDATE'],
+    BOOTHS: ['VIEW'],
+    ELECTION: ['VIEW', 'CREATE'],
+    TRAINING: ['VIEW'],
+    GRIEVANCES: ['VIEW', 'CREATE'],
+    SURVEYS: ['VIEW']
+  },
+  FINANCE_OFFICER: {
+    DASHBOARD: ['VIEW'],
+    FINANCE: ['VIEW', 'CREATE', 'UPDATE', 'APPROVE'],
+    FUNDRAISING: ['VIEW', 'CREATE'],
+    MEMBERSHIP: ['VIEW'],
+    TRAINING: ['VIEW'],
+    GRIEVANCES: ['VIEW']
+  },
+  MEMBER: {
+    DASHBOARD: ['VIEW'],
+    MEMBERSHIP: ['VIEW', 'CREATE'],
+    COMMUNICATION: ['VIEW'],
+    TRAINING: ['VIEW'],
+    GRIEVANCES: ['VIEW', 'CREATE'],
+    SURVEYS: ['VIEW']
+  }
+};

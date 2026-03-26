@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import { usePermissions } from '../hooks/usePermissions';
+import { UserProfile } from '../types';
 import { Plus, Bell, ExternalLink } from 'lucide-react';
 
-export const NoticeAdmin: React.FC = () => {
+interface Props {
+  user: UserProfile;
+}
+
+export const NoticeAdmin: React.FC<Props> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -169,8 +176,12 @@ export const NoticeAdmin: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right text-sm font-bold text-emerald-600 space-x-2">
-                  <button onClick={() => handleEdit(item)} className="hover:underline">Edit</button>
-                  <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline">Delete</button>
+                  {can('NOTICE_POPUP', 'UPDATE') && (
+                    <button onClick={() => handleEdit(item)} className="hover:underline">Edit</button>
+                  )}
+                  {can('NOTICE_POPUP', 'DELETE') && (
+                    <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline">Delete</button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -198,13 +209,15 @@ export const NoticeAdmin: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Notice & Popup Center</h1>
           <p className="text-gray-500">Manage internal, public, and popup notices.</p>
         </div>
-        <button 
-          onClick={handleCreate}
-          className="flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors w-full sm:w-auto"
-        >
-          <Plus size={20} />
-          Create Notice
-        </button>
+        {can('NOTICE_POPUP', 'CREATE') && (
+          <button 
+            onClick={handleCreate}
+            className="flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors w-full sm:w-auto"
+          >
+            <Plus size={20} />
+            Create Notice
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

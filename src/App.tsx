@@ -55,6 +55,7 @@ export default function App() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [booths, setBooths] = useState<Booth[]>([]);
+  const [summary, setSummary] = useState<any>(null);
 
   useEffect(() => {
     // Close sidebar on view change on mobile
@@ -86,15 +87,17 @@ export default function App() {
   const fetchData = async () => {
     try {
       // Stagger API calls to avoid hitting rate limits
-      const campaignsData = await api.get('/campaigns');
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const supportersResponse = await api.get('/supporters');
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const boothsData = await api.get('/booths');
+      const [campaignsData, supportersResponse, boothsData, summaryData] = await Promise.all([
+        api.get('/campaigns'),
+        api.get('/supporters'),
+        api.get('/booths'),
+        api.get('/dashboard/summary')
+      ]);
       
       setCampaigns(campaignsData);
       setSupporters(supportersResponse.data || []);
       setBooths(boothsData);
+      setSummary(summaryData);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -337,10 +340,17 @@ export default function App() {
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <header className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
-              Welcome, {user.displayName}
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+                Welcome, {user.displayName}
+              </h1>
+              {user.orgUnitName && (
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                  {user.orgUnitLevel}: {user.orgUnitName}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-slate-500">
               {user.role.replace('_', ' ').toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} | Political Party Organization System
             </p>
           </div>
@@ -365,28 +375,56 @@ export default function App() {
           </div>
         </header>
 
-        {currentView === 'dashboard' && (
+        {currentView === 'dashboard' && summary && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Total Supporters</p>
-              <p className="text-3xl font-bold text-slate-800 mt-2">{supporters.length}</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
-              <p className="text-3xl font-bold text-slate-800 mt-2">
-                {campaigns.filter(c => c.status === 'ACTIVE').length}
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Total Booths</p>
-              <p className="text-3xl font-bold text-slate-800 mt-2">{booths.length}</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Ready Booths</p>
-              <p className="text-3xl font-bold text-slate-800 mt-2">
-                {booths.filter(b => b.status === 'READY').length}
-              </p>
-            </div>
+            {summary.totalMembers !== undefined && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Total Members</p>
+                <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalMembers}</p>
+              </div>
+            )}
+            {summary.totalSupporters !== undefined && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Total Supporters</p>
+                <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalSupporters}</p>
+              </div>
+            )}
+            {summary.totalBooths !== undefined && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Total Booths</p>
+                <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalBooths}</p>
+              </div>
+            )}
+            {summary.activeCampaigns !== undefined && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
+                <p className="text-3xl font-bold text-slate-800 mt-2">{summary.activeCampaigns}</p>
+              </div>
+            )}
+            {summary.totalIncome !== undefined && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Total Income</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-2">रू {summary.totalIncome.toLocaleString()}</p>
+              </div>
+            )}
+            {summary.totalExpenses !== undefined && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Total Expenses</p>
+                <p className="text-3xl font-bold text-rose-600 mt-2">रू {summary.totalExpenses.toLocaleString()}</p>
+              </div>
+            )}
+            {summary.readyBooths !== undefined && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Ready Booths</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-2">{summary.readyBooths}</p>
+              </div>
+            )}
+            {summary.openIssues !== undefined && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">Open Issues</p>
+                <p className="text-3xl font-bold text-amber-600 mt-2">{summary.openIssues}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -394,23 +432,23 @@ export default function App() {
         {currentView === 'supporters' && <SupportersView supporters={supporters} onRefresh={fetchData} />}
         {currentView === 'booths' && <BoothsView booths={booths} onRefresh={fetchData} />}
         {currentView === 'hierarchy' && <HierarchyAdmin user={user} />}
-        {currentView === 'membership' && <MembershipAdmin />}
+        {currentView === 'membership' && <MembershipAdmin user={user} />}
         {currentView === 'renewals' && <RenewalsManagement />}
         {currentView === 'volunteers' && <VolunteerAdmin />}
         {currentView === 'cms' && <CmsAdmin />}
         {currentView === 'documents' && <DocumentsView />}
-        {currentView === 'communication' && <CommunicationAdmin />}
-        {currentView === 'notices' && <NoticeAdmin />}
+        {currentView === 'communication' && <CommunicationAdmin user={user} />}
+        {currentView === 'notices' && <NoticeAdmin user={user} />}
         {currentView === 'training' && (
-          (user.role === 'ADMIN' || user.role === 'STAFF') ? <TrainingAdmin /> : <TrainingPortal user={user} />
+          (user.role === 'ADMIN' || user.role === 'STAFF') ? <TrainingAdmin user={user} /> : <TrainingPortal user={user} />
         )}
         {currentView === 'events' && <AppEventsAdmin />}
-        {currentView === 'finance' && <FinanceAdmin />}
-        {currentView === 'fundraiser' && <FundraiserAdmin />}
-        {currentView === 'election' && <ElectionAdmin key="election-admin" />}
+        {currentView === 'finance' && <FinanceAdmin user={user} />}
+        {currentView === 'fundraiser' && <FundraiserAdmin user={user} />}
+        {currentView === 'election' && <ElectionAdmin user={user} key="election-admin" />}
         {currentView === 'candidate-dashboard' && (
           (user.role === 'ADMIN' || user.role === 'STAFF') 
-            ? <ElectionAdmin key="candidate-admin" defaultTab="candidates" /> 
+            ? <ElectionAdmin user={user} key="candidate-admin" defaultTab="candidates" /> 
             : <CandidateDashboard />
         )}
         {currentView === 'grievances' && <GrievancePortal user={user} />}

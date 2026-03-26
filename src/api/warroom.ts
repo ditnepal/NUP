@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, AuthRequest, authorize } from './middleware/auth';
+import { pgisService } from '../services/pgis.service';
 
 const router = express.Router();
 
@@ -18,7 +19,8 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']),
       boothReadiness,
       intelReports,
       electionIncidents,
-      areaScores
+      areaScores,
+      recentSignals
     ] = await Promise.all([
       // Membership Trends (Last 6 months)
       prisma.member.groupBy({
@@ -59,7 +61,9 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']),
       // Area Strength Scores
       prisma.areaStrengthScore.findMany({
         include: { orgUnit: { select: { name: true, level: true } } }
-      })
+      }),
+      // PGIS Signals (Unified Feed)
+      pgisService.getSignals(10)
     ]);
 
     // Aggregate data for AI analysis
@@ -71,7 +75,8 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']),
       surveys: surveyTrends,
       booths: boothReadiness,
       incidents: electionIncidents,
-      areaScores: areaScores
+      areaScores: areaScores,
+      signals: recentSignals
     };
 
     res.json({

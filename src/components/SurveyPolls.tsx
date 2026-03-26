@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { api } from '../lib/api';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface Survey {
   id: string;
@@ -33,6 +34,7 @@ interface Poll {
 }
 
 export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
       await new Promise(resolve => setTimeout(resolve, 300));
       const pData = await api.get('/surveys/polls');
       
-      if (isAdminOrStaff) {
+      if (can('SURVEYS', 'CREATE') || can('SURVEYS', 'UPDATE')) {
         setSurveys(sData);
         setPolls(pData);
       } else {
@@ -277,7 +279,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
 
       {activeTab === 'surveys' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isAdminOrStaff && (
+          {can('SURVEYS', 'CREATE') && (
             <motion.div 
               whileHover={{ scale: 1.02 }}
               onClick={() => setShowCreateSurvey(true)}
@@ -302,8 +304,8 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
             >
               <div className="flex justify-between items-start">
                 <div 
-                  onClick={() => isAdminOrStaff && handleToggleSurveyStatus(s.id, s.status)}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${isAdminOrStaff ? 'cursor-pointer' : ''} ${s.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                  onClick={() => can('SURVEYS', 'UPDATE') && handleToggleSurveyStatus(s.id, s.status)}
+                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${can('SURVEYS', 'UPDATE') ? 'cursor-pointer' : ''} ${s.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
                 >
                   {s.status}
                 </div>
@@ -320,7 +322,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
                   <BarChart3 size={16} />
                   {s._count.responses} Responses
                 </div>
-                {isAdminOrStaff ? (
+                {can('SURVEYS', 'UPDATE') ? (
                   <button onClick={() => handleViewResults(s.id)} className="flex items-center gap-2 text-sm font-bold text-black hover:gap-3 transition-all">
                     View Results
                     <ChevronRight size={16} />
@@ -337,7 +339,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {isAdminOrStaff && (
+          {can('SURVEYS', 'CREATE') && (
             <motion.div 
               whileHover={{ scale: 1.02 }}
               onClick={() => setShowCreatePoll(true)}
@@ -358,8 +360,8 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
                 <h3 className="text-2xl font-bold">{p.question}</h3>
                 <div className="flex items-center gap-2">
                   <div 
-                    onClick={() => isAdminOrStaff && handleTogglePollStatus(p.id, p.status)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${isAdminOrStaff ? 'cursor-pointer' : ''} ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                    onClick={() => can('SURVEYS', 'UPDATE') && handleTogglePollStatus(p.id, p.status)}
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${can('SURVEYS', 'UPDATE') ? 'cursor-pointer' : ''} ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
                   >
                     {p.status}
                   </div>

@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { Notice, UserProfile } from '../types';
 import { X, Bell, Info, AlertTriangle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface NoticePopupProps {
   user?: UserProfile | null;
@@ -10,6 +11,7 @@ interface NoticePopupProps {
 }
 
 export const NoticePopup: React.FC<NoticePopupProps> = ({ user, currentPath = window.location.pathname }) => {
+  const { can } = usePermissions(user || null);
   const [activeNotices, setActiveNotices] = useState<Notice[]>([]);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
@@ -20,7 +22,7 @@ export const NoticePopup: React.FC<NoticePopupProps> = ({ user, currentPath = wi
   const fetchPopups = async () => {
     try {
       const endpoint = user 
-        ? (user.role === 'MEMBER' ? '/communication/notices/members' : '/communication/notices')
+        ? (can('NOTICE_POPUP', 'CREATE') || can('NOTICE_POPUP', 'UPDATE') ? '/communication/notices' : '/communication/notices/members')
         : '/communication/notices/public';
       
       const result = await api.get(endpoint);

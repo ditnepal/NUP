@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import { usePermissions } from '../hooks/usePermissions';
+import { UserProfile, TrainingProgram, Course, Lesson } from '../types';
 import { Plus, Edit2, Trash2, Save, X, BookOpen, ExternalLink, Paperclip, Pin, CheckCircle, Clock, ChevronRight, ArrowLeft, Layers, FileText } from 'lucide-react';
-import { TrainingProgram, Course, Lesson } from '../types';
 
-export const TrainingAdmin: React.FC = () => {
+interface Props {
+  user: UserProfile;
+}
+
+export const TrainingAdmin: React.FC<Props> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -218,12 +224,16 @@ export const TrainingAdmin: React.FC = () => {
                   <button onClick={() => setSelectedProgram(program)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Manage Courses">
                     <Layers size={18} />
                   </button>
-                  <button onClick={() => handleOpenProgramModal(program)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
-                    <Edit2 size={18} />
-                  </button>
-                  <button onClick={() => handleDeleteProgram(program.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
-                    <Trash2 size={18} />
-                  </button>
+                  {can('TRAINING', 'UPDATE') && (
+                    <button onClick={() => handleOpenProgramModal(program)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                      <Edit2 size={18} />
+                    </button>
+                  )}
+                  {can('TRAINING', 'DELETE') && (
+                    <button onClick={() => handleDeleteProgram(program.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
@@ -274,12 +284,16 @@ export const TrainingAdmin: React.FC = () => {
                   <button onClick={() => setSelectedCourse(course)} className="p-2 text-slate-400 hover:text-purple-600 transition-colors" title="Manage Lessons">
                     <FileText size={18} />
                   </button>
-                  <button onClick={() => handleOpenCourseModal(course)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
-                    <Edit2 size={18} />
-                  </button>
-                  <button onClick={() => handleDeleteCourse(course.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
-                    <Trash2 size={18} />
-                  </button>
+                  {can('TRAINING', 'UPDATE') && (
+                    <button onClick={() => handleOpenCourseModal(course)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                      <Edit2 size={18} />
+                    </button>
+                  )}
+                  {can('TRAINING', 'DELETE') && (
+                    <button onClick={() => handleDeleteCourse(course.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
@@ -323,12 +337,16 @@ export const TrainingAdmin: React.FC = () => {
               </td>
               <td className="px-6 py-4 text-right">
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => handleOpenLessonModal(lesson)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
-                    <Edit2 size={18} />
-                  </button>
-                  <button onClick={() => handleDeleteLesson(lesson.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
-                    <Trash2 size={18} />
-                  </button>
+                  {can('TRAINING', 'UPDATE') && (
+                    <button onClick={() => handleOpenLessonModal(lesson)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                      <Edit2 size={18} />
+                    </button>
+                  )}
+                  {can('TRAINING', 'DELETE') && (
+                    <button onClick={() => handleDeleteLesson(lesson.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
@@ -382,17 +400,17 @@ export const TrainingAdmin: React.FC = () => {
           </div>
         </div>
         
-        {!selectedProgram && !selectedCourse && (
+        {!selectedProgram && !selectedCourse && can('TRAINING', 'CREATE') && (
           <button onClick={() => handleOpenProgramModal()} className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-700">
             <Plus size={20} /> New Program
           </button>
         )}
-        {selectedProgram && !selectedCourse && (
+        {selectedProgram && !selectedCourse && can('TRAINING', 'CREATE') && (
           <button onClick={() => handleOpenCourseModal()} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700">
             <Plus size={20} /> New Course
           </button>
         )}
-        {selectedCourse && (
+        {selectedCourse && can('TRAINING', 'CREATE') && (
           <button onClick={() => handleOpenLessonModal()} className="bg-purple-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-purple-700">
             <Plus size={20} /> New Lesson
           </button>

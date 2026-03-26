@@ -1,7 +1,10 @@
 import express from 'express';
 import prisma from '../lib/prisma';
-import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { authenticate, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
 import { z } from 'zod';
+import { hierarchyService } from '../services/hierarchy.service';
+import { permissionService } from '../services/permission.service';
 
 const router = express.Router();
 
@@ -22,7 +25,7 @@ const supporterSchema = z.object({
 // @route   GET /api/v1/supporters
 // @desc    Get all supporters (with pagination and filtering)
 // @access  Private (Staff, Field Coordinator, Booth Coordinator)
-router.get('/', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR']), async (req: AuthRequest, res) => {
+router.get('/', authenticate, checkPermission('SUPPORTERS', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -38,9 +41,11 @@ router.get('/', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_CO
     if (supportLevel) where.supportLevel = supportLevel;
     if (boothId) where.boothId = boothId;
 
-    // Booth Coordinators can only see supporters in their assigned booth (if applicable)
-    // Field Coordinators can only see supporters in their assigned area (if applicable)
-    // For now, we assume global access for these roles, but in a real app, you'd filter by their assigned region.
+    // Hierarchy Scoping
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    if (accessibleUnitIds) {
+      where.booth = { orgUnitId: { in: accessibleUnitIds } };
+    }
 
     const [supporters, total] = await Promise.all([
       prisma.supporter.findMany({
@@ -66,6 +71,7 @@ router.get('/', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_CO
       }
     });
   } catch (error) {
+    console.error('Supporters fetch error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -73,7 +79,7 @@ router.get('/', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_CO
 // @route   POST /api/v1/supporters
 // @desc    Create a new supporter
 // @access  Private
-router.post('/', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR']), async (req: AuthRequest, res) => {
+router.post('/', authenticate, checkPermission('SUPPORTERS', 'CREATE'), async (req: AuthRequest, res) => {
   try {
     const data = supporterSchema.parse(req.body);
 
@@ -96,7 +102,7 @@ router.post('/', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_C
 // @route   PUT /api/v1/supporters/:id
 // @desc    Update supporter profile
 // @access  Private
-router.put('/:id', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR']), async (req: AuthRequest, res) => {
+router.put('/:id', authenticate, checkPermission('SUPPORTERS', 'UPDATE'), async (req: AuthRequest, res) => {
   try {
     const data = supporterSchema.partial().parse(req.body);
     
@@ -122,7 +128,7 @@ router.put('/:id', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH
 // @route   DELETE /api/v1/supporters/:id
 // @desc    Delete a supporter
 // @access  Private (Admin, Staff)
-router.delete('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.delete('/:id', authenticate, checkPermission('SUPPORTERS', 'DELETE'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     
@@ -142,7 +148,7 @@ router.delete('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: A
 // @route   POST /api/v1/supporters/:id/interactions
 // @desc    Log an interaction with a supporter
 // @access  Private
-router.post('/:id/interactions', authenticate, authorize(['STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR']), async (req: AuthRequest, res) => {
+router.post('/:id/interactions', authenticate, checkPermission('SUPPORTERS', 'UPDATE'), async (req: AuthRequest, res) => {
   try {
     const { type, notes } = req.body;
     const supporterId = req.params.id;

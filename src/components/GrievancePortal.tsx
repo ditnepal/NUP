@@ -19,12 +19,14 @@ import { api } from '../lib/api';
 import { Grievance } from '../types';
 import { GrievanceStatusBadge, GrievancePriorityBadge } from './ui/GrievanceBadges';
 import { StatCard } from './ui/StatCard';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface GrievancePortalProps {
   user: any;
 }
 
 export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [grievances, setGrievances] = useState<Grievance[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -60,7 +62,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
       setGrievances(gData);
       setCategories(cData);
 
-      if (isAdminOrStaff) {
+      if (can('GRIEVANCES', 'UPDATE') || can('GRIEVANCES', 'ESCALATE')) {
         const sData = await api.get('/grievances/staff');
         setStaff(sData);
       }
@@ -146,7 +148,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
           <p className="text-slate-500 mt-2">Submit and track public complaints and internal issues.</p>
         </div>
         <div className="flex items-center gap-3">
-          {isAdminOrStaff && (
+          {can('GRIEVANCES', 'UPDATE') && (
             <button 
               onClick={() => setShowCategoryModal(true)}
               className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
@@ -155,13 +157,15 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
               Categories
             </button>
           )}
-          <button 
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 transition-colors shadow-lg"
-          >
-            <Plus size={20} />
-            New Grievance
-          </button>
+          {can('GRIEVANCES', 'CREATE') && (
+            <button 
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 transition-colors shadow-lg"
+            >
+              <Plus size={20} />
+              New Grievance
+            </button>
+          )}
         </div>
       </div>
 
@@ -329,7 +333,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
       )}
 
       {/* Manage Categories Modal */}
-      {showCategoryModal && isAdminOrStaff && (
+      {showCategoryModal && can('GRIEVANCES', 'UPDATE') && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
@@ -416,42 +420,48 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
               </div>
 
               {/* Admin Actions */}
-              {isAdminOrStaff && selectedGrievance.status !== 'RESOLVED' && selectedGrievance.status !== 'CLOSED' && (
+              {(can('GRIEVANCES', 'UPDATE') || can('GRIEVANCES', 'ESCALATE')) && selectedGrievance.status !== 'RESOLVED' && selectedGrievance.status !== 'CLOSED' && (
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                   <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider">Admin Actions</h3>
                   <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <select 
-                        value={assigneeId}
-                        onChange={e => setAssigneeId(e.target.value)}
-                        className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
-                      >
-                        <option value="">Select Assignee...</option>
-                        {staff.map(s => (
-                          <option key={s.id} value={s.id}>{s.displayName}</option>
-                        ))}
-                      </select>
-                      <button 
-                        onClick={handleAssign}
-                        disabled={!assigneeId}
-                        className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-                      >
-                        Assign
-                      </button>
-                    </div>
+                    {can('GRIEVANCES', 'UPDATE') && (
+                      <div className="flex items-center gap-2">
+                        <select 
+                          value={assigneeId}
+                          onChange={e => setAssigneeId(e.target.value)}
+                          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+                        >
+                          <option value="">Select Assignee...</option>
+                          {staff.map(s => (
+                            <option key={s.id} value={s.id}>{s.displayName}</option>
+                          ))}
+                        </select>
+                        <button 
+                          onClick={handleAssign}
+                          disabled={!assigneeId}
+                          className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                        >
+                          Assign
+                        </button>
+                      </div>
+                    )}
                     <div className="flex-1"></div>
-                    <button 
-                      onClick={() => handleStatusChange('escalate')}
-                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200"
-                    >
-                      Escalate
-                    </button>
-                    <button 
-                      onClick={() => handleStatusChange('resolve')}
-                      className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-200"
-                    >
-                      Mark Resolved
-                    </button>
+                    {can('GRIEVANCES', 'ESCALATE') && (
+                      <button 
+                        onClick={() => handleStatusChange('escalate')}
+                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200"
+                      >
+                        Escalate
+                      </button>
+                    )}
+                    {can('GRIEVANCES', 'UPDATE') && (
+                      <button 
+                        onClick={() => handleStatusChange('resolve')}
+                        className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-200"
+                      >
+                        Mark Resolved
+                      </button>
+                    )}
                   </div>
                   {selectedGrievance.assignments && selectedGrievance.assignments.length > 0 && (
                     <div className="text-sm text-slate-600 mt-2">
@@ -501,7 +511,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 transition-all resize-none"
                     />
                     <div className="flex items-center justify-between">
-                      {isAdminOrStaff ? (
+                      {can('GRIEVANCES', 'UPDATE') ? (
                         <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
                           <input 
                             type="checkbox" 

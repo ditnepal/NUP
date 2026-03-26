@@ -1,11 +1,13 @@
 import express from 'express';
 import prisma from '../lib/prisma';
-import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import { authenticate, AuthRequest } from './middleware/auth';
+import { checkPermission } from './middleware/permissions';
 import { z } from 'zod';
 import { membershipService } from '../services/membership.service';
 import { financeService } from '../services/finance.service';
 import { auditService } from '../services/audit.service';
 import { hierarchyService } from '../services/hierarchy.service';
+import { permissionService } from '../services/permission.service';
 
 const router = express.Router();
 console.log('Members router loaded');
@@ -13,7 +15,7 @@ console.log('Members router loaded');
 // @route   GET /api/v1/members/dashboard/metrics
 // @desc    Get membership dashboard metrics
 // @access  Private (Admin/Staff)
-router.get('/dashboard/metrics', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.get('/dashboard/metrics', authenticate, checkPermission('MEMBERSHIP', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     // Basic member counts
     const totalPending = await prisma.member.count({ where: { status: 'PENDING' } });
@@ -57,7 +59,10 @@ router.get('/dashboard/metrics', authenticate, authorize(['ADMIN', 'STAFF']), as
 // @route   GET /api/v1/members/:id
 // @desc    Get member details
 // @access  Private (Admin/Staff)
-router.get('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.get('/:id', authenticate, checkPermission('MEMBERSHIP', 'VIEW', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const member = await prisma.member.findUnique({
@@ -79,7 +84,7 @@ router.get('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: Auth
 // @route   GET /api/v1/members
 // @desc    Get members (Scoped)
 // @access  Private
-router.get('/', authenticate, async (req: AuthRequest, res) => {
+router.get('/', authenticate, checkPermission('MEMBERSHIP', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const { status, unitId, isEscalated } = req.query;
     const query: any = {};
@@ -88,18 +93,16 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
     if (isEscalated === 'false') query.isEscalated = false;
     
     // Hierarchy Scoping
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    
     if (unitId) {
       const hasAccess = await hierarchyService.hasAccess(req.user?.id!, unitId as string);
       if (!hasAccess) return res.status(403).json({ error: 'Access denied to this unit' });
       
       const subUnitIds = await hierarchyService.getSubUnitIds(unitId as string);
       query.orgUnitId = { in: subUnitIds };
-    } else if (req.user?.role !== 'ADMIN') {
-      if (!req.user?.orgUnitId) {
-        return res.json([]);
-      }
-      const subUnitIds = await hierarchyService.getSubUnitIds(req.user.orgUnitId);
-      query.orgUnitId = { in: subUnitIds };
+    } else if (accessibleUnitIds) {
+      query.orgUnitId = { in: accessibleUnitIds };
     }
 
     const members = await prisma.member.findMany({
@@ -452,6 +455,7 @@ router.post('/me/renewals', authenticate, async (req: AuthRequest, res) => {
           memberId: member.id,
           renewalRequestId: renewal.id,
           recordedById: req.user?.id,
+          orgUnitId: member.orgUnitId,
         });
       }
     }
@@ -465,8 +469,8 @@ router.post('/me/renewals', authenticate, async (req: AuthRequest, res) => {
 
 // @route   POST /api/v1/members/apply
 // @desc    Submit membership application
-// @access  Public (or Staff)
-router.post('/apply', upload.fields([
+// @access  Private (or Staff)
+router.post('/apply', authenticate, checkPermission('MEMBERSHIP', 'CREATE'), upload.fields([
   { name: 'identityDocument', maxCount: 1 },
   { name: 'profilePhoto', maxCount: 1 },
   { name: 'video', maxCount: 1 }
@@ -515,6 +519,7 @@ router.post('/apply', upload.fields([
           paymentMethod: validatedData.paymentMethod,
           description: `Membership application fee for ${validatedData.fullName}`,
           memberId: member.id,
+          orgUnitId: member.orgUnitId,
         });
       }
     }
@@ -531,7 +536,10 @@ router.post('/apply', upload.fields([
 // @route   POST /api/v1/members/:id/reject
 // @desc    Reject membership application
 // @access  Private (Admin/Staff)
-router.post('/:id/reject', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/reject', authenticate, checkPermission('MEMBERSHIP', 'REJECT', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
@@ -545,20 +553,14 @@ router.post('/:id/reject', authenticate, authorize(['ADMIN', 'STAFF']), async (r
 // @route   POST /api/v1/members/:id/verify
 // @desc    Verify membership (Local Unit)
 // @access  Private (Staff/Admin)
-router.post('/:id/verify', authenticate, authorize(['ADMIN', 'STAFF', 'FIELD_COORDINATOR']), async (req: AuthRequest, res) => {
+router.post('/:id/verify', authenticate, checkPermission('MEMBERSHIP', 'VERIFY', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { note } = req.body;
     
-    // Scoping check
-    const member = await prisma.member.findUnique({ where: { id } });
-    if (!member) return res.status(404).json({ error: 'Member not found' });
-    
-    if (req.user?.role !== 'ADMIN') {
-      const hasAccess = await hierarchyService.hasAccess(req.user?.id!, member.orgUnitId);
-      if (!hasAccess) return res.status(403).json({ error: 'Access denied: Member is outside your assigned unit scope' });
-    }
-
     const updatedMember = await membershipService.verify(id, req.user?.id!, note);
     res.json(updatedMember);
   } catch (error: any) {
@@ -569,19 +571,13 @@ router.post('/:id/verify', authenticate, authorize(['ADMIN', 'STAFF', 'FIELD_COO
 // @route   POST /api/v1/members/:id/approve
 // @desc    Approve membership (Higher Unit)
 // @access  Private (Admin/Staff)
-router.post('/:id/approve', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/approve', authenticate, checkPermission('MEMBERSHIP', 'APPROVE', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { note } = req.body;
-
-    // Scoping check
-    const member = await prisma.member.findUnique({ where: { id } });
-    if (!member) return res.status(404).json({ error: 'Member not found' });
-    
-    if (req.user?.role !== 'ADMIN') {
-      const hasAccess = await hierarchyService.hasAccess(req.user?.id!, member.orgUnitId);
-      if (!hasAccess) return res.status(403).json({ error: 'Access denied: Member is outside your assigned unit scope' });
-    }
 
     const updatedMember = await membershipService.approve(id, req.user?.id!, note);
     res.json(updatedMember);
@@ -593,19 +589,13 @@ router.post('/:id/approve', authenticate, authorize(['ADMIN', 'STAFF']), async (
 // @route   POST /api/v1/members/:id/escalate
 // @desc    Escalate membership application to parent unit
 // @access  Private (Staff/Admin)
-router.post('/:id/escalate', authenticate, authorize(['ADMIN', 'STAFF', 'FIELD_COORDINATOR']), async (req: AuthRequest, res) => {
+router.post('/:id/escalate', authenticate, checkPermission('MEMBERSHIP', 'ESCALATE', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { note } = req.body;
-
-    // Scoping check
-    const member = await prisma.member.findUnique({ where: { id } });
-    if (!member) return res.status(404).json({ error: 'Member not found' });
-    
-    if (req.user?.role !== 'ADMIN') {
-      const hasAccess = await hierarchyService.hasAccess(req.user?.id!, member.orgUnitId);
-      if (!hasAccess) return res.status(403).json({ error: 'Access denied: Member is outside your assigned unit scope' });
-    }
 
     const updatedMember = await membershipService.escalate(id, note);
     res.json(updatedMember);
@@ -651,7 +641,10 @@ router.get('/:id/card', authenticate, async (req: AuthRequest, res) => {
 // @route   POST /api/v1/members/:id/renew
 // @desc    Renew membership
 // @access  Private (Admin/Staff)
-router.post('/:id/renew', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/renew', authenticate, checkPermission('MEMBERSHIP', 'RENEW', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const member = await membershipService.renew(id);
@@ -664,7 +657,10 @@ router.post('/:id/renew', authenticate, authorize(['ADMIN', 'STAFF']), async (re
 // @route   POST /api/v1/members/:id/generate-card
 // @desc    Generate membership card
 // @access  Private (Admin/Staff)
-router.post('/:id/generate-card', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/generate-card', authenticate, checkPermission('MEMBERSHIP', 'GENERATE_CARD', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const member = await membershipService.generateCard(id);
@@ -677,7 +673,10 @@ router.post('/:id/generate-card', authenticate, authorize(['ADMIN', 'STAFF']), a
 // @route   POST /api/v1/members/:id/reissue-card
 // @desc    Reissue membership card
 // @access  Private (Admin/Staff)
-router.post('/:id/reissue-card', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/reissue-card', authenticate, checkPermission('MEMBERSHIP', 'GENERATE_CARD', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const member = await membershipService.generateCard(id);
@@ -690,7 +689,10 @@ router.post('/:id/reissue-card', authenticate, authorize(['ADMIN', 'STAFF']), as
 // @route   POST /api/v1/members/:id/regenerate-card
 // @desc    Regenerate membership card
 // @access  Private (Admin/Staff)
-router.post('/:id/regenerate-card', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/regenerate-card', authenticate, checkPermission('MEMBERSHIP', 'GENERATE_CARD', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const member = await membershipService.generateCard(id);
@@ -703,7 +705,10 @@ router.post('/:id/regenerate-card', authenticate, authorize(['ADMIN', 'STAFF']),
 // @route   POST /api/v1/members/:id/transfer
 // @desc    Transfer membership
 // @access  Private (Admin)
-router.post('/:id/transfer', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
+router.post('/:id/transfer', authenticate, checkPermission('MEMBERSHIP', 'TRANSFER', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { newOrgUnitId } = req.body;
@@ -717,7 +722,10 @@ router.post('/:id/transfer', authenticate, authorize(['ADMIN']), async (req: Aut
 // @route   POST /api/v1/members/:id/suspend
 // @desc    Suspend membership
 // @access  Private (Admin/Staff)
-router.post('/:id/suspend', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.post('/:id/suspend', authenticate, checkPermission('MEMBERSHIP', 'SUSPEND', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
@@ -731,7 +739,10 @@ router.post('/:id/suspend', authenticate, authorize(['ADMIN', 'STAFF']), async (
 // @route   POST /api/v1/members/:id/terminate
 // @desc    Terminate membership
 // @access  Private (Admin)
-router.post('/:id/terminate', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
+router.post('/:id/terminate', authenticate, checkPermission('MEMBERSHIP', 'TERMINATE', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
@@ -745,7 +756,10 @@ router.post('/:id/terminate', authenticate, authorize(['ADMIN']), async (req: Au
 // @route   PUT /api/v1/members/:id
 // @desc    Update member
 // @access  Private (Admin/Staff)
-router.put('/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+router.put('/:id', authenticate, checkPermission('MEMBERSHIP', 'UPDATE', async (req) => {
+  const member = await prisma.member.findUnique({ where: { id: req.params.id }, select: { orgUnitId: true } });
+  return member?.orgUnitId || undefined;
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const data = req.body;

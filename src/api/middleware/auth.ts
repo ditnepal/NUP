@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../../lib/prisma';
+import { UserRole } from '../../types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-nup-os-2026';
 
@@ -8,10 +9,12 @@ export interface AuthRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: string;
+    displayName: string;
+    role: UserRole;
     roleId?: string;
     orgUnitId?: string;
     orgUnitLevel?: string;
+    orgUnitName?: string;
   };
 }
 
@@ -32,13 +35,15 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       select: { 
         id: true, 
         email: true, 
+        displayName: true,
         role: true, 
         isActive: true,
         roleId: true,
         orgUnitId: true,
         orgUnit: {
           select: {
-            level: true
+            level: true,
+            name: true
           }
         }
       }
@@ -51,10 +56,12 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     req.user = { 
       id: user.id, 
       email: user.email, 
-      role: user.role,
+      displayName: user.displayName,
+      role: user.role as UserRole,
       roleId: user.roleId || undefined,
       orgUnitId: user.orgUnitId || undefined,
-      orgUnitLevel: user.orgUnit?.level || undefined
+      orgUnitLevel: user.orgUnit?.level || undefined,
+      orgUnitName: user.orgUnit?.name || undefined
     };
     next();
   } catch (error) {

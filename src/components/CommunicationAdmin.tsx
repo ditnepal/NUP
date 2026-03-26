@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import { usePermissions } from '../hooks/usePermissions';
+import { UserProfile } from '../types';
 import { Plus, Search, Filter, CheckCircle, Clock, AlertCircle, Mail, MessageSquare, Bell, Users, Send, FileText, Layout, Target, Megaphone } from 'lucide-react';
 
 type Tab = 'templates' | 'segments' | 'campaigns';
 
-export const CommunicationAdmin: React.FC = () => {
+interface Props {
+  user: UserProfile;
+}
+
+export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [activeTab, setActiveTab] = useState<Tab>('templates');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
@@ -306,11 +313,15 @@ export const CommunicationAdmin: React.FC = () => {
                   {new Date(item.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 text-right text-sm font-bold text-emerald-600 space-x-2">
-                  <button onClick={() => handleEdit(item)} className="hover:underline">Edit</button>
-                  {activeTab === 'campaigns' && item.status === 'DRAFT' && (
+                  {can('COMMUNICATION', 'UPDATE') && (
+                    <button onClick={() => handleEdit(item)} className="hover:underline">Edit</button>
+                  )}
+                  {activeTab === 'campaigns' && item.status === 'DRAFT' && can('COMMUNICATION', 'APPROVE') && (
                     <button onClick={() => handleBroadcast(item.id)} className="text-blue-600 hover:underline">Broadcast</button>
                   )}
-                  <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline">Delete</button>
+                  {can('COMMUNICATION', 'DELETE') && (
+                    <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline">Delete</button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -340,13 +351,15 @@ export const CommunicationAdmin: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Communication Center</h1>
           <p className="text-gray-500">Manage templates, segments, and campaigns.</p>
         </div>
-        <button 
-          onClick={handleCreate}
-          className="flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors w-full sm:w-auto"
-        >
-          <Plus size={20} />
-          Create {activeTab.slice(0, -1).charAt(0).toUpperCase() + activeTab.slice(0, -1).slice(1)}
-        </button>
+        {can('COMMUNICATION', 'CREATE') && (
+          <button 
+            onClick={handleCreate}
+            className="flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors w-full sm:w-auto"
+          >
+            <Plus size={20} />
+            Create {activeTab.slice(0, -1).charAt(0).toUpperCase() + activeTab.slice(0, -1).slice(1)}
+          </button>
+        )}
       </div>
 
       <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">

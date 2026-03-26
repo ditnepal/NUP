@@ -9,6 +9,7 @@ export class ElectionService {
     type: string;
     startDate?: Date;
     endDate?: Date;
+    orgUnitId?: string;
   }) {
     return prisma.electionCycle.create({
       data: {
@@ -18,8 +19,9 @@ export class ElectionService {
     });
   }
 
-  async getElectionCycles() {
+  async getElectionCycles(orgUnitIds?: string[] | null) {
     return prisma.electionCycle.findMany({
+      where: orgUnitIds ? { orgUnitId: { in: orgUnitIds } } : {},
       orderBy: { year: 'desc' },
       include: {
         _count: {
@@ -65,12 +67,14 @@ export class ElectionService {
     province: string;
     district: string;
     totalVoters?: number;
+    orgUnitId?: string;
   }) {
     return prisma.constituency.create({ data });
   }
 
-  async getConstituencies() {
+  async getConstituencies(orgUnitIds?: string[] | null) {
     return prisma.constituency.findMany({
+      where: orgUnitIds ? { orgUnitId: { in: orgUnitIds } } : {},
       orderBy: { name: 'asc' },
       include: {
         _count: { select: { candidates: true, pollingStations: true } }
@@ -115,13 +119,18 @@ export class ElectionService {
     localLevel: string;
     district: string;
     province: string;
+    orgUnitId?: string;
   }) {
     return prisma.pollingStation.create({ data });
   }
 
-  async getPollingStations(constituencyId?: string) {
+  async getPollingStations(constituencyId?: string, orgUnitIds?: string[] | null) {
+    const where: any = {};
+    if (constituencyId) where.constituencyId = constituencyId;
+    if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+
     return prisma.pollingStation.findMany({
-      where: constituencyId ? { constituencyId } : {},
+      where,
       include: {
         _count: { select: { booths: true } },
         constituency: true,
@@ -160,6 +169,7 @@ export class ElectionService {
     electionCycleId: string;
     constituencyId?: string;
     manifesto?: string;
+    orgUnitId?: string;
   }) {
     return prisma.candidate.create({
       data: {
@@ -178,9 +188,12 @@ export class ElectionService {
     return prisma.candidateDocument.create({ data });
   }
 
-  async getCandidates(cycleId: string) {
+  async getCandidates(cycleId: string, orgUnitIds?: string[] | null) {
+    const where: any = { electionCycleId: cycleId };
+    if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+
     return prisma.candidate.findMany({
-      where: { electionCycleId: cycleId },
+      where,
       include: {
         constituency: true,
         documents: true,
@@ -285,6 +298,7 @@ export class ElectionService {
     type: string;
     severity: string;
     description: string;
+    orgUnitId?: string;
   }) {
     const incident = await prisma.electionIncident.create({
       data: {
@@ -304,9 +318,12 @@ export class ElectionService {
     return incident;
   }
 
-  async getIncidents(cycleId: string) {
+  async getIncidents(cycleId: string, orgUnitIds?: string[] | null) {
+    const where: any = { cycleId };
+    if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+
     return prisma.electionIncident.findMany({
-      where: { cycleId },
+      where,
       include: {
         reporter: { select: { displayName: true, email: true } },
         pollingStation: true,
@@ -340,6 +357,7 @@ export class ElectionService {
     votesReceived: number;
     isWinner?: boolean;
     verifiedById?: string;
+    orgUnitId?: string;
   }) {
     const result = await prisma.electionResult.upsert({
       where: {
@@ -354,6 +372,7 @@ export class ElectionService {
         isWinner: data.isWinner,
         verifiedById: data.verifiedById,
         verifiedAt: data.verifiedById ? new Date() : null,
+        orgUnitId: data.orgUnitId,
       },
       create: {
         ...data,
@@ -374,12 +393,13 @@ export class ElectionService {
     return result;
   }
 
-  async getResults(cycleId: string, constituencyId?: string) {
+  async getResults(cycleId: string, constituencyId?: string, orgUnitIds?: string[] | null) {
+    const where: any = { cycleId };
+    if (constituencyId) where.constituencyId = constituencyId;
+    if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+
     return prisma.electionResult.findMany({
-      where: {
-        cycleId,
-        constituencyId: constituencyId || undefined,
-      },
+      where,
       include: {
         candidate: true,
         constituency: true,
@@ -418,9 +438,13 @@ export class ElectionService {
     });
   }
 
-  async getBoothReadiness(district?: string) {
+  async getBoothReadiness(district?: string, orgUnitIds?: string[] | null) {
+    const where: any = {};
+    if (district) where.district = district;
+    if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+
     const booths = await prisma.booth.findMany({
-      where: district ? { district } : {},
+      where,
       include: {
         _count: {
           select: {
