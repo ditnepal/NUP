@@ -219,7 +219,7 @@ export default function App() {
   }
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'FINANCE_OFFICER', 'BOOTH_COORDINATOR'] },
     { id: 'member-dashboard', label: 'Member Portal', icon: Award, roles: ['MEMBER'] },
     { id: 'warroom', label: 'War Room', icon: ShieldAlert, roles: ['ADMIN', 'STAFF'] },
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
@@ -376,55 +376,99 @@ export default function App() {
         </header>
 
         {currentView === 'dashboard' && summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {summary.totalMembers !== undefined && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Total Members</p>
-                <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalMembers}</p>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">Dashboard</h2>
+                <p className="text-slate-500">Scope: <span className="font-semibold text-slate-700">{summary.scopeName}</span></p>
               </div>
-            )}
-            {summary.totalSupporters !== undefined && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Total Supporters</p>
-                <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalSupporters}</p>
-              </div>
-            )}
-            {summary.totalBooths !== undefined && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Total Booths</p>
-                <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalBooths}</p>
-              </div>
-            )}
-            {summary.activeCampaigns !== undefined && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
-                <p className="text-3xl font-bold text-slate-800 mt-2">{summary.activeCampaigns}</p>
-              </div>
-            )}
-            {summary.totalIncome !== undefined && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Total Income</p>
-                <p className="text-3xl font-bold text-emerald-600 mt-2">रू {summary.totalIncome.toLocaleString()}</p>
-              </div>
-            )}
-            {summary.totalExpenses !== undefined && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Total Expenses</p>
-                <p className="text-3xl font-bold text-rose-600 mt-2">रू {summary.totalExpenses.toLocaleString()}</p>
-              </div>
-            )}
-            {summary.readyBooths !== undefined && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Ready Booths</p>
-                <p className="text-3xl font-bold text-emerald-600 mt-2">{summary.readyBooths}</p>
-              </div>
-            )}
-            {summary.openIssues !== undefined && (
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">Open Issues</p>
-                <p className="text-3xl font-bold text-amber-600 mt-2">{summary.openIssues}</p>
-              </div>
-            )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {summary.totalMembers !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Total Members</p>
+                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalMembers}</p>
+                </div>
+              )}
+              {summary.totalSupporters !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Total Supporters</p>
+                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalSupporters}</p>
+                </div>
+              )}
+              {summary.strongSupporters !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Strong Supporters</p>
+                  <p className="text-3xl font-bold text-emerald-600 mt-2">{summary.strongSupporters}</p>
+                </div>
+              )}
+              {summary.totalBooths !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Total Booths</p>
+                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalBooths}</p>
+                </div>
+              )}
+              {summary.readyBooths !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Ready Booths</p>
+                  <p className="text-3xl font-bold text-emerald-600 mt-2">{summary.readyBooths}</p>
+                </div>
+              )}
+              {summary.criticalBooths !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Critical Booths</p>
+                  <p className="text-3xl font-bold text-rose-600 mt-2">{summary.criticalBooths}</p>
+                </div>
+              )}
+              {summary.activeCampaigns !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
+                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.activeCampaigns}</p>
+                </div>
+              )}
+              {summary.totalIncome !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Total Income</p>
+                  <p className="text-3xl font-bold text-emerald-600 mt-2">रू {summary.totalIncome.toLocaleString()}</p>
+                </div>
+              )}
+              {summary.totalExpenses !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Total Expenses</p>
+                  <p className="text-3xl font-bold text-rose-600 mt-2">रू {summary.totalExpenses.toLocaleString()}</p>
+                </div>
+              )}
+              {summary.totalDonations !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Total Donations</p>
+                  <p className="text-3xl font-bold text-emerald-600 mt-2">रू {summary.totalDonations.toLocaleString()}</p>
+                </div>
+              )}
+              {summary.activeFundCampaigns !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Active Fundraisers</p>
+                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.activeFundCampaigns}</p>
+                </div>
+              )}
+              {summary.openIssues !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Open Issues</p>
+                  <p className="text-3xl font-bold text-amber-600 mt-2">{summary.openIssues}</p>
+                </div>
+              )}
+              {summary.openGrievances !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Open Grievances</p>
+                  <p className="text-3xl font-bold text-amber-600 mt-2">{summary.openGrievances}</p>
+                </div>
+              )}
+              {summary.activeSurveys !== undefined && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-sm font-medium text-slate-500">Active Surveys</p>
+                  <p className="text-3xl font-bold text-indigo-600 mt-2">{summary.activeSurveys}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

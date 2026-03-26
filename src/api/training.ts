@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate, authorize, AuthRequest } from './middleware/auth';
 import { checkPermission } from './middleware/permissions';
+import { permissionService } from '../services/permission.service';
 import { trainingService } from '../services/training.service';
 import prisma from '../lib/prisma';
 import { z } from 'zod';
@@ -16,6 +17,7 @@ const programSchema = z.object({
   isPinned: z.boolean().optional(),
   externalUrl: z.string().optional(),
   attachmentUrl: z.string().optional(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const courseSchema = z.object({
@@ -24,6 +26,7 @@ const courseSchema = z.object({
   description: z.string().optional(),
   thumbnail: z.string().optional(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const lessonSchema = z.object({
@@ -32,6 +35,7 @@ const lessonSchema = z.object({
   content: z.string().min(1),
   videoUrl: z.string().optional(),
   order: z.number().int(),
+  orgUnitId: z.string().uuid().optional(),
 });
 
 const quizSchema = z.object({
@@ -73,6 +77,14 @@ router.get('/programs/portal', authenticate, async (req: AuthRequest, res) => {
       where.audience = { in: ['PUBLIC', 'MEMBERS', 'STAFF'] };
     } else {
       where.audience = 'PUBLIC';
+    }
+
+    if (req.user?.id) {
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user.id);
+      where.OR = [
+        { orgUnitId: { in: accessibleUnitIds } },
+        { orgUnitId: null }
+      ];
     }
 
     const programs = await prisma.trainingProgram.findMany({
@@ -124,9 +136,16 @@ router.get('/programs/public', async (req, res) => {
 // @route   GET /api/v1/training/programs/admin
 // @desc    Get all training programs for management
 // @access  Private (Admin/Staff)
-router.get('/programs/admin', authenticate, checkPermission('TRAINING', 'VIEW'), async (req, res) => {
+router.get('/programs/admin', authenticate, checkPermission('TRAINING', 'VIEW'), async (req: AuthRequest, res) => {
   try {
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
     const programs = await prisma.trainingProgram.findMany({
+      where: {
+        OR: [
+          { orgUnitId: { in: accessibleUnitIds } },
+          { orgUnitId: null }
+        ]
+      },
       include: { 
         courses: {
           include: {
@@ -147,9 +166,22 @@ router.get('/programs/admin', authenticate, checkPermission('TRAINING', 'VIEW'),
 // @route   POST /api/v1/training/programs
 // @desc    Create a training program
 // @access  Private (Admin/Staff)
-router.post('/programs', authenticate, checkPermission('TRAINING', 'CREATE'), async (req, res) => {
+router.post('/programs', authenticate, checkPermission('TRAINING', 'CREATE'), async (req: AuthRequest, res) => {
   try {
     const data = programSchema.parse(req.body);
+    
+    if (!data.orgUnitId) {
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+      if (user?.orgUnitId) {
+        data.orgUnitId = user.orgUnitId;
+      }
+    } else {
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      if (!accessibleUnitIds.includes(data.orgUnitId)) {
+        return res.status(403).json({ error: 'Cannot create program for an organization unit outside your scope' });
+      }
+    }
+
     const program = await prisma.trainingProgram.create({ data });
     res.status(201).json(program);
   } catch (error: any) {
@@ -160,7 +192,10 @@ router.post('/programs', authenticate, checkPermission('TRAINING', 'CREATE'), as
 // @route   PUT /api/v1/training/programs/:id
 // @desc    Update a training program
 // @access  Private (Admin/Staff)
-router.put('/programs/:id', authenticate, checkPermission('TRAINING', 'UPDATE'), async (req, res) => {
+router.put('/programs/:id', authenticate, checkPermission('TRAINING', 'UPDATE', async (req) => {
+  const program = await prisma.trainingProgram.findUnique({ where: { id: req.params.id } });
+  return program?.orgUnitId || null;
+}), async (req, res) => {
   try {
     const data = programSchema.parse(req.body);
     const program = await prisma.trainingProgram.update({
@@ -176,7 +211,10 @@ router.put('/programs/:id', authenticate, checkPermission('TRAINING', 'UPDATE'),
 // @route   DELETE /api/v1/training/programs/:id
 // @desc    Delete a training program
 // @access  Private (Admin)
-router.delete('/programs/:id', authenticate, checkPermission('TRAINING', 'DELETE'), async (req, res) => {
+router.delete('/programs/:id', authenticate, checkPermission('TRAINING', 'DELETE', async (req) => {
+  const program = await prisma.trainingProgram.findUnique({ where: { id: req.params.id } });
+  return program?.orgUnitId || null;
+}), async (req, res) => {
   try {
     await prisma.trainingProgram.delete({ where: { id: req.params.id } });
     res.json({ message: 'Program deleted' });
@@ -210,9 +248,22 @@ router.get('/courses/:id', async (req, res) => {
 // @route   POST /api/v1/training/courses
 // @desc    Create a course
 // @access  Private (Admin/Staff)
-router.post('/courses', authenticate, checkPermission('TRAINING', 'CREATE'), async (req, res) => {
+router.post('/courses', authenticate, checkPermission('TRAINING', 'CREATE'), async (req: AuthRequest, res) => {
   try {
     const data = courseSchema.parse(req.body);
+    
+    if (!data.orgUnitId) {
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+      if (user?.orgUnitId) {
+        data.orgUnitId = user.orgUnitId;
+      }
+    } else {
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      if (!accessibleUnitIds.includes(data.orgUnitId)) {
+        return res.status(403).json({ error: 'Cannot create course for an organization unit outside your scope' });
+      }
+    }
+
     const course = await prisma.course.create({ data });
     res.status(201).json(course);
   } catch (error: any) {
@@ -223,7 +274,10 @@ router.post('/courses', authenticate, checkPermission('TRAINING', 'CREATE'), asy
 // @route   PUT /api/v1/training/courses/:id
 // @desc    Update a course
 // @access  Private (Admin/Staff)
-router.put('/courses/:id', authenticate, checkPermission('TRAINING', 'UPDATE'), async (req, res) => {
+router.put('/courses/:id', authenticate, checkPermission('TRAINING', 'UPDATE', async (req) => {
+  const course = await prisma.course.findUnique({ where: { id: req.params.id } });
+  return course?.orgUnitId || null;
+}), async (req, res) => {
   try {
     const data = courseSchema.parse(req.body);
     const course = await prisma.course.update({
@@ -239,7 +293,10 @@ router.put('/courses/:id', authenticate, checkPermission('TRAINING', 'UPDATE'), 
 // @route   DELETE /api/v1/training/courses/:id
 // @desc    Delete a course
 // @access  Private (Admin/Staff)
-router.delete('/courses/:id', authenticate, checkPermission('TRAINING', 'DELETE'), async (req, res) => {
+router.delete('/courses/:id', authenticate, checkPermission('TRAINING', 'DELETE', async (req) => {
+  const course = await prisma.course.findUnique({ where: { id: req.params.id } });
+  return course?.orgUnitId || null;
+}), async (req, res) => {
   try {
     await prisma.course.delete({ where: { id: req.params.id } });
     res.json({ message: 'Course deleted' });
@@ -263,9 +320,22 @@ router.post('/courses/:id/enroll', authenticate, async (req: AuthRequest, res) =
 // @route   POST /api/v1/training/lessons
 // @desc    Create a lesson
 // @access  Private (Admin/Staff)
-router.post('/lessons', authenticate, checkPermission('TRAINING', 'CREATE'), async (req, res) => {
+router.post('/lessons', authenticate, checkPermission('TRAINING', 'CREATE'), async (req: AuthRequest, res) => {
   try {
     const data = lessonSchema.parse(req.body);
+    
+    if (!data.orgUnitId) {
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+      if (user?.orgUnitId) {
+        data.orgUnitId = user.orgUnitId;
+      }
+    } else {
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      if (!accessibleUnitIds.includes(data.orgUnitId)) {
+        return res.status(403).json({ error: 'Cannot create lesson for an organization unit outside your scope' });
+      }
+    }
+
     const lesson = await prisma.lesson.create({ data });
     res.status(201).json(lesson);
   } catch (error: any) {
@@ -276,7 +346,10 @@ router.post('/lessons', authenticate, checkPermission('TRAINING', 'CREATE'), asy
 // @route   PUT /api/v1/training/lessons/:id
 // @desc    Update a lesson
 // @access  Private (Admin/Staff)
-router.put('/lessons/:id', authenticate, checkPermission('TRAINING', 'UPDATE'), async (req, res) => {
+router.put('/lessons/:id', authenticate, checkPermission('TRAINING', 'UPDATE', async (req) => {
+  const lesson = await prisma.lesson.findUnique({ where: { id: req.params.id } });
+  return lesson?.orgUnitId || null;
+}), async (req, res) => {
   try {
     const data = lessonSchema.parse(req.body);
     const lesson = await prisma.lesson.update({
@@ -292,7 +365,10 @@ router.put('/lessons/:id', authenticate, checkPermission('TRAINING', 'UPDATE'), 
 // @route   DELETE /api/v1/training/lessons/:id
 // @desc    Delete a lesson
 // @access  Private (Admin/Staff)
-router.delete('/lessons/:id', authenticate, checkPermission('TRAINING', 'DELETE'), async (req, res) => {
+router.delete('/lessons/:id', authenticate, checkPermission('TRAINING', 'DELETE', async (req) => {
+  const lesson = await prisma.lesson.findUnique({ where: { id: req.params.id } });
+  return lesson?.orgUnitId || null;
+}), async (req, res) => {
   try {
     await prisma.lesson.delete({ where: { id: req.params.id } });
     res.json({ message: 'Lesson deleted' });

@@ -116,6 +116,13 @@ model OrganizationUnit {
   fundraisingCampaigns FundraisingCampaign[]
   transactions        Transaction[]
   campaigns           Campaign[]
+  audienceSegments    AudienceSegment[]
+  communicationTemplates CommunicationTemplate[]
+  communicationCampaigns CommunicationCampaign[]
+  trainingPrograms    TrainingProgram[]
+  courses             Course[]
+  lessons             Lesson[]
+  notices             Notice[]
 }
 
 model Office {
@@ -1022,6 +1029,8 @@ model AudienceSegment {
   criteria    String
   createdAt   DateTime                @default(now())
   updatedAt   DateTime                @updatedAt
+  orgUnitId   String?
+  orgUnit     OrganizationUnit?       @relation(fields: [orgUnitId], references: [id])
   campaigns   CommunicationCampaign[]
 }
 
@@ -1032,8 +1041,10 @@ model CommunicationTemplate {
   body      String
   type      String
   category  String
+  orgUnitId String?
   createdAt DateTime                @default(now())
   updatedAt DateTime                @updatedAt
+  orgUnit   OrganizationUnit?       @relation(fields: [orgUnitId], references: [id])
   campaigns CommunicationCampaign[]
 }
 
@@ -1045,8 +1056,10 @@ model CommunicationCampaign {
   segmentId    String?
   scheduledAt  DateTime?
   sentAt       DateTime?
+  orgUnitId    String?
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
+  orgUnit      OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
   template     CommunicationTemplate @relation(fields: [templateId], references: [id])
   segment      AudienceSegment?      @relation(fields: [segmentId], references: [id])
   deliveryLogs DeliveryLog[]
@@ -1075,8 +1088,10 @@ model TrainingProgram {
   isPinned      Boolean  @default(false)
   externalUrl   String?
   attachmentUrl String?
+  orgUnitId     String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   courses       Course[]
 }
 
@@ -1087,8 +1102,10 @@ model Course {
   description  String?
   thumbnail    String?
   level        String
+  orgUnitId    String?
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  orgUnit      OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   certificates Certificate[]
   program      TrainingProgram @relation(fields: [programId], references: [id])
   enrollments  Enrollment[]
@@ -1102,8 +1119,10 @@ model Lesson {
   content   String
   videoUrl  String?
   order     Int
+  orgUnitId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  orgUnit   OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   course    Course   @relation(fields: [courseId], references: [id])
   quizzes   Quiz[]
 }
@@ -1399,8 +1418,10 @@ model Notice {
   attachmentUrl String?
   externalUrl   String?
   authorId      String
+  orgUnitId     String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   author        User      @relation(fields: [authorId], references: [id])
 
   @@index([status, audience])

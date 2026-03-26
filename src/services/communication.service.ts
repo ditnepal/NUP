@@ -68,6 +68,11 @@ export class CommunicationService {
     } else if (criteria.role) {
       whereClause.role = criteria.role;
     }
+    
+    // Scope enforcement: If campaign has an orgUnitId, only target users within that org unit
+    if (campaign.orgUnitId) {
+      whereClause.orgUnitId = campaign.orgUnitId;
+    }
 
     const users = await prisma.user.findMany({
       where: whereClause,

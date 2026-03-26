@@ -23,7 +23,10 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
     const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
     const isScoped = accessibleUnitIds !== null;
 
-    let summary: any = {};
+    const userOrgUnit = req.user?.orgUnitId ? await prisma.organizationUnit.findUnique({ where: { id: req.user.orgUnitId } }) : null;
+    const scopeName = userOrgUnit ? `${userOrgUnit.name} (${userOrgUnit.level})` : 'National';
+
+    let summary: any = { scopeName };
 
     if (role === 'ADMIN' || role === 'STAFF') {
       const memberWhere: any = { status: 'ACTIVE' };
@@ -31,65 +34,89 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
       const boothWhere: any = {};
       const campaignWhere: any = { phase: 'ACTIVE' };
       const issueWhere: any = { status: 'OPEN' };
+      const grievanceWhere: any = { status: { not: 'closed' } };
+      const surveyWhere: any = { status: 'ACTIVE' };
 
       if (isScoped) {
         memberWhere.orgUnitId = { in: accessibleUnitIds };
         supporterWhere.booth = { orgUnitId: { in: accessibleUnitIds } };
         boothWhere.orgUnitId = { in: accessibleUnitIds };
         issueWhere.orgUnitId = { in: accessibleUnitIds };
-        // For campaigns, we could filter by target location, but for Phase 1A we'll keep it simple
+        grievanceWhere.orgUnitId = { in: accessibleUnitIds };
+        surveyWhere.orgUnitId = { in: accessibleUnitIds };
       }
 
-      const [totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues] = await Promise.all([
+      const [totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys] = await Promise.all([
         prisma.member.count({ where: memberWhere }),
         prisma.supporter.count({ where: supporterWhere }),
         prisma.booth.count({ where: boothWhere }),
         prisma.campaign.count({ where: campaignWhere }),
-        prisma.issue.count({ where: issueWhere })
+        prisma.issue.count({ where: issueWhere }),
+        prisma.grievance.count({ where: grievanceWhere }),
+        prisma.survey.count({ where: surveyWhere })
       ]);
-      summary = { totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues };
+      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys };
     } else if (role === 'FINANCE_OFFICER') {
       const transactionWhere: any = {};
+      const donationWhere: any = { status: 'COMPLETED' };
+      const fundCampaignWhere: any = { status: 'ACTIVE' };
+
       if (isScoped) {
-        // Transactions are linked to members, who have orgUnits
         transactionWhere.member = { orgUnitId: { in: accessibleUnitIds } };
+        donationWhere.campaign = { orgUnitId: { in: accessibleUnitIds } };
+        fundCampaignWhere.orgUnitId = { in: accessibleUnitIds };
       }
-      const transactions = await prisma.transaction.findMany({ where: transactionWhere });
+      
+      const [transactions, donations, activeFundCampaigns] = await Promise.all([
+        prisma.transaction.findMany({ where: transactionWhere }),
+        prisma.donation.findMany({ where: donationWhere }),
+        prisma.fundraisingCampaign.count({ where: fundCampaignWhere })
+      ]);
+      
       const totalIncome = transactions.filter(t => t.type === 'INCOME').reduce((acc, curr) => acc + curr.amount, 0);
       const totalExpenses = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, curr) => acc + curr.amount, 0);
-      summary = { totalIncome, totalExpenses, netBalance: totalIncome - totalExpenses, transactionCount: transactions.length };
+      const totalDonations = donations.reduce((acc, curr) => acc + curr.amount, 0);
+      
+      summary = { ...summary, totalIncome, totalExpenses, netBalance: totalIncome - totalExpenses, transactionCount: transactions.length, totalDonations, activeFundCampaigns };
     } else if (role === 'FIELD_COORDINATOR') {
       const supporterWhere: any = {};
       const campaignWhere: any = { phase: 'ACTIVE' };
+      const grievanceWhere: any = { status: { not: 'closed' } };
       
       if (isScoped) {
         supporterWhere.booth = { orgUnitId: { in: accessibleUnitIds } };
+        grievanceWhere.orgUnitId = { in: accessibleUnitIds };
       }
 
-      const [totalSupporters, strongSupporters, activeCampaigns] = await Promise.all([
+      const [totalSupporters, strongSupporters, activeCampaigns, openGrievances] = await Promise.all([
         prisma.supporter.count({ where: supporterWhere }),
         prisma.supporter.count({ where: { ...supporterWhere, supportLevel: 'STRONG' } }),
-        prisma.campaign.count({ where: campaignWhere })
+        prisma.campaign.count({ where: campaignWhere }),
+        prisma.grievance.count({ where: grievanceWhere })
       ]);
-      summary = { totalSupporters, strongSupporters, activeCampaigns };
+      summary = { ...summary, totalSupporters, strongSupporters, activeCampaigns, openGrievances };
     } else if (role === 'BOOTH_COORDINATOR') {
       const boothWhere: any = {};
+      const supporterWhere: any = {};
+
       if (isScoped) {
         boothWhere.orgUnitId = { in: accessibleUnitIds };
+        supporterWhere.booth = { orgUnitId: { in: accessibleUnitIds } };
       }
-      const [totalBooths, readyBooths, criticalBooths] = await Promise.all([
+      const [totalBooths, readyBooths, criticalBooths, totalSupporters] = await Promise.all([
         prisma.booth.count({ where: boothWhere }),
         prisma.booth.count({ where: { ...boothWhere, status: 'READY' } }),
-        prisma.booth.count({ where: { ...boothWhere, status: 'CRITICAL' } })
+        prisma.booth.count({ where: { ...boothWhere, status: 'CRITICAL' } }),
+        prisma.supporter.count({ where: supporterWhere })
       ]);
-      summary = { totalBooths, readyBooths, criticalBooths };
+      summary = { ...summary, totalBooths, readyBooths, criticalBooths, totalSupporters };
     } else {
       // Regular Member
       const [myIssues, upcomingEvents] = await Promise.all([
         prisma.issue.count({ where: { reporterId: userId } }),
         prisma.event.count({ where: { startDate: { gte: new Date() } } })
       ]);
-      summary = { myIssues, upcomingEvents };
+      summary = { ...summary, myIssues, upcomingEvents };
     }
 
     res.json(summary);

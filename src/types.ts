@@ -11,6 +11,7 @@ export type GrievanceStatus = 'pending' | 'in-review' | 'resolved' | 'closed';
 export type GrievancePriority = 'low' | 'medium' | 'high';
 
 export interface DashboardSummary {
+  scopeName?: string;
   totalMembers?: number;
   totalSupporters?: number;
   totalBooths?: number;
@@ -25,6 +26,10 @@ export interface DashboardSummary {
   criticalBooths?: number;
   myIssues?: number;
   upcomingEvents?: number;
+  openGrievances?: number;
+  activeSurveys?: number;
+  totalDonations?: number;
+  activeFundCampaigns?: number;
 }
 
 export interface UserProfile {
