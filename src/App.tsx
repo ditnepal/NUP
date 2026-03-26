@@ -36,7 +36,7 @@ import { NoticePopup } from './components/NoticePopup';
 import { Toaster } from 'sonner';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target } from 'lucide-react';
 
 type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
 
@@ -379,93 +379,138 @@ export default function App() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-slate-800">Dashboard</h2>
-                <p className="text-slate-500">Scope: <span className="font-semibold text-slate-700">{summary.scopeName}</span></p>
+                <h2 className="text-2xl font-bold text-slate-800">Dashboard Overview</h2>
+                <p className="text-slate-500 flex items-center gap-2 mt-1">
+                  <Globe size={16} className="text-emerald-600" />
+                  Scope: <span className="font-semibold text-slate-700">{summary.scopeName}</span>
+                </p>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {summary.totalMembers !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Total Members</p>
-                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalMembers}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Total Members</p>
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Users size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-800">{summary.totalMembers.toLocaleString()}</p>
                 </div>
               )}
               {summary.totalSupporters !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Total Supporters</p>
-                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalSupporters}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Total Supporters</p>
+                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><UserPlus size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-800">{summary.totalSupporters.toLocaleString()}</p>
                 </div>
               )}
               {summary.strongSupporters !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Strong Supporters</p>
-                  <p className="text-3xl font-bold text-emerald-600 mt-2">{summary.strongSupporters}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Strong Supporters</p>
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><CheckCircle size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-600">{summary.strongSupporters.toLocaleString()}</p>
                 </div>
               )}
               {summary.totalBooths !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Total Booths</p>
-                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.totalBooths}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Total Booths</p>
+                    <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><MapPin size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-800">{summary.totalBooths.toLocaleString()}</p>
                 </div>
               )}
               {summary.readyBooths !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Ready Booths</p>
-                  <p className="text-3xl font-bold text-emerald-600 mt-2">{summary.readyBooths}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Ready Booths</p>
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><CheckCircle size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-600">{summary.readyBooths.toLocaleString()}</p>
                 </div>
               )}
               {summary.criticalBooths !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Critical Booths</p>
-                  <p className="text-3xl font-bold text-rose-600 mt-2">{summary.criticalBooths}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Critical Booths</p>
+                    <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><AlertTriangle size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-rose-600">{summary.criticalBooths.toLocaleString()}</p>
                 </div>
               )}
               {summary.activeCampaigns !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
-                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.activeCampaigns}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
+                    <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><Megaphone size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-800">{summary.activeCampaigns.toLocaleString()}</p>
                 </div>
               )}
               {summary.totalIncome !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Total Income</p>
-                  <p className="text-3xl font-bold text-emerald-600 mt-2">रू {summary.totalIncome.toLocaleString()}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Total Income</p>
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><TrendingUp size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-600">रू {summary.totalIncome.toLocaleString()}</p>
                 </div>
               )}
               {summary.totalExpenses !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Total Expenses</p>
-                  <p className="text-3xl font-bold text-rose-600 mt-2">रू {summary.totalExpenses.toLocaleString()}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Total Expenses</p>
+                    <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><TrendingDown size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-rose-600">रू {summary.totalExpenses.toLocaleString()}</p>
                 </div>
               )}
               {summary.totalDonations !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Total Donations</p>
-                  <p className="text-3xl font-bold text-emerald-600 mt-2">रू {summary.totalDonations.toLocaleString()}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Total Donations</p>
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Heart size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-600">रू {summary.totalDonations.toLocaleString()}</p>
                 </div>
               )}
               {summary.activeFundCampaigns !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Active Fundraisers</p>
-                  <p className="text-3xl font-bold text-slate-800 mt-2">{summary.activeFundCampaigns}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Active Fundraisers</p>
+                    <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Target size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-800">{summary.activeFundCampaigns.toLocaleString()}</p>
                 </div>
               )}
               {summary.openIssues !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Open Issues</p>
-                  <p className="text-3xl font-bold text-amber-600 mt-2">{summary.openIssues}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Open Issues</p>
+                    <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><AlertTriangle size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-amber-600">{summary.openIssues.toLocaleString()}</p>
                 </div>
               )}
               {summary.openGrievances !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Open Grievances</p>
-                  <p className="text-3xl font-bold text-amber-600 mt-2">{summary.openGrievances}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Open Grievances</p>
+                    <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><ShieldAlert size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-rose-600">{summary.openGrievances.toLocaleString()}</p>
                 </div>
               )}
               {summary.activeSurveys !== undefined && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Active Surveys</p>
-                  <p className="text-3xl font-bold text-indigo-600 mt-2">{summary.activeSurveys}</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Active Surveys</p>
+                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><ClipboardList size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-indigo-600">{summary.activeSurveys.toLocaleString()}</p>
                 </div>
               )}
             </div>

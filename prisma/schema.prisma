@@ -27,6 +27,7 @@ model User {
   uploadedMedia        CmsMedia[]                 @relation("MediaUploader")
   createdPages         CmsPage[]                  @relation("PageAuthor")
   createdPosts         CmsPost[]                  @relation("PostAuthor")
+  cmsSections          CmsSection[]               @relation("SectionAuthor")
   deliveryLogs         DeliveryLog[]
   donorProfile         DonorProfile?
   incidentReports      ElectionIncident[]         @relation("IncidentReporter")
@@ -37,9 +38,9 @@ model User {
   grievanceResponses   GrievanceResponse[]
   fieldReports         GroundIntelligenceReport[]
   intelligenceAlerts   IntelligenceAlert[]
-  memberProfile        Member?
-  verifiedMembers      Member[]                   @relation("MemberVerifier")
   approvedMembers      Member[]                   @relation("MemberApprover")
+  verifiedMembers      Member[]                   @relation("MemberVerifier")
+  memberProfile        Member?
   notices              Notice[]
   notifications        Notification[]
   officeBearers        OfficeBearer[]
@@ -47,11 +48,10 @@ model User {
   pollVotes            PollVote[]
   quizAttempts         QuizAttempt[]
   surveyResponses      SurveyResponse[]
-  reviewedTransactions Transaction[]              @relation("TransactionReviewer")
   recordedTransactions Transaction[]              @relation("TransactionRecorder")
-  cmsSections          CmsSection[]               @relation("SectionAuthor")
-  roleProfile          Role?                      @relation(fields: [roleId], references: [id])
+  reviewedTransactions Transaction[]              @relation("TransactionReviewer")
   orgUnit              OrganizationUnit?          @relation(fields: [orgUnitId], references: [id])
+  roleProfile          Role?                      @relation(fields: [roleId], references: [id])
   volunteerProfile     Volunteer?
   deployments          VolunteerDeployment[]
 
@@ -79,50 +79,50 @@ model Permission {
 }
 
 model OrganizationUnit {
-  id                  String                     @id @default(uuid())
-  name                String
-  level               String
-  code                String?                    @unique
-  parentId            String?
-  isActive            Boolean                    @default(true)
-  description         String?
-  sortOrder           Int                        @default(0)
-  contactEmail        String?
-  contactPhone        String?
-  createdAt           DateTime                   @default(now())
-  updatedAt           DateTime                   @updatedAt
-  areaStrengthScore   AreaStrengthScore?
-  booths              Booth[]
-  committees          Committee[]
-  communityPriorities CommunityPriority[]
-  departments         Department[]
-  grievances          Grievance[]
-  fieldReports        GroundIntelligenceReport[]
-  intelligenceAlerts  IntelligenceAlert[]
-  members             Member[]
-  offices             Office[]
-  parent              OrganizationUnit?          @relation("Hierarchy", fields: [parentId], references: [id])
-  children            OrganizationUnit[]         @relation("Hierarchy")
-  users               User[]
-  wings               Wing[]
-  electionCycles      ElectionCycle[]
-  constituencies      Constituency[]
-  candidates          Candidate[]
-  pollingStations     PollingStation[]
-  incidents           ElectionIncident[]
-  results             ElectionResult[]
-  surveys             Survey[]
-  polls               Poll[]
-  fundraisingCampaigns FundraisingCampaign[]
-  transactions        Transaction[]
-  campaigns           Campaign[]
-  audienceSegments    AudienceSegment[]
-  communicationTemplates CommunicationTemplate[]
+  id                     String                     @id @default(uuid())
+  name                   String
+  level                  String
+  code                   String?                    @unique
+  parentId               String?
+  isActive               Boolean                    @default(true)
+  description            String?
+  sortOrder              Int                        @default(0)
+  contactEmail           String?
+  contactPhone           String?
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  areaStrengthScore      AreaStrengthScore?
+  audienceSegments       AudienceSegment[]
+  booths                 Booth[]
+  campaigns              Campaign[]
+  candidates             Candidate[]
+  committees             Committee[]
   communicationCampaigns CommunicationCampaign[]
-  trainingPrograms    TrainingProgram[]
-  courses             Course[]
-  lessons             Lesson[]
-  notices             Notice[]
+  communicationTemplates CommunicationTemplate[]
+  communityPriorities    CommunityPriority[]
+  constituencies         Constituency[]
+  courses                Course[]
+  departments            Department[]
+  electionCycles         ElectionCycle[]
+  incidents              ElectionIncident[]
+  results                ElectionResult[]
+  fundraisingCampaigns   FundraisingCampaign[]
+  grievances             Grievance[]
+  fieldReports           GroundIntelligenceReport[]
+  intelligenceAlerts     IntelligenceAlert[]
+  lessons                Lesson[]
+  members                Member[]
+  notices                Notice[]
+  offices                Office[]
+  parent                 OrganizationUnit?          @relation("Hierarchy", fields: [parentId], references: [id])
+  children               OrganizationUnit[]         @relation("Hierarchy")
+  polls                  Poll[]
+  pollingStations        PollingStation[]
+  surveys                Survey[]
+  trainingPrograms       TrainingProgram[]
+  transactions           Transaction[]
+  users                  User[]
+  wings                  Wing[]
 }
 
 model Office {
@@ -165,8 +165,8 @@ model OfficeBearer {
   status      String    @default("ACTIVE")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  committee   Committee @relation(fields: [committeeId], references: [id])
   user        User?     @relation(fields: [userId], references: [id])
+  committee   Committee @relation(fields: [committeeId], references: [id])
 }
 
 model Department {
@@ -295,12 +295,12 @@ model Member {
   qrCodeData             String?
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
-  user                   User?             @relation(fields: [userId], references: [id])
-  booth                  Booth?            @relation(fields: [boothId], references: [id])
-  orgUnit                OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  membershipType         MembershipType?   @relation(fields: [membershipTypeId], references: [id])
-  verifiedBy             User?             @relation("MemberVerifier", fields: [verifiedById], references: [id])
   approvedBy             User?             @relation("MemberApprover", fields: [approvedById], references: [id])
+  verifiedBy             User?             @relation("MemberVerifier", fields: [verifiedById], references: [id])
+  membershipType         MembershipType?   @relation(fields: [membershipTypeId], references: [id])
+  orgUnit                OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  booth                  Booth?            @relation(fields: [boothId], references: [id])
+  user                   User?             @relation(fields: [userId], references: [id])
   renewalRequests        RenewalRequest[]
   transactions           Transaction[]
   volunteer              Volunteer?
@@ -333,8 +333,8 @@ model Volunteer {
   status           String                   @default("ACTIVE")
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
-  member           Member?                  @relation(fields: [memberId], references: [id])
   user             User?                    @relation(fields: [userId], references: [id])
+  member           Member?                  @relation(fields: [memberId], references: [id])
   assignments      VolunteerAssignment[]
   availabilityList VolunteerAvailability[]
   performance      VolunteerPerformance[]
@@ -408,8 +408,8 @@ model VolunteerAssignment {
   status      String            @default("PENDING")
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-  volunteer   Volunteer         @relation(fields: [volunteerId], references: [id])
   campaign    Campaign?         @relation(fields: [campaignId], references: [id])
+  volunteer   Volunteer         @relation(fields: [volunteerId], references: [id])
   reports     VolunteerReport[]
 }
 
@@ -455,22 +455,22 @@ model Interaction {
 }
 
 model CmsPage {
-  id             String   @id @default(uuid())
-  slug           String   @unique
+  id             String    @id @default(uuid())
+  slug           String    @unique
   title          String
   content        String
-  status         String   @default("DRAFT")
+  status         String    @default("DRAFT")
   authorId       String
   seoTitle       String?
   seoDescription String?
   seoKeywords    String?
-  language       String   @default("en")
-  isSystem       Boolean  @default(false)
-  isPinned       Boolean  @default(false)
+  language       String    @default("en")
+  isSystem       Boolean   @default(false)
+  isPinned       Boolean   @default(false)
   publishedAt    DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  author         User     @relation("PageAuthor", fields: [authorId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  author         User      @relation("PageAuthor", fields: [authorId], references: [id])
 }
 
 model CmsPost {
@@ -492,8 +492,8 @@ model CmsPost {
   publishedAt    DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  author         User         @relation("PostAuthor", fields: [authorId], references: [id])
   category       CmsCategory? @relation(fields: [categoryId], references: [id])
+  author         User         @relation("PostAuthor", fields: [authorId], references: [id])
 }
 
 model CmsCategory {
@@ -520,8 +520,8 @@ model CmsMedia {
   uploadedById String
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  category     CmsCategory? @relation(fields: [categoryId], references: [id])
   uploadedBy   User         @relation("MediaUploader", fields: [uploadedById], references: [id])
+  category     CmsCategory? @relation(fields: [categoryId], references: [id])
 }
 
 model CmsRedirect {
@@ -545,28 +545,28 @@ model CmsDownload {
 }
 
 model CmsSection {
-  id          String   @id @default(cuid())
-  title       String
-  type        String   // HERO, HIGHLIGHT, CTA, CONTENT_BLOCK, NOTICE_BANNER
-  order       Int      @default(0)
-  isEnabled   Boolean  @default(true)
-  content     String   // JSON string for type-specific content
-  authorId    String
-  author      User     @relation("SectionAuthor", fields: [authorId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  items       CmsSectionContent[]
+  id        String              @id @default(cuid())
+  title     String
+  type      String
+  order     Int                 @default(0)
+  isEnabled Boolean             @default(true)
+  content   String
+  authorId  String
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  author    User                @relation("SectionAuthor", fields: [authorId], references: [id])
+  items     CmsSectionContent[]
 }
 
 model CmsSectionContent {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   sectionId   String
+  contentId   String
+  contentType String
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   section     CmsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  contentId   String   // ID of the related content (CmsPost, Notice, etc.)
-  contentType String   // POST, NOTICE, EVENT, etc.
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model Issue {
@@ -605,8 +605,8 @@ model Campaign {
   orgUnitId            String?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
-  volunteerAssignments VolunteerAssignment[]
   orgUnit              OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
+  volunteerAssignments VolunteerAssignment[]
 }
 
 model ElectionCycle {
@@ -621,26 +621,26 @@ model ElectionCycle {
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
   candidates Candidate[]
+  orgUnit    OrganizationUnit?  @relation(fields: [orgUnitId], references: [id])
   incidents  ElectionIncident[]
   results    ElectionResult[]
-  orgUnit    OrganizationUnit?  @relation(fields: [orgUnitId], references: [id])
 }
 
 model Constituency {
-  id              String           @id @default(uuid())
+  id              String            @id @default(uuid())
   name            String
-  code            String?          @unique
+  code            String?           @unique
   type            String
   province        String
   district        String
-  totalVoters     Int              @default(0)
+  totalVoters     Int               @default(0)
   orgUnitId       String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   candidates      Candidate[]
+  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   results         ElectionResult[]
   pollingStations PollingStation[]
-  orgUnit         OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model Candidate {
@@ -660,9 +660,9 @@ model Candidate {
   orgUnitId       String?
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
-  electionCycle   ElectionCycle?      @relation(fields: [electionCycleId], references: [id])
-  constituency    Constituency?       @relation(fields: [constituencyId], references: [id])
   orgUnit         OrganizationUnit?   @relation(fields: [orgUnitId], references: [id])
+  constituency    Constituency?       @relation(fields: [constituencyId], references: [id])
+  electionCycle   ElectionCycle?      @relation(fields: [electionCycleId], references: [id])
   documents       CandidateDocument[]
   results         ElectionResult[]
 }
@@ -694,8 +694,8 @@ model PollingStation {
   updatedAt      DateTime           @updatedAt
   booths         Booth[]
   incidents      ElectionIncident[]
-  constituency   Constituency?      @relation(fields: [constituencyId], references: [id])
   orgUnit        OrganizationUnit?  @relation(fields: [orgUnitId], references: [id])
+  constituency   Constituency?      @relation(fields: [constituencyId], references: [id])
 }
 
 model Booth {
@@ -716,16 +716,16 @@ model Booth {
   orgUnitId        String?
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
-  pollingStation   PollingStation?       @relation(fields: [pollingStationId], references: [id])
   orgUnit          OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
+  pollingStation   PollingStation?       @relation(fields: [pollingStationId], references: [id])
   team             BoothTeamMember[]
+  incidents        ElectionIncident[]
   results          ElectionResult[]
   members          Member[]
   outreach         OutreachRecord[]
   pollingLogs      PollingDayLog[]
   supporters       Supporter[]
   deployments      VolunteerDeployment[]
-  incidents        ElectionIncident[]
 }
 
 model BoothTeamMember {
@@ -736,8 +736,8 @@ model BoothTeamMember {
   status    String   @default("ACTIVE")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  booth     Booth    @relation(fields: [boothId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+  booth     Booth    @relation(fields: [boothId], references: [id])
 
   @@unique([boothId, userId])
 }
@@ -752,8 +752,8 @@ model VolunteerDeployment {
   status    String    @default("ASSIGNED")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  booth     Booth     @relation(fields: [boothId], references: [id])
   user      User      @relation(fields: [userId], references: [id])
+  booth     Booth     @relation(fields: [boothId], references: [id])
 }
 
 model OutreachRecord {
@@ -765,9 +765,9 @@ model OutreachRecord {
   outcome     String?
   notes       String?
   createdAt   DateTime   @default(now())
-  booth       Booth      @relation(fields: [boothId], references: [id])
-  user        User       @relation(fields: [userId], references: [id])
   supporter   Supporter? @relation(fields: [supporterId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
+  booth       Booth      @relation(fields: [boothId], references: [id])
 }
 
 model PollingDayLog {
@@ -782,43 +782,43 @@ model PollingDayLog {
 }
 
 model ElectionIncident {
-  id               String          @id @default(uuid())
+  id               String            @id @default(uuid())
   cycleId          String
   pollingStationId String?
   boothId          String?
   reporterId       String
   type             String
-  severity         String          @default("MEDIUM")
+  severity         String            @default("MEDIUM")
   description      String
-  status           String          @default("REPORTED")
+  status           String            @default("REPORTED")
   orgUnitId        String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  cycle            ElectionCycle   @relation(fields: [cycleId], references: [id])
-  pollingStation   PollingStation? @relation(fields: [pollingStationId], references: [id])
-  booth            Booth?          @relation(fields: [boothId], references: [id])
-  reporter         User            @relation("IncidentReporter", fields: [reporterId], references: [id])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
   orgUnit          OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  reporter         User              @relation("IncidentReporter", fields: [reporterId], references: [id])
+  booth            Booth?            @relation(fields: [boothId], references: [id])
+  pollingStation   PollingStation?   @relation(fields: [pollingStationId], references: [id])
+  cycle            ElectionCycle     @relation(fields: [cycleId], references: [id])
 }
 
 model ElectionResult {
-  id             String        @id @default(uuid())
+  id             String            @id @default(uuid())
   cycleId        String
   constituencyId String?
   boothId        String?
   candidateId    String
   votesReceived  Int
-  isWinner       Boolean       @default(false)
+  isWinner       Boolean           @default(false)
   verifiedById   String?
   verifiedAt     DateTime?
   orgUnitId      String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  cycle          ElectionCycle @relation(fields: [cycleId], references: [id])
-  constituency   Constituency? @relation(fields: [constituencyId], references: [id])
-  booth          Booth?        @relation(fields: [boothId], references: [id])
-  candidate      Candidate     @relation(fields: [candidateId], references: [id])
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   orgUnit        OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  candidate      Candidate         @relation(fields: [candidateId], references: [id])
+  booth          Booth?            @relation(fields: [boothId], references: [id])
+  constituency   Constituency?     @relation(fields: [constituencyId], references: [id])
+  cycle          ElectionCycle     @relation(fields: [cycleId], references: [id])
 
   @@unique([cycleId, boothId, candidateId])
 }
@@ -871,8 +871,8 @@ model EventRegistration {
   notes          String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  event          Event     @relation(fields: [eventId], references: [id])
   user           User?     @relation(fields: [userId], references: [id])
+  event          Event     @relation(fields: [eventId], references: [id])
 
   @@unique([eventId, userId])
 }
@@ -916,8 +916,8 @@ model FundraisingCampaign {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   donations         Donation[]
-  updates           FundraisingUpdate[]
   orgUnit           OrganizationUnit?   @relation(fields: [orgUnitId], references: [id])
+  updates           FundraisingUpdate[]
 }
 
 model FundraisingUpdate {
@@ -960,9 +960,9 @@ model Donation {
   receiptUrl    String?
   notes         String?
   createdAt     DateTime             @default(now())
-  donor         DonorProfile         @relation(fields: [donorId], references: [id])
-  campaign      FundraisingCampaign? @relation(fields: [campaignId], references: [id])
   transaction   Transaction          @relation(fields: [transactionId], references: [id])
+  campaign      FundraisingCampaign? @relation(fields: [campaignId], references: [id])
+  donor         DonorProfile         @relation(fields: [donorId], references: [id])
 }
 
 model RecurringDonation {
@@ -979,13 +979,13 @@ model RecurringDonation {
 }
 
 model Transaction {
-  id                 String          @id @default(uuid())
+  id                 String            @id @default(uuid())
   type               String
   category           String
   amount             Float
   description        String?
-  date               DateTime        @default(now())
-  status             String          @default("COMPLETED")
+  date               DateTime          @default(now())
+  status             String            @default("COMPLETED")
   paymentMethod      String?
   referenceId        String?
   recordedById       String?
@@ -993,16 +993,16 @@ model Transaction {
   reviewedAt         DateTime?
   reconciliationNote String?
   orgUnitId          String?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   memberId           String?
   renewalRequestId   String?
   donation           Donation?
-  renewalRequest     RenewalRequest? @relation(fields: [renewalRequestId], references: [id])
-  member             Member?         @relation(fields: [memberId], references: [id])
-  reviewedBy         User?           @relation("TransactionReviewer", fields: [reviewedById], references: [id])
-  recordedBy         User?           @relation("TransactionRecorder", fields: [recordedById], references: [id])
   orgUnit            OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  recordedBy         User?             @relation("TransactionRecorder", fields: [recordedById], references: [id])
+  reviewedBy         User?             @relation("TransactionReviewer", fields: [reviewedById], references: [id])
+  member             Member?           @relation(fields: [memberId], references: [id])
+  renewalRequest     RenewalRequest?   @relation(fields: [renewalRequestId], references: [id])
 }
 
 model PaymentIntegration {
@@ -1044,8 +1044,8 @@ model CommunicationTemplate {
   orgUnitId String?
   createdAt DateTime                @default(now())
   updatedAt DateTime                @updatedAt
-  orgUnit   OrganizationUnit?       @relation(fields: [orgUnitId], references: [id])
   campaigns CommunicationCampaign[]
+  orgUnit   OrganizationUnit?       @relation(fields: [orgUnitId], references: [id])
 }
 
 model CommunicationCampaign {
@@ -1059,9 +1059,9 @@ model CommunicationCampaign {
   orgUnitId    String?
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
-  orgUnit      OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
-  template     CommunicationTemplate @relation(fields: [templateId], references: [id])
   segment      AudienceSegment?      @relation(fields: [segmentId], references: [id])
+  template     CommunicationTemplate @relation(fields: [templateId], references: [id])
+  orgUnit      OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
   deliveryLogs DeliveryLog[]
 }
 
@@ -1074,56 +1074,56 @@ model DeliveryLog {
   error      String?
   provider   String?
   sentAt     DateTime               @default(now())
-  campaign   CommunicationCampaign? @relation(fields: [campaignId], references: [id])
   user       User?                  @relation(fields: [userId], references: [id])
+  campaign   CommunicationCampaign? @relation(fields: [campaignId], references: [id])
 }
 
 model TrainingProgram {
-  id            String   @id @default(uuid())
+  id            String            @id @default(uuid())
   name          String
   description   String?
   category      String
-  status        String   @default("DRAFT")
-  audience      String   @default("PUBLIC")
-  isPinned      Boolean  @default(false)
+  status        String            @default("DRAFT")
+  audience      String            @default("PUBLIC")
+  isPinned      Boolean           @default(false)
   externalUrl   String?
   attachmentUrl String?
   orgUnitId     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
   courses       Course[]
+  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model Course {
-  id           String          @id @default(uuid())
+  id           String            @id @default(uuid())
   programId    String
   title        String
   description  String?
   thumbnail    String?
   level        String
   orgUnitId    String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  orgUnit      OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   certificates Certificate[]
-  program      TrainingProgram @relation(fields: [programId], references: [id])
+  program      TrainingProgram   @relation(fields: [programId], references: [id])
+  orgUnit      OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   enrollments  Enrollment[]
   lessons      Lesson[]
 }
 
 model Lesson {
-  id        String   @id @default(uuid())
+  id        String            @id @default(uuid())
   courseId  String
   title     String
   content   String
   videoUrl  String?
   order     Int
   orgUnitId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  course    Course            @relation(fields: [courseId], references: [id])
   orgUnit   OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  course    Course   @relation(fields: [courseId], references: [id])
   quizzes   Quiz[]
 }
 
@@ -1156,8 +1156,8 @@ model QuizAttempt {
   score     Int
   passed    Boolean
   createdAt DateTime @default(now())
-  quiz      Quiz     @relation(fields: [quizId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
 }
 
 model Enrollment {
@@ -1169,8 +1169,8 @@ model Enrollment {
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  course      Course    @relation(fields: [courseId], references: [id])
   user        User      @relation(fields: [userId], references: [id])
+  course      Course    @relation(fields: [courseId], references: [id])
 
   @@unique([courseId, userId])
 }
@@ -1183,8 +1183,8 @@ model Certificate {
   expiryDate     DateTime?
   certificateUrl String?
   createdAt      DateTime  @default(now())
-  course         Course    @relation(fields: [courseId], references: [id])
   user           User      @relation(fields: [userId], references: [id])
+  course         Course    @relation(fields: [courseId], references: [id])
 }
 
 model LiveSession {
@@ -1206,8 +1206,8 @@ model Attendance {
   userId    String
   status    String      @default("PRESENT")
   createdAt DateTime    @default(now())
-  session   LiveSession @relation(fields: [sessionId], references: [id])
   user      User        @relation(fields: [userId], references: [id])
+  session   LiveSession @relation(fields: [sessionId], references: [id])
 }
 
 model GrievanceCategory {
@@ -1233,9 +1233,9 @@ model Grievance {
   closedAt    DateTime?
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
-  category    GrievanceCategory     @relation(fields: [categoryId], references: [id])
-  reporter    User                  @relation("GrievanceReporter", fields: [reporterId], references: [id])
   orgUnit     OrganizationUnit?     @relation(fields: [orgUnitId], references: [id])
+  reporter    User                  @relation("GrievanceReporter", fields: [reporterId], references: [id])
+  category    GrievanceCategory     @relation(fields: [categoryId], references: [id])
   assignments GrievanceAssignment[]
   responses   GrievanceResponse[]
 
@@ -1252,8 +1252,8 @@ model GrievanceAssignment {
   assignedAt  DateTime  @default(now())
   status      String    @default("ACTIVE")
   createdAt   DateTime  @default(now())
-  grievance   Grievance @relation(fields: [grievanceId], references: [id])
   user        User      @relation(fields: [userId], references: [id])
+  grievance   Grievance @relation(fields: [grievanceId], references: [id])
 }
 
 model GrievanceResponse {
@@ -1263,24 +1263,24 @@ model GrievanceResponse {
   content     String
   isInternal  Boolean   @default(false)
   createdAt   DateTime  @default(now())
-  grievance   Grievance @relation(fields: [grievanceId], references: [id])
   user        User      @relation(fields: [userId], references: [id])
+  grievance   Grievance @relation(fields: [grievanceId], references: [id])
 }
 
 model Survey {
-  id            String           @id @default(uuid())
+  id            String            @id @default(uuid())
   title         String
   description   String?
-  status        String           @default("DRAFT")
-  audience      String           @default("MEMBER")
-  placementType String           @default("GENERAL")
+  status        String            @default("DRAFT")
+  audience      String            @default("MEMBER")
+  placementType String            @default("GENERAL")
   targetSlug    String?
   orgUnitId     String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   questions     SurveyQuestion[]
   responses     SurveyResponse[]
-  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model SurveyQuestion {
@@ -1301,8 +1301,8 @@ model SurveyResponse {
   userId    String?
   createdAt DateTime       @default(now())
   answers   SurveyAnswer[]
-  survey    Survey         @relation(fields: [surveyId], references: [id])
   user      User?          @relation(fields: [userId], references: [id])
+  survey    Survey         @relation(fields: [surveyId], references: [id])
 }
 
 model SurveyAnswer {
@@ -1311,23 +1311,23 @@ model SurveyAnswer {
   questionId String
   value      String
   createdAt  DateTime       @default(now())
-  response   SurveyResponse @relation(fields: [responseId], references: [id])
   question   SurveyQuestion @relation(fields: [questionId], references: [id])
+  response   SurveyResponse @relation(fields: [responseId], references: [id])
 }
 
 model Poll {
-  id            String       @id @default(uuid())
+  id            String            @id @default(uuid())
   question      String
-  status        String       @default("ACTIVE")
-  audience      String       @default("MEMBER")
-  placementType String       @default("GENERAL")
+  status        String            @default("ACTIVE")
+  audience      String            @default("MEMBER")
+  placementType String            @default("GENERAL")
   targetSlug    String?
   orgUnitId     String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   options       PollOption[]
   votes         PollVote[]
-  orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model PollOption {
@@ -1345,9 +1345,9 @@ model PollVote {
   optionId  String
   userId    String?
   createdAt DateTime   @default(now())
-  poll      Poll       @relation(fields: [pollId], references: [id])
-  option    PollOption @relation(fields: [optionId], references: [id])
   user      User?      @relation(fields: [userId], references: [id])
+  option    PollOption @relation(fields: [optionId], references: [id])
+  poll      Poll       @relation(fields: [pollId], references: [id])
 
   @@unique([pollId, userId])
 }
@@ -1365,8 +1365,8 @@ model GroundIntelligenceReport {
   priority       String            @default("MEDIUM")
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
-  reporter       User              @relation(fields: [reporterId], references: [id])
   orgUnit        OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
+  reporter       User              @relation(fields: [reporterId], references: [id])
 }
 
 model CommunityPriority {
@@ -1389,8 +1389,8 @@ model IntelligenceAlert {
   userId    String?
   isRead    Boolean           @default(false)
   createdAt DateTime          @default(now())
-  orgUnit   OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
   user      User?             @relation(fields: [userId], references: [id])
+  orgUnit   OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
 }
 
 model AreaStrengthScore {
@@ -1404,25 +1404,25 @@ model AreaStrengthScore {
 }
 
 model Notice {
-  id            String    @id @default(uuid())
+  id            String            @id @default(uuid())
   title         String
   content       String
-  audience      String    @default("PUBLIC") // PUBLIC, MEMBERS, STAFF
-  status        String    @default("DRAFT")
-  isPinned      Boolean   @default(false)
-  isPopup       Boolean   @default(false)
-  displayType   String    @default("BANNER") // BANNER, MODAL, TOAST
-  targetPath    String?   // Optional: target specific pages (e.g., "/dashboard")
+  audience      String            @default("PUBLIC")
+  status        String            @default("DRAFT")
+  isPinned      Boolean           @default(false)
+  isPopup       Boolean           @default(false)
+  displayType   String            @default("BANNER")
+  targetPath    String?
   publishAt     DateTime?
   expireAt      DateTime?
   attachmentUrl String?
   externalUrl   String?
   authorId      String
   orgUnitId     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  author        User              @relation(fields: [authorId], references: [id])
   orgUnit       OrganizationUnit? @relation(fields: [orgUnitId], references: [id])
-  author        User      @relation(fields: [authorId], references: [id])
 
   @@index([status, audience])
 }
