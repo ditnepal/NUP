@@ -41,26 +41,128 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
         memberWhere.orgUnitId = { in: accessibleUnitIds };
         supporterWhere.booth = { orgUnitId: { in: accessibleUnitIds } };
         boothWhere.orgUnitId = { in: accessibleUnitIds };
-        issueWhere.orgUnitId = { in: accessibleUnitIds };
         grievanceWhere.orgUnitId = { in: accessibleUnitIds };
         surveyWhere.orgUnitId = { in: accessibleUnitIds };
       }
 
-      const [totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys] = await Promise.all([
+      const [totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, recentGrievances, criticalBoothsList] = await Promise.all([
         prisma.member.count({ where: memberWhere }),
         prisma.supporter.count({ where: supporterWhere }),
         prisma.booth.count({ where: boothWhere }),
         prisma.campaign.count({ where: campaignWhere }),
         prisma.issue.count({ where: issueWhere }),
         prisma.grievance.count({ where: grievanceWhere }),
-        prisma.survey.count({ where: surveyWhere })
+        prisma.survey.count({ where: surveyWhere }),
+        prisma.grievance.findMany({ where: grievanceWhere, orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, title: true, priority: true, status: true, createdAt: true } }),
+        prisma.booth.findMany({ where: { ...boothWhere, status: 'CRITICAL' }, orderBy: { updatedAt: 'desc' }, take: 5, select: { id: true, name: true, status: true, updatedAt: true } })
       ]);
 
-      // Phase 2A: Child-Unit Breakdown
+      const actionQueue = [
+        ...recentGrievances.map(g => ({ id: g.id, type: 'GRIEVANCE', title: g.title, priority: g.priority, status: g.status, date: g.createdAt.toISOString() })),
+        ...criticalBoothsList.map(b => ({ id: b.id, type: 'BOOTH', title: b.name, status: b.status, date: b.updatedAt?.toISOString() }))
+      ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
+
+      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, actionQueue };
+    } else if (role === 'FINANCE_OFFICER') {
+      const transactionWhere: any = {};
+      const donationWhere: any = { status: 'COMPLETED' };
+      const fundCampaignWhere: any = { status: 'ACTIVE' };
+
+      if (isScoped) {
+        transactionWhere.member = { orgUnitId: { in: accessibleUnitIds } };
+        donationWhere.campaign = { orgUnitId: { in: accessibleUnitIds } };
+        fundCampaignWhere.orgUnitId = { in: accessibleUnitIds };
+      }
+      
+      const [transactions, donations, activeFundCampaigns, recentTransactions, activeCampaignsList] = await Promise.all([
+        prisma.transaction.findMany({ where: transactionWhere }),
+        prisma.donation.findMany({ where: donationWhere }),
+        prisma.fundraisingCampaign.count({ where: fundCampaignWhere }),
+        prisma.transaction.findMany({ where: transactionWhere, orderBy: { date: 'desc' }, take: 5, select: { id: true, description: true, amount: true, status: true, date: true } }),
+        prisma.fundraisingCampaign.findMany({ where: fundCampaignWhere, orderBy: { startDate: 'desc' }, take: 5, select: { id: true, title: true, currentAmount: true, goalAmount: true, status: true, startDate: true } })
+      ]);
+      
+      const totalIncome = transactions.filter(t => t.type === 'INCOME').reduce((acc, curr) => acc + curr.amount, 0);
+      const totalExpenses = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, curr) => acc + curr.amount, 0);
+      const totalDonations = donations.reduce((acc, curr) => acc + curr.amount, 0);
+      
+      const actionQueue = [
+        ...recentTransactions.map(t => ({ id: t.id, type: 'TRANSACTION', title: t.description, subtitle: `Amount: ${t.amount}`, status: t.status, date: t.date.toISOString() })),
+        ...activeCampaignsList.map(c => ({ id: c.id, type: 'FUNDRAISER', title: c.title, subtitle: `Raised: ${c.currentAmount}/${c.goalAmount}`, status: c.status, date: c.startDate.toISOString() }))
+      ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
+
+      summary = { ...summary, totalIncome, totalExpenses, netBalance: totalIncome - totalExpenses, transactionCount: transactions.length, totalDonations, activeFundCampaigns, actionQueue };
+    } else if (role === 'FIELD_COORDINATOR') {
+      const supporterWhere: any = {};
+      const campaignWhere: any = { phase: 'ACTIVE' };
+      const grievanceWhere: any = { status: { not: 'closed' } };
+      
+      if (isScoped) {
+        supporterWhere.booth = { orgUnitId: { in: accessibleUnitIds } };
+        grievanceWhere.orgUnitId = { in: accessibleUnitIds };
+      }
+
+      const [totalSupporters, strongSupporters, activeCampaigns, openGrievances, recentGrievances, criticalBoothsList] = await Promise.all([
+        prisma.supporter.count({ where: supporterWhere }),
+        prisma.supporter.count({ where: { ...supporterWhere, supportLevel: 'STRONG' } }),
+        prisma.campaign.count({ where: campaignWhere }),
+        prisma.grievance.count({ where: grievanceWhere }),
+        prisma.grievance.findMany({ where: grievanceWhere, orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, title: true, priority: true, status: true, createdAt: true } }),
+        prisma.booth.findMany({ where: { orgUnitId: { in: accessibleUnitIds || [] }, status: 'CRITICAL' }, orderBy: { updatedAt: 'desc' }, take: 5, select: { id: true, name: true, status: true, updatedAt: true } })
+      ]);
+
+      const actionQueue = [
+        ...recentGrievances.map(g => ({ id: g.id, type: 'GRIEVANCE', title: g.title, priority: g.priority, status: g.status, date: g.createdAt.toISOString() })),
+        ...criticalBoothsList.map(b => ({ id: b.id, type: 'BOOTH', title: b.name, status: b.status, date: b.updatedAt?.toISOString() }))
+      ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
+
+      summary = { ...summary, totalSupporters, strongSupporters, activeCampaigns, openGrievances, actionQueue };
+    } else if (role === 'BOOTH_COORDINATOR') {
+      const boothWhere: any = {};
+      const supporterWhere: any = {};
+
+      if (isScoped) {
+        boothWhere.orgUnitId = { in: accessibleUnitIds };
+        supporterWhere.booth = { orgUnitId: { in: accessibleUnitIds } };
+      }
+      const [totalBooths, readyBooths, criticalBooths, totalSupporters, criticalBoothsList, recentGrievances] = await Promise.all([
+        prisma.booth.count({ where: boothWhere }),
+        prisma.booth.count({ where: { ...boothWhere, status: 'READY' } }),
+        prisma.booth.count({ where: { ...boothWhere, status: 'CRITICAL' } }),
+        prisma.supporter.count({ where: supporterWhere }),
+        prisma.booth.findMany({ where: { ...boothWhere, status: 'CRITICAL' }, orderBy: { updatedAt: 'desc' }, take: 5, select: { id: true, name: true, status: true, updatedAt: true } }),
+        prisma.grievance.findMany({ where: { orgUnitId: { in: accessibleUnitIds || [] }, status: { not: 'closed' } }, orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, title: true, priority: true, status: true, createdAt: true } })
+      ]);
+
+      const actionQueue = [
+        ...criticalBoothsList.map(b => ({ id: b.id, type: 'BOOTH', title: b.name, status: b.status, date: b.updatedAt?.toISOString() })),
+        ...recentGrievances.map(g => ({ id: g.id, type: 'GRIEVANCE', title: g.title, priority: g.priority, status: g.status, date: g.createdAt.toISOString() }))
+      ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
+
+      summary = { ...summary, totalBooths, readyBooths, criticalBooths, totalSupporters, actionQueue };
+    } else {
+      // Regular Member
+      const [myIssues, upcomingEvents, recentIssues, upcomingEventsList] = await Promise.all([
+        prisma.issue.count({ where: { reporterId: userId } }),
+        prisma.event.count({ where: { startDate: { gte: new Date() } } }),
+        prisma.issue.findMany({ where: { reporterId: userId }, orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, title: true, status: true, createdAt: true } }),
+        prisma.event.findMany({ where: { startDate: { gte: new Date() } }, orderBy: { startDate: 'asc' }, take: 5, select: { id: true, title: true, startDate: true, location: true } })
+      ]);
+
+      const actionQueue = [
+        ...recentIssues.map(i => ({ id: i.id, type: 'ISSUE', title: i.title, status: i.status, date: i.createdAt.toISOString() })),
+        ...upcomingEventsList.map(e => ({ id: e.id, type: 'EVENT', title: e.title, subtitle: e.location, date: e.startDate.toISOString() }))
+      ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
+
+      summary = { ...summary, myIssues, upcomingEvents, actionQueue };
+    }
+
+    // Phase 2B: Child-Unit Breakdown for all hierarchy-relevant roles
+    if (role !== 'MEMBER') {
       let childUnitsSummary: any[] = [];
       let parentIdForChildren = req.user?.orgUnitId;
       
-      if (!parentIdForChildren) {
+      if (!parentIdForChildren && (role === 'ADMIN' || role === 'STAFF' || role === 'FINANCE_OFFICER')) {
         const nationalUnit = await prisma.organizationUnit.findFirst({ where: { level: 'NATIONAL' } });
         if (nationalUnit) {
           parentIdForChildren = nationalUnit.id;
@@ -78,10 +180,11 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
           const childPromises = immediateChildren.map(async (child) => {
             const descendantIds = await hierarchyService.getSubUnitIds(child.id);
             
-            const [members, supporters, booths, grievances] = await Promise.all([
+            const [members, supporters, booths, criticalBooths, grievances] = await Promise.all([
               prisma.member.count({ where: { orgUnitId: { in: descendantIds }, status: 'ACTIVE' } }),
               prisma.supporter.count({ where: { booth: { orgUnitId: { in: descendantIds } } } }),
               prisma.booth.count({ where: { orgUnitId: { in: descendantIds } } }),
+              prisma.booth.count({ where: { orgUnitId: { in: descendantIds }, status: 'CRITICAL' } }),
               prisma.grievance.count({ where: { orgUnitId: { in: descendantIds }, status: { not: 'closed' } } })
             ]);
             
@@ -92,6 +195,7 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
               members,
               supporters,
               booths,
+              criticalBooths,
               openGrievances: grievances
             };
           });
@@ -100,69 +204,7 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
           childUnitsSummary.sort((a, b) => b.members - a.members);
         }
       }
-
-      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, childUnits: childUnitsSummary };
-    } else if (role === 'FINANCE_OFFICER') {
-      const transactionWhere: any = {};
-      const donationWhere: any = { status: 'COMPLETED' };
-      const fundCampaignWhere: any = { status: 'ACTIVE' };
-
-      if (isScoped) {
-        transactionWhere.member = { orgUnitId: { in: accessibleUnitIds } };
-        donationWhere.campaign = { orgUnitId: { in: accessibleUnitIds } };
-        fundCampaignWhere.orgUnitId = { in: accessibleUnitIds };
-      }
-      
-      const [transactions, donations, activeFundCampaigns] = await Promise.all([
-        prisma.transaction.findMany({ where: transactionWhere }),
-        prisma.donation.findMany({ where: donationWhere }),
-        prisma.fundraisingCampaign.count({ where: fundCampaignWhere })
-      ]);
-      
-      const totalIncome = transactions.filter(t => t.type === 'INCOME').reduce((acc, curr) => acc + curr.amount, 0);
-      const totalExpenses = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, curr) => acc + curr.amount, 0);
-      const totalDonations = donations.reduce((acc, curr) => acc + curr.amount, 0);
-      
-      summary = { ...summary, totalIncome, totalExpenses, netBalance: totalIncome - totalExpenses, transactionCount: transactions.length, totalDonations, activeFundCampaigns };
-    } else if (role === 'FIELD_COORDINATOR') {
-      const supporterWhere: any = {};
-      const campaignWhere: any = { phase: 'ACTIVE' };
-      const grievanceWhere: any = { status: { not: 'closed' } };
-      
-      if (isScoped) {
-        supporterWhere.booth = { orgUnitId: { in: accessibleUnitIds } };
-        grievanceWhere.orgUnitId = { in: accessibleUnitIds };
-      }
-
-      const [totalSupporters, strongSupporters, activeCampaigns, openGrievances] = await Promise.all([
-        prisma.supporter.count({ where: supporterWhere }),
-        prisma.supporter.count({ where: { ...supporterWhere, supportLevel: 'STRONG' } }),
-        prisma.campaign.count({ where: campaignWhere }),
-        prisma.grievance.count({ where: grievanceWhere })
-      ]);
-      summary = { ...summary, totalSupporters, strongSupporters, activeCampaigns, openGrievances };
-    } else if (role === 'BOOTH_COORDINATOR') {
-      const boothWhere: any = {};
-      const supporterWhere: any = {};
-
-      if (isScoped) {
-        boothWhere.orgUnitId = { in: accessibleUnitIds };
-        supporterWhere.booth = { orgUnitId: { in: accessibleUnitIds } };
-      }
-      const [totalBooths, readyBooths, criticalBooths, totalSupporters] = await Promise.all([
-        prisma.booth.count({ where: boothWhere }),
-        prisma.booth.count({ where: { ...boothWhere, status: 'READY' } }),
-        prisma.booth.count({ where: { ...boothWhere, status: 'CRITICAL' } }),
-        prisma.supporter.count({ where: supporterWhere })
-      ]);
-      summary = { ...summary, totalBooths, readyBooths, criticalBooths, totalSupporters };
-    } else {
-      // Regular Member
-      const [myIssues, upcomingEvents] = await Promise.all([
-        prisma.issue.count({ where: { reporterId: userId } }),
-        prisma.event.count({ where: { startDate: { gte: new Date() } } })
-      ]);
-      summary = { ...summary, myIssues, upcomingEvents };
+      summary.childUnits = childUnitsSummary;
     }
 
     res.json(summary);

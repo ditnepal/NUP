@@ -17,7 +17,18 @@ export interface ChildUnitSummary {
   members: number;
   supporters: number;
   booths: number;
+  criticalBooths?: number;
   openGrievances: number;
+}
+
+export interface DashboardActionItem {
+  id: string;
+  type: string;
+  title: string;
+  subtitle?: string;
+  priority?: string;
+  status?: string;
+  date?: string;
 }
 
 export interface DashboardSummary {
@@ -41,6 +52,7 @@ export interface DashboardSummary {
   totalDonations?: number;
   activeFundCampaigns?: number;
   childUnits?: ChildUnitSummary[];
+  actionQueue?: DashboardActionItem[];
 }
 
 export interface UserProfile {

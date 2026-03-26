@@ -36,7 +36,7 @@ import { NoticePopup } from './components/NoticePopup';
 import { Toaster } from 'sonner';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo } from 'lucide-react';
 
 type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
 
@@ -515,39 +515,176 @@ export default function App() {
               )}
             </div>
 
-            {summary.childUnits && summary.childUnits.length > 0 && (
+            {summary.actionQueue && summary.actionQueue.length > 0 && (
               <div className="mt-8">
                 <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <GitGraph size={20} className="text-emerald-600" />
-                  Child Unit Breakdown
+                  <ListTodo size={20} className="text-blue-600" />
+                  Priority Action Queue
                 </h3>
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-                        <tr>
-                          <th className="px-6 py-4">Unit Name</th>
-                          <th className="px-6 py-4 text-right">Members</th>
-                          <th className="px-6 py-4 text-right">Supporters</th>
-                          <th className="px-6 py-4 text-right">Booths</th>
-                          <th className="px-6 py-4 text-right">Open Grievances</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {summary.childUnits.map((unit: any) => (
-                          <tr key={unit.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4">
-                              <div className="font-semibold text-slate-800">{unit.name}</div>
-                              <div className="text-xs text-slate-500 uppercase tracking-wider">{unit.level}</div>
-                            </td>
-                            <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.members.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.supporters.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.booths.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-right font-medium text-rose-600">{unit.openGrievances > 0 ? unit.openGrievances.toLocaleString() : '-'}</td>
+                  <ul className="divide-y divide-slate-100">
+                    {summary.actionQueue.map((item: any) => (
+                      <li key={item.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start sm:items-center gap-4">
+                          <div className={`p-2 rounded-lg shrink-0 ${
+                            item.type === 'GRIEVANCE' ? 'bg-rose-50 text-rose-600' :
+                            item.type === 'BOOTH' ? 'bg-amber-50 text-amber-600' :
+                            item.type === 'TRANSACTION' ? 'bg-emerald-50 text-emerald-600' :
+                            item.type === 'FUNDRAISER' ? 'bg-indigo-50 text-indigo-600' :
+                            item.type === 'ISSUE' ? 'bg-orange-50 text-orange-600' :
+                            item.type === 'EVENT' ? 'bg-blue-50 text-blue-600' :
+                            'bg-slate-50 text-slate-600'
+                          }`}>
+                            {item.type === 'GRIEVANCE' && <ShieldAlert size={18} />}
+                            {item.type === 'BOOTH' && <MapPin size={18} />}
+                            {item.type === 'TRANSACTION' && <DollarSign size={18} />}
+                            {item.type === 'FUNDRAISER' && <TrendingUp size={18} />}
+                            {item.type === 'ISSUE' && <AlertTriangle size={18} />}
+                            {item.type === 'EVENT' && <Calendar size={18} />}
+                            {!['GRIEVANCE', 'BOOTH', 'TRANSACTION', 'FUNDRAISER', 'ISSUE', 'EVENT'].includes(item.type) && <Activity size={18} />}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-800">{item.title}</div>
+                            <div className="text-sm text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                              <span className="uppercase text-xs font-medium tracking-wider text-slate-400">{item.type}</span>
+                              {item.subtitle && <><span className="text-slate-300">•</span><span>{item.subtitle}</span></>}
+                              {item.date && <><span className="text-slate-300">•</span><span>{new Date(item.date).toLocaleDateString()}</span></>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {item.priority && (
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                              item.priority === 'CRITICAL' || item.priority === 'HIGH' ? 'bg-rose-100 text-rose-700' :
+                              item.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
+                              'bg-emerald-100 text-emerald-700'
+                            }`}>
+                              {item.priority}
+                            </span>
+                          )}
+                          {item.status && (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                              {item.status}
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {summary.childUnits && summary.childUnits.length > 0 && (
+              <div className="mt-8 space-y-8">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <AlertTriangle size={20} className="text-amber-500" />
+                    Operational Attention Signals
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Highest Grievances */}
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                      <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+                        <ShieldAlert size={16} className="text-rose-500" />
+                        Highest Open Grievances
+                      </h4>
+                      <ul className="space-y-2">
+                        {[...summary.childUnits]
+                          .filter(u => u.openGrievances > 0)
+                          .sort((a, b) => b.openGrievances - a.openGrievances)
+                          .slice(0, 3)
+                          .map(u => (
+                            <li key={u.id} className="flex justify-between items-center text-sm">
+                              <span className="text-slate-700 truncate pr-2">{u.name}</span>
+                              <span className="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">{u.openGrievances}</span>
+                            </li>
+                          ))}
+                        {[...summary.childUnits].filter(u => u.openGrievances > 0).length === 0 && (
+                          <li className="text-sm text-slate-500 italic">No open grievances</li>
+                        )}
+                      </ul>
+                    </div>
+
+                    {/* Critical Booths */}
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                      <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+                        <MapPin size={16} className="text-amber-500" />
+                        Critical Booths
+                      </h4>
+                      <ul className="space-y-2">
+                        {[...summary.childUnits]
+                          .filter(u => (u.criticalBooths || 0) > 0)
+                          .sort((a, b) => (b.criticalBooths || 0) - (a.criticalBooths || 0))
+                          .slice(0, 3)
+                          .map(u => (
+                            <li key={u.id} className="flex justify-between items-center text-sm">
+                              <span className="text-slate-700 truncate pr-2">{u.name}</span>
+                              <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{u.criticalBooths}</span>
+                            </li>
+                          ))}
+                        {[...summary.childUnits].filter(u => (u.criticalBooths || 0) > 0).length === 0 && (
+                          <li className="text-sm text-slate-500 italic">No critical booths</li>
+                        )}
+                      </ul>
+                    </div>
+
+                    {/* Lowest Member Strength */}
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                      <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+                        <Users size={16} className="text-blue-500" />
+                        Lowest Member Strength
+                      </h4>
+                      <ul className="space-y-2">
+                        {[...summary.childUnits]
+                          .sort((a, b) => a.members - b.members)
+                          .slice(0, 3)
+                          .map(u => (
+                            <li key={u.id} className="flex justify-between items-center text-sm">
+                              <span className="text-slate-700 truncate pr-2">{u.name}</span>
+                              <span className="font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">{u.members}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <GitGraph size={20} className="text-emerald-600" />
+                    Child Unit Breakdown
+                  </h3>
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
+                          <tr>
+                            <th className="px-6 py-4">Unit Name</th>
+                            <th className="px-6 py-4 text-right">Members</th>
+                            <th className="px-6 py-4 text-right">Supporters</th>
+                            <th className="px-6 py-4 text-right">Booths</th>
+                            <th className="px-6 py-4 text-right">Critical Booths</th>
+                            <th className="px-6 py-4 text-right">Open Grievances</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {summary.childUnits.map((unit: any) => (
+                            <tr key={unit.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="font-semibold text-slate-800">{unit.name}</div>
+                                <div className="text-xs text-slate-500 uppercase tracking-wider">{unit.level}</div>
+                              </td>
+                              <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.members.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.supporters.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.booths.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right font-medium text-amber-600">{(unit.criticalBooths || 0) > 0 ? (unit.criticalBooths || 0).toLocaleString() : '-'}</td>
+                              <td className="px-6 py-4 text-right font-medium text-rose-600">{unit.openGrievances > 0 ? unit.openGrievances.toLocaleString() : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
