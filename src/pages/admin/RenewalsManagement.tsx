@@ -3,7 +3,15 @@ import { api } from '../../lib/api';
 import { Loader2, CheckCircle, XCircle, Clock, AlertCircle, X } from 'lucide-react';
 import { format } from 'date-fns';
 
-export default function RenewalsManagement() {
+import { usePermissions } from '../../hooks/usePermissions';
+import { UserProfile } from '../../types';
+
+interface RenewalsManagementProps {
+  user: UserProfile | null;
+}
+
+export default function RenewalsManagement({ user }: RenewalsManagementProps) {
+  const { can } = usePermissions(user);
   const [renewals, setRenewals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -109,7 +117,7 @@ export default function RenewalsManagement() {
                     {format(new Date(renewal.createdAt), 'MMM d, yyyy')}
                   </td>
                   <td className="p-4">
-                    {renewal.status === 'PENDING' && (
+                    {renewal.status === 'PENDING' && can('MEMBERSHIP', 'UPDATE') && (
                       <button
                         onClick={() => setSelectedRenewal(renewal)}
                         className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"

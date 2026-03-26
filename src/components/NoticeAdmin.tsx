@@ -207,7 +207,11 @@ export const NoticeAdmin: React.FC<Props> = ({ user }) => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Notice & Popup Center</h1>
-          <p className="text-gray-500">Manage internal, public, and popup notices.</p>
+          <p className="text-gray-500">
+            {can('NOTICE_POPUP', 'CREATE') 
+              ? 'Manage internal, public, and popup notices.'
+              : 'View internal, public, and popup notices.'}
+          </p>
         </div>
         {can('NOTICE_POPUP', 'CREATE') && (
           <button 

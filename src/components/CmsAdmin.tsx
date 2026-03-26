@@ -4,13 +4,30 @@ import { Plus, Search, Edit2, Trash2, Eye, FileText, Globe, CheckCircle, Clock, 
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
-export const CmsAdmin: React.FC = () => {
+import { usePermissions } from '../hooks/usePermissions';
+import { UserProfile } from '../types';
+
+interface CmsAdminProps {
+  user: UserProfile | null;
+}
+
+export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
+  const { can } = usePermissions(user);
+
+  const availableTabs = [
+    { id: 'pages', permission: { module: 'CMS', action: 'VIEW' } },
+    { id: 'posts', permission: { module: 'CMS', action: 'VIEW' } },
+    { id: 'sections', permission: { module: 'CMS', action: 'VIEW' } },
+  ].filter(tab => can(tab.permission.module as any, tab.permission.action as any));
+
   const [pages, setPages] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pages' | 'posts' | 'sections'>('pages');
+  const [activeTab, setActiveTab] = useState<'pages' | 'posts' | 'sections'>(
+    (availableTabs[0]?.id as any) || 'pages'
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -185,6 +202,7 @@ export const CmsAdmin: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Content Management System</h1>
           <p className="text-gray-500">Manage your website pages, news, and statements.</p>
         </div>
+        {can('CMS', 'CREATE') && (
           <button 
             onClick={() => handleOpenModal()}
             className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 font-bold"
@@ -192,6 +210,7 @@ export const CmsAdmin: React.FC = () => {
             <Plus size={20} />
             Create New {activeTab === 'pages' ? 'Page' : activeTab === 'posts' ? 'Post' : 'Section'}
           </button>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
@@ -340,20 +359,24 @@ export const CmsAdmin: React.FC = () => {
                         <Eye size={18} />
                       </a>
                     )}
-                    <button 
-                      onClick={() => handleOpenModal(item)}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                      title="Edit"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button 
-                      onClick={() => setDeleteConfirm({ id: item.id, title: item.title })}
-                      className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                      title="Delete"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    {can('CMS', 'UPDATE') && (
+                      <button 
+                        onClick={() => handleOpenModal(item)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        title="Edit"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                    )}
+                    {can('CMS', 'DELETE') && (
+                      <button 
+                        onClick={() => setDeleteConfirm({ id: item.id, title: item.title })}
+                        className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

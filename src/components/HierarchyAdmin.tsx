@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { OrganizationUnit, OrgCommittee, OrgOfficeBearer, Office } from '../types';
+import { OrganizationUnit, OrgCommittee, OrgOfficeBearer, Office, UserProfile } from '../types';
 import { Plus, ChevronRight, ChevronDown, MapPin, Building2, Users, Edit2, Trash2, X, Loader2, AlertCircle, CheckCircle2, Shield, UserPlus, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface HierarchyAdminProps {
-  user?: any;
+  user?: UserProfile | null;
 }
 
 export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [units, setUnits] = useState<OrganizationUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -364,7 +366,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
           <h1 className="text-2xl font-bold text-gray-900">Organization Hierarchy</h1>
           <p className="text-gray-500 text-sm">Manage structural units and geographic organizational scope.</p>
         </div>
-        {isAdmin && (
+        {isAdmin && can('HIERARCHY', 'CREATE') && (
           <button 
             onClick={() => openAddModal(null)}
             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 shadow-sm transition-all"

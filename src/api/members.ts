@@ -65,15 +65,7 @@ router.get('/:id', authenticate, checkPermission('MEMBERSHIP', 'VIEW', async (re
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const member = await prisma.member.findUnique({
-      where: { id },
-      include: { 
-        orgUnit: true, 
-        user: { select: { email: true, displayName: true, phoneNumber: true } },
-        verifiedBy: { select: { displayName: true } },
-        approvedBy: { select: { displayName: true } }
-      }
-    });
+    const member = await membershipService.getMemberById(id);
     if (!member) return res.status(404).json({ error: 'Member not found' });
     res.json(member);
   } catch (error) {
@@ -87,10 +79,10 @@ router.get('/:id', authenticate, checkPermission('MEMBERSHIP', 'VIEW', async (re
 router.get('/', authenticate, checkPermission('MEMBERSHIP', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const { status, unitId, isEscalated } = req.query;
-    const query: any = {};
-    if (status) query.status = status;
-    if (isEscalated === 'true') query.isEscalated = true;
-    if (isEscalated === 'false') query.isEscalated = false;
+    const filters: any = {};
+    if (status) filters.status = status as string;
+    if (isEscalated === 'true') filters.isEscalated = true;
+    if (isEscalated === 'false') filters.isEscalated = false;
     
     // Hierarchy Scoping
     const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
@@ -100,21 +92,12 @@ router.get('/', authenticate, checkPermission('MEMBERSHIP', 'VIEW'), async (req:
       if (!hasAccess) return res.status(403).json({ error: 'Access denied to this unit' });
       
       const subUnitIds = await hierarchyService.getSubUnitIds(unitId as string);
-      query.orgUnitId = { in: subUnitIds };
+      filters.orgUnitIds = subUnitIds;
     } else if (accessibleUnitIds) {
-      query.orgUnitId = { in: accessibleUnitIds };
+      filters.orgUnitIds = accessibleUnitIds;
     }
 
-    const members = await prisma.member.findMany({
-      where: query,
-      include: {
-        orgUnit: { select: { name: true, level: true } },
-        user: { select: { email: true, displayName: true, phoneNumber: true } },
-        verifiedBy: { select: { displayName: true } },
-        approvedBy: { select: { displayName: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const members = await membershipService.getMembers(filters);
     res.json(members);
   } catch (error: any) {
     console.error('Detailed error in GET /api/v1/members:', {

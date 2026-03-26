@@ -16,6 +16,11 @@ export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
   const [candidates, setCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'manage'>('overview');
+
+  const availableTabs = (['overview', 'manage'] as const).filter(tab => {
+    if (tab === 'manage') return can('FUNDRAISING', 'UPDATE');
+    return true;
+  });
   const [isFundraiserModalOpen, setIsFundraiserModalOpen] = useState(false);
   const [newFundraiser, setNewFundraiser] = useState({
     title: '',

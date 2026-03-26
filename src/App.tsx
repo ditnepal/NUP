@@ -36,6 +36,7 @@ import { NoticePopup } from './components/NoticePopup';
 import { Toaster } from 'sonner';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
+import { usePermissions } from './hooks/usePermissions';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo } from 'lucide-react';
 
 type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
@@ -51,6 +52,7 @@ export default function App() {
   const [initialMobile, setInitialMobile] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { can } = usePermissions(user);
   
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [supporters, setSupporters] = useState<Supporter[]>([]);
@@ -219,32 +221,32 @@ export default function App() {
   }
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'FINANCE_OFFICER', 'BOOTH_COORDINATOR'] },
-    { id: 'member-dashboard', label: 'Member Portal', icon: Award, roles: ['MEMBER'] },
-    { id: 'warroom', label: 'War Room', icon: ShieldAlert, roles: ['ADMIN', 'STAFF'] },
-    { id: 'campaigns', label: 'Campaigns', icon: Megaphone, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
-    { id: 'supporters', label: 'Supporters', icon: Users, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'] },
-    { id: 'booths', label: 'Booths', icon: MapPin, roles: ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR'] },
-    { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph, roles: ['ADMIN', 'STAFF'] },
-    { id: 'membership', label: 'Membership', icon: UserPlus, roles: ['ADMIN', 'STAFF'] },
-    { id: 'renewals', label: 'Renewals', icon: Clock, roles: ['ADMIN', 'STAFF'] },
-    { id: 'fundraiser', label: 'Fundraiser', icon: Heart, roles: ['ADMIN', 'STAFF', 'FINANCE_OFFICER'] },
-    { id: 'volunteers', label: 'Volunteers', icon: Heart, roles: ['ADMIN', 'STAFF'] },
-    { id: 'cms', label: 'CMS', icon: Layout, roles: ['ADMIN', 'STAFF'] },
-    { id: 'documents', label: 'Documents', icon: FileText, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
-    { id: 'communication', label: 'Communication', icon: MessageSquare, roles: ['ADMIN', 'STAFF'] },
-    { id: 'notices', label: 'Notice & Popup', icon: Bell, roles: ['ADMIN', 'STAFF'] },
-    { id: 'training', label: 'Training', icon: GraduationCap, roles: ['ADMIN', 'STAFF', 'MEMBER', 'FIELD_COORDINATOR'] },
-    { id: 'events', label: 'Events', icon: Calendar, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
-    { id: 'finance', label: 'Finance', icon: DollarSign, roles: ['ADMIN', 'FINANCE_OFFICER'] },
-    { id: 'election', label: 'Election', icon: Vote, roles: ['ADMIN', 'STAFF'] },
-    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
-    { id: 'grievances', label: 'Grievances', icon: ShieldAlert, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
-    { id: 'surveys', label: 'Surveys', icon: ClipboardList, roles: ['ADMIN', 'STAFF', 'MEMBER'] },
-    { id: 'pgis', label: 'PGIS', icon: Shield, roles: ['ADMIN', 'STAFF'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, show: can('DASHBOARD', 'VIEW') && user.role !== 'MEMBER' },
+    { id: 'member-dashboard', label: 'Member Portal', icon: Award, show: user.role === 'MEMBER' },
+    { id: 'warroom', label: 'War Room', icon: ShieldAlert, show: can('WAR_ROOM', 'VIEW') },
+    { id: 'campaigns', label: 'Campaigns', icon: Megaphone, show: can('COMMUNICATION', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
+    { id: 'supporters', label: 'Supporters', icon: Users, show: can('SUPPORTERS', 'VIEW') },
+    { id: 'booths', label: 'Booths', icon: MapPin, show: can('BOOTHS', 'VIEW') },
+    { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph, show: can('HIERARCHY', 'VIEW') },
+    { id: 'membership', label: 'Membership', icon: UserPlus, show: can('MEMBERSHIP', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
+    { id: 'renewals', label: 'Renewals', icon: Clock, show: can('MEMBERSHIP', 'RENEW') },
+    { id: 'fundraiser', label: 'Fundraiser', icon: Heart, show: can('FUNDRAISING', 'VIEW') },
+    { id: 'volunteers', label: 'Volunteers', icon: Heart, show: can('SUPPORTERS', 'VIEW') && ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'cms', label: 'CMS', icon: Layout, show: can('CMS', 'VIEW') },
+    { id: 'documents', label: 'Documents', icon: FileText, show: can('CMS', 'VIEW') },
+    { id: 'communication', label: 'Communication', icon: MessageSquare, show: can('COMMUNICATION', 'VIEW') && user.role !== 'MEMBER' },
+    { id: 'notices', label: 'Notice & Popup', icon: Bell, show: can('NOTICE_POPUP', 'VIEW') },
+    { id: 'training', label: 'Training', icon: GraduationCap, show: can('TRAINING', 'VIEW') },
+    { id: 'events', label: 'Events', icon: Calendar, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'finance', label: 'Finance', icon: DollarSign, show: can('FINANCE', 'VIEW') },
+    { id: 'election', label: 'Election', icon: Vote, show: can('ELECTION', 'VIEW') },
+    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' },
+    { id: 'grievances', label: 'Grievances', icon: ShieldAlert, show: can('GRIEVANCES', 'VIEW') },
+    { id: 'surveys', label: 'Surveys', icon: ClipboardList, show: can('SURVEYS', 'VIEW') },
+    { id: 'pgis', label: 'PGIS', icon: Shield, show: can('PGIS', 'VIEW') },
   ];
 
-  const filteredNavItems = navItems.filter(item => !item.roles || item.roles.includes(user.role));
+  const filteredNavItems = navItems.filter(item => item.show);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
@@ -693,20 +695,20 @@ export default function App() {
         )}
 
         {currentView === 'campaigns' && <CampaignsView campaigns={campaigns} />}
-        {currentView === 'supporters' && <SupportersView supporters={supporters} onRefresh={fetchData} />}
-        {currentView === 'booths' && <BoothsView booths={booths} onRefresh={fetchData} />}
+        {currentView === 'supporters' && <SupportersView supporters={supporters} onRefresh={fetchData} user={user} />}
+        {currentView === 'booths' && <BoothsView booths={booths} onRefresh={fetchData} user={user} />}
         {currentView === 'hierarchy' && <HierarchyAdmin user={user} />}
         {currentView === 'membership' && <MembershipAdmin user={user} />}
-        {currentView === 'renewals' && <RenewalsManagement />}
+        {currentView === 'renewals' && <RenewalsManagement user={user} />}
         {currentView === 'volunteers' && <VolunteerAdmin />}
-        {currentView === 'cms' && <CmsAdmin />}
-        {currentView === 'documents' && <DocumentsView />}
+        {currentView === 'cms' && <CmsAdmin user={user} />}
+        {currentView === 'documents' && <DocumentsView user={user} />}
         {currentView === 'communication' && <CommunicationAdmin user={user} />}
         {currentView === 'notices' && <NoticeAdmin user={user} />}
         {currentView === 'training' && (
-          (user.role === 'ADMIN' || user.role === 'STAFF') ? <TrainingAdmin user={user} /> : <TrainingPortal user={user} />
+          (can('TRAINING', 'CREATE') || can('TRAINING', 'UPDATE')) ? <TrainingAdmin user={user} /> : <TrainingPortal user={user} />
         )}
-        {currentView === 'events' && <AppEventsAdmin />}
+        {currentView === 'events' && <AppEventsAdmin user={user} />}
         {currentView === 'finance' && <FinanceAdmin user={user} />}
         {currentView === 'fundraiser' && <FundraiserAdmin user={user} />}
         {currentView === 'election' && <ElectionAdmin user={user} key="election-admin" />}

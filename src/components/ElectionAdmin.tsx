@@ -15,7 +15,8 @@ import {
   FileText,
   Edit2,
   Trash2,
-  X
+  X,
+  History
 } from 'lucide-react';
 import { Candidate, Constituency } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -33,7 +34,20 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
   const [pollingStations, setPollingStations] = useState<any[]>([]);
   const [booths, setBooths] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'incidents' | 'results' | 'readiness' | 'constituencies' | 'cycles' | 'pollingStations'>(defaultTab as any);
+  const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'incidents' | 'results' | 'readiness' | 'constituencies' | 'cycles' | 'pollingStations'>(
+    defaultTab ? (defaultTab as any) : (can('ELECTION', 'UPDATE') ? 'overview' : 'results')
+  );
+
+  const availableTabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'candidates', label: 'Candidates' },
+    { id: 'constituencies', label: 'Constituencies', adminOnly: true },
+    { id: 'pollingStations', label: 'Polling Stations', adminOnly: true },
+    { id: 'cycles', label: 'Cycles', adminOnly: true },
+    { id: 'incidents', label: 'Incidents' },
+    { id: 'results', label: 'Results' },
+    { id: 'readiness', label: 'Booth Readiness', adminOnly: true },
+  ].filter(tab => !tab.adminOnly || can('ELECTION', 'UPDATE'));
   
   // Modal state
   const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false);
@@ -626,16 +640,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-100 overflow-x-auto no-scrollbar pb-1">
-        {[
-          { id: 'overview', label: 'Overview' },
-          { id: 'candidates', label: 'Candidates' },
-          { id: 'constituencies', label: 'Constituencies' },
-          { id: 'pollingStations', label: 'Polling Stations' },
-          { id: 'cycles', label: 'Cycles' },
-          { id: 'incidents', label: 'Incidents' },
-          { id: 'results', label: 'Results' },
-          { id: 'readiness', label: 'Booth Readiness' },
-        ].map((tab) => (
+        {availableTabs.map((tab) => (
           <button 
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
@@ -1670,6 +1675,32 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-32 resize-none"
                   />
                 </div>
+
+                {/* Audit Trail */}
+                {editingIncident?.auditTrail && editingIncident.auditTrail.length > 0 && (
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <History size={14} className="text-slate-400" />
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Incident History</h4>
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                      {editingIncident.auditTrail.map((log: any) => (
+                        <div key={log.id} className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px]">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-bold text-slate-700 uppercase">{log.action}</span>
+                            <span className="text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+                          </div>
+                          <p className="text-slate-600 mb-1">
+                            {log.details && typeof log.details === 'object' 
+                              ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
+                              : log.details}
+                          </p>
+                          <p className="text-slate-400 italic">By: {log.userDisplayName || log.userId}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
@@ -1760,6 +1791,32 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     <span className="text-sm font-bold text-slate-700">Verified</span>
                   </label>
                 </div>
+
+                {/* Audit Trail */}
+                {editingResult?.auditTrail && editingResult.auditTrail.length > 0 && (
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <History size={14} className="text-slate-400" />
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Result History</h4>
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                      {editingResult.auditTrail.map((log: any) => (
+                        <div key={log.id} className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px]">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-bold text-slate-700 uppercase">{log.action}</span>
+                            <span className="text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+                          </div>
+                          <p className="text-slate-600 mb-1">
+                            {log.details && typeof log.details === 'object' 
+                              ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
+                              : log.details}
+                          </p>
+                          <p className="text-slate-400 italic">By: {log.userDisplayName || log.userId}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
@@ -1814,6 +1871,32 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     placeholder="Describe current readiness status, missing equipment, etc."
                   />
                 </div>
+
+                {/* Audit Trail */}
+                {editingBooth?.auditTrail && editingBooth.auditTrail.length > 0 && (
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <History size={14} className="text-slate-400" />
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Readiness History</h4>
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                      {editingBooth.auditTrail.map((log: any) => (
+                        <div key={log.id} className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px]">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-bold text-slate-700 uppercase">{log.action}</span>
+                            <span className="text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+                          </div>
+                          <p className="text-slate-600 mb-1">
+                            {log.details && typeof log.details === 'object' 
+                              ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
+                              : log.details}
+                          </p>
+                          <p className="text-slate-400 italic">By: {log.userDisplayName || log.userId}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">

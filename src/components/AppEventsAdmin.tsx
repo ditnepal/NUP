@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { AppEvent } from '../types';
+import { AppEvent, UserProfile } from '../types';
 import { api } from '../lib/api';
+import { usePermissions } from '../hooks/usePermissions';
 
-export const AppEventsAdmin: React.FC = () => {
+interface AppEventsAdminProps {
+  user: UserProfile;
+}
+
+export const AppEventsAdmin: React.FC<AppEventsAdminProps> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -25,6 +31,7 @@ export const AppEventsAdmin: React.FC = () => {
   };
 
   const handleCreate = async () => {
+    if (!can('COMMUNICATION', 'CREATE')) return;
     try {
       await api.post('/app-events', newEvent);
       setShowForm(false);
@@ -35,6 +42,7 @@ export const AppEventsAdmin: React.FC = () => {
   };
 
   const handleToggle = async (id: string, updates: Partial<AppEvent>) => {
+    if (!can('COMMUNICATION', 'UPDATE')) return;
     try {
       await api.patch(`/app-events/${id}`, updates);
       fetchEvents();
@@ -49,10 +57,14 @@ export const AppEventsAdmin: React.FC = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Events Management</h1>
-        <button onClick={() => setShowForm(!showForm)} className="bg-emerald-600 text-white px-4 py-2 rounded">Create Event</button>
+        {can('COMMUNICATION', 'CREATE') && (
+          <button onClick={() => setShowForm(!showForm)} className="bg-emerald-600 text-white px-4 py-2 rounded">
+            {showForm ? 'Cancel' : 'Create Event'}
+          </button>
+        )}
       </div>
       
-      {showForm && (
+      {showForm && can('COMMUNICATION', 'CREATE') && (
         <div className="bg-white p-4 mb-4 border rounded">
           <input placeholder="Title" className="border p-2 w-full mb-2" onChange={e => setNewEvent({...newEvent, title: e.target.value})} />
           <input placeholder="Summary" className="border p-2 w-full mb-2" onChange={e => setNewEvent({...newEvent, summary: e.target.value})} />
@@ -77,7 +89,7 @@ export const AppEventsAdmin: React.FC = () => {
             <th className="py-2">Title</th>
             <th className="py-2">Status</th>
             <th className="py-2">Audience</th>
-            <th className="py-2">Actions</th>
+            {can('COMMUNICATION', 'UPDATE') && <th className="py-2">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -86,14 +98,16 @@ export const AppEventsAdmin: React.FC = () => {
               <td className="py-2">{event.title}</td>
               <td className="py-2">{event.status}</td>
               <td className="py-2">{event.audience}</td>
-              <td className="py-2">
-                <button onClick={() => handleToggle(event.id, { status: event.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED' })} className="text-emerald-600 mr-2">
-                  {event.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
-                </button>
-                <button onClick={() => handleToggle(event.id, { isPinned: !event.isPinned })} className="text-emerald-600">
-                  {event.isPinned ? 'Unpin' : 'Pin'}
-                </button>
-              </td>
+              {can('COMMUNICATION', 'UPDATE') && (
+                <td className="py-2">
+                  <button onClick={() => handleToggle(event.id, { status: event.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED' })} className="text-emerald-600 mr-2">
+                    {event.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
+                  </button>
+                  <button onClick={() => handleToggle(event.id, { isPinned: !event.isPinned })} className="text-emerald-600">
+                    {event.isPinned ? 'Unpin' : 'Pin'}
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

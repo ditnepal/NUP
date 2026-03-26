@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Plus, Search, Loader2, Upload, FileText, Trash2, X } from 'lucide-react';
-import { PartyDocument } from '../types';
+import { PartyDocument, UserProfile } from '../types';
 import { DocumentCard } from './ui/DocumentCard';
 import { DocumentTable } from './ui/DocumentTable';
 import { ConfirmationModal } from './ConfirmationModal';
+import { usePermissions } from '../hooks/usePermissions';
 
-export const DocumentsView: React.FC = () => {
+interface DocumentsViewProps {
+  user: UserProfile;
+}
+
+export const DocumentsView: React.FC<DocumentsViewProps> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [documents, setDocuments] = useState<PartyDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,12 +38,13 @@ export const DocumentsView: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    if (!can('CMS', 'DELETE')) return;
     setDocumentToDelete(id);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!documentToDelete) return;
+    if (!documentToDelete || !can('CMS', 'DELETE')) return;
     try {
       await api.delete(`/documents/${documentToDelete}`);
       fetchDocuments();
@@ -63,13 +70,15 @@ export const DocumentsView: React.FC = () => {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Documents & Resources</h1>
           <p className="text-slate-500 mt-2">Manage and access official party documents.</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
-        >
-          <Plus size={20} />
-          Upload Document
-        </button>
+        {can('CMS', 'CREATE') && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
+          >
+            <Plus size={20} />
+            Upload Document
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -103,11 +112,11 @@ export const DocumentsView: React.FC = () => {
           </div>
         ) : filteredDocuments.length > 0 ? (
           viewMode === 'table' ? (
-            <DocumentTable documents={filteredDocuments} onDelete={handleDelete} />
+            <DocumentTable documents={filteredDocuments} onDelete={can('CMS', 'DELETE') ? handleDelete : undefined} />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
               {filteredDocuments.map(doc => (
-                <DocumentCard key={doc.id} document={doc} onDelete={handleDelete} />
+                <DocumentCard key={doc.id} document={doc} onDelete={can('CMS', 'DELETE') ? handleDelete : undefined} />
               ))}
             </div>
           )
@@ -117,7 +126,7 @@ export const DocumentsView: React.FC = () => {
       </div>
       
       {/* Upload Modal */}
-      {isModalOpen && (
+      {isModalOpen && can('CMS', 'CREATE') && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl">
             <div className="flex justify-between items-center mb-6">

@@ -299,11 +299,14 @@ router.post('/incidents', authenticate, checkPermission('ELECTION', 'CREATE', (r
 router.put('/incidents/:id', authenticate, checkPermission('ELECTION', 'UPDATE', async (req) => {
   const incident = await prisma.electionIncident.findUnique({ where: { id: req.params.id } });
   return incident?.orgUnitId || undefined;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const data = incidentSchema.partial().parse(req.body);
-    const incident = await electionService.updateIncident(id, data);
+    const incident = await electionService.updateIncident(id, {
+      ...data,
+      userId: req.user?.id
+    });
     res.json(incident);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -313,10 +316,10 @@ router.put('/incidents/:id', authenticate, checkPermission('ELECTION', 'UPDATE',
 router.delete('/incidents/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
   const incident = await prisma.electionIncident.findUnique({ where: { id: req.params.id } });
   return incident?.orgUnitId || undefined;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await electionService.deleteIncident(id);
+    await electionService.deleteIncident(id, req.user?.id);
     res.json({ message: 'Incident deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -343,6 +346,7 @@ router.post('/results', authenticate, checkPermission('ELECTION', 'CREATE', (req
     const result = await electionService.enterResult({
       ...data,
       verifiedById: data.verified ? req.user?.id : undefined,
+      userId: req.user?.id
     });
     res.status(201).json(result);
   } catch (error: any) {
@@ -360,6 +364,7 @@ router.put('/results/:id', authenticate, checkPermission('ELECTION', 'UPDATE', a
     const result = await electionService.updateResult(id, {
       ...data,
       verifiedById: data.verified ? req.user?.id : undefined,
+      userId: req.user?.id
     });
     res.json(result);
   } catch (error: any) {
@@ -370,10 +375,10 @@ router.put('/results/:id', authenticate, checkPermission('ELECTION', 'UPDATE', a
 router.delete('/results/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
   const result = await prisma.electionResult.findUnique({ where: { id: req.params.id } });
   return result?.orgUnitId || undefined;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await electionService.deleteResult(id);
+    await electionService.deleteResult(id, req.user?.id);
     res.json({ message: 'Result deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -392,14 +397,17 @@ router.get('/booth-readiness', authenticate, checkPermission('ELECTION', 'VIEW')
   }
 });
 
-router.put('/booths/:id/readiness', authenticate, checkPermission('ELECTION', 'APPROVE'), async (req, res) => {
+router.put('/booths/:id/readiness', authenticate, checkPermission('ELECTION', 'APPROVE'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const data = z.object({
       status: z.string().optional(),
       readinessNote: z.string().optional(),
     }).parse(req.body);
-    const booth = await electionService.updateBoothReadiness(id, data);
+    const booth = await electionService.updateBoothReadiness(id, {
+      ...data,
+      userId: req.user?.id
+    });
     res.json(booth);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

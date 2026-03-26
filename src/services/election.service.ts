@@ -322,7 +322,7 @@ export class ElectionService {
     const where: any = { cycleId };
     if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
 
-    return prisma.electionIncident.findMany({
+    const incidents = await prisma.electionIncident.findMany({
       where,
       include: {
         reporter: { select: { displayName: true, email: true } },
@@ -331,21 +331,62 @@ export class ElectionService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return Promise.all(incidents.map(async (incident) => {
+      const logs = await auditService.getLogsForEntity('ElectionIncident', incident.id);
+      return {
+        ...incident,
+        auditTrail: logs.map(l => ({
+          id: l.id,
+          action: l.action,
+          userId: l.userId || '',
+          userDisplayName: l.user?.displayName || l.userId,
+          details: l.details ? JSON.parse(l.details) : undefined,
+          timestamp: l.timestamp.toISOString(),
+        })),
+      };
+    }));
   }
 
   async updateIncident(id: string, data: {
     status?: string;
     severity?: string;
     description?: string;
+    userId?: string;
   }) {
-    return prisma.electionIncident.update({
+    const { userId, ...updateData } = data;
+    const incident = await prisma.electionIncident.update({
       where: { id },
-      data,
+      data: updateData,
     });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'ELECTION_INCIDENT_UPDATED',
+        entityType: 'ElectionIncident',
+        entityId: incident.id,
+        details: updateData,
+      });
+    }
+
+    return incident;
   }
 
-  async deleteIncident(id: string) {
-    return prisma.electionIncident.delete({ where: { id } });
+  async deleteIncident(id: string, userId?: string) {
+    const incident = await prisma.electionIncident.delete({ where: { id } });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'ELECTION_INCIDENT_DELETED',
+        entityType: 'ElectionIncident',
+        entityId: id,
+        details: { type: incident.type, description: incident.description },
+      });
+    }
+
+    return incident;
   }
 
   // --- Results (High Sensitivity) ---
@@ -358,35 +399,47 @@ export class ElectionService {
     isWinner?: boolean;
     verifiedById?: string;
     orgUnitId?: string;
+    userId?: string;
   }) {
+    const { userId, ...resultData } = data;
     const result = await prisma.electionResult.upsert({
       where: {
         cycleId_boothId_candidateId: {
-          cycleId: data.cycleId,
-          boothId: data.boothId || 'GLOBAL', // Fallback if booth is null
-          candidateId: data.candidateId,
+          cycleId: resultData.cycleId,
+          boothId: resultData.boothId || 'GLOBAL', // Fallback if booth is null
+          candidateId: resultData.candidateId,
         },
       },
       update: {
-        votesReceived: data.votesReceived,
-        isWinner: data.isWinner,
-        verifiedById: data.verifiedById,
-        verifiedAt: data.verifiedById ? new Date() : null,
-        orgUnitId: data.orgUnitId,
+        votesReceived: resultData.votesReceived,
+        isWinner: resultData.isWinner,
+        verifiedById: resultData.verifiedById,
+        verifiedAt: resultData.verifiedById ? new Date() : null,
+        orgUnitId: resultData.orgUnitId,
       },
       create: {
-        ...data,
-        boothId: data.boothId || 'GLOBAL',
+        ...resultData,
+        boothId: resultData.boothId || 'GLOBAL',
       },
     });
 
-    if (data.verifiedById) {
+    if (userId) {
       await auditService.log({
-        userId: data.verifiedById,
+        userId,
+        action: 'ELECTION_RESULT_ENTERED',
+        entityType: 'ElectionResult',
+        entityId: result.id,
+        details: { votesReceived: resultData.votesReceived, candidateId: resultData.candidateId },
+      });
+    }
+
+    if (resultData.verifiedById) {
+      await auditService.log({
+        userId: resultData.verifiedById,
         action: 'ELECTION_RESULT_VERIFIED',
         entityType: 'ElectionResult',
         entityId: result.id,
-        details: `Verified result for candidate ${data.candidateId} in cycle ${data.cycleId}`,
+        details: `Verified result for candidate ${resultData.candidateId} in cycle ${resultData.cycleId}`,
       });
     }
 
@@ -398,7 +451,7 @@ export class ElectionService {
     if (constituencyId) where.constituencyId = constituencyId;
     if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
 
-    return prisma.electionResult.findMany({
+    const results = await prisma.electionResult.findMany({
       where,
       include: {
         candidate: true,
@@ -407,35 +460,100 @@ export class ElectionService {
       },
       orderBy: { votesReceived: 'desc' },
     });
+
+    return Promise.all(results.map(async (result) => {
+      const logs = await auditService.getLogsForEntity('ElectionResult', result.id);
+      return {
+        ...result,
+        auditTrail: logs.map(l => ({
+          id: l.id,
+          action: l.action,
+          userId: l.userId || '',
+          userDisplayName: l.user?.displayName || l.userId,
+          details: l.details ? JSON.parse(l.details) : undefined,
+          timestamp: l.timestamp.toISOString(),
+        })),
+      };
+    }));
   }
 
   async updateResult(id: string, data: {
     votesReceived?: number;
     isWinner?: boolean;
     verifiedById?: string;
+    userId?: string;
   }) {
-    return prisma.electionResult.update({
+    const { userId, ...updateData } = data;
+    const result = await prisma.electionResult.update({
       where: { id },
       data: {
-        ...data,
-        verifiedAt: data.verifiedById ? new Date() : undefined,
+        ...updateData,
+        verifiedAt: updateData.verifiedById ? new Date() : undefined,
       },
     });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'ELECTION_RESULT_UPDATED',
+        entityType: 'ElectionResult',
+        entityId: result.id,
+        details: updateData,
+      });
+    }
+
+    if (updateData.verifiedById) {
+      await auditService.log({
+        userId: updateData.verifiedById,
+        action: 'ELECTION_RESULT_VERIFIED',
+        entityType: 'ElectionResult',
+        entityId: result.id,
+        details: `Verified result via update`,
+      });
+    }
+
+    return result;
   }
 
-  async deleteResult(id: string) {
-    return prisma.electionResult.delete({ where: { id } });
+  async deleteResult(id: string, userId?: string) {
+    const result = await prisma.electionResult.delete({ where: { id } });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'ELECTION_RESULT_DELETED',
+        entityType: 'ElectionResult',
+        entityId: id,
+        details: { candidateId: result.candidateId, votes: result.votesReceived },
+      });
+    }
+
+    return result;
   }
 
   // --- Analytics & Readiness ---
   async updateBoothReadiness(id: string, data: {
     status?: string;
     readinessNote?: string;
+    userId?: string;
   }) {
-    return prisma.booth.update({
+    const { userId, ...updateData } = data;
+    const booth = await prisma.booth.update({
       where: { id },
-      data,
+      data: updateData,
     });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'ELECTION_BOOTH_READINESS_UPDATED',
+        entityType: 'Booth',
+        entityId: booth.id,
+        details: updateData,
+      });
+    }
+
+    return booth;
   }
 
   async getBoothReadiness(district?: string, orgUnitIds?: string[] | null) {
@@ -456,15 +574,29 @@ export class ElectionService {
       },
     });
 
-    return booths.map((b) => ({
-      id: b.id,
-      name: b.name,
-      status: b.status,
-      teamCount: b._count.team,
-      deploymentCount: b._count.deployments,
-      outreachCount: b._count.outreach,
-      readinessScore: this.calculateReadiness(b),
+    const boothsWithAudit = await Promise.all(booths.map(async (b) => {
+      const logs = await auditService.getLogsForEntity('Booth', b.id);
+      return {
+        id: b.id,
+        name: b.name,
+        status: b.status,
+        readinessNote: b.readinessNote,
+        teamCount: b._count.team,
+        deploymentCount: b._count.deployments,
+        outreachCount: b._count.outreach,
+        readinessScore: this.calculateReadiness(b),
+        auditTrail: logs.map(l => ({
+          id: l.id,
+          action: l.action,
+          userId: l.userId || '',
+          userDisplayName: l.user?.displayName || l.userId,
+          details: l.details ? JSON.parse(l.details) : undefined,
+          timestamp: l.timestamp.toISOString(),
+        })),
+      };
     }));
+
+    return boothsWithAudit;
   }
 
   private calculateReadiness(booth: any) {

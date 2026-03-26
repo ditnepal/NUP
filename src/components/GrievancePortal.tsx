@@ -31,6 +31,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
   const [categories, setCategories] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'mine'>('mine');
   
   const [showNewModal, setShowNewModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -140,6 +141,11 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
     }
   };
 
+  const filteredGrievances = grievances.filter(g => {
+    if (activeFilter === 'mine') return g.reporter.id === user.id;
+    return true;
+  });
+
   return (
     <div className="p-4 md:p-6 w-full max-w-screen-2xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -148,6 +154,22 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
           <p className="text-slate-500 mt-2">Submit and track public complaints and internal issues.</p>
         </div>
         <div className="flex items-center gap-3">
+          {isAdminOrStaff && (
+            <div className="flex bg-slate-100 p-1 rounded-xl mr-2">
+              <button 
+                onClick={() => setActiveFilter('mine')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeFilter === 'mine' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                My Grievances
+              </button>
+              <button 
+                onClick={() => setActiveFilter('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                All Grievances
+              </button>
+            </div>
+          )}
           {can('GRIEVANCES', 'UPDATE') && (
             <button 
               onClick={() => setShowCategoryModal(true)}
@@ -206,11 +228,11 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500">Loading grievances...</td>
                 </tr>
-              ) : grievances.length === 0 ? (
+              ) : filteredGrievances.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500">No grievances found.</td>
                 </tr>
-              ) : grievances.map((g) => (
+              ) : filteredGrievances.map((g) => (
                 <motion.tr 
                   key={g.id}
                   initial={{ opacity: 0 }}
@@ -498,6 +520,41 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                     <p className="text-sm text-slate-500 italic">No responses yet.</p>
                   )}
                 </div>
+
+                {/* Audit Trail Section */}
+                {selectedGrievance.auditTrail && selectedGrievance.auditTrail.length > 0 && (
+                  <div className="space-y-4 pt-6 border-t border-slate-100">
+                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 uppercase tracking-widest opacity-60">
+                      <History size={14} />
+                      Operational Audit Trail
+                    </h3>
+                    <div className="space-y-4">
+                      {selectedGrievance.auditTrail.map((log, idx) => (
+                        <div key={idx} className="flex gap-3 text-xs">
+                          <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5" />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start mb-0.5">
+                              <span className="font-bold text-slate-900">{log.action.replace(/_/g, ' ')}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {new Date(log.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="text-slate-500 line-clamp-2">
+                              {log.details && typeof log.details === 'object' 
+                                ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
+                                : 'System recorded action'}
+                            </div>
+                            {log.user && (
+                              <div className="text-[10px] text-slate-600 font-medium mt-1">
+                                by {log.user.displayName || log.user.email}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Add Response Form */}
                 {selectedGrievance.status !== 'CLOSED' && (

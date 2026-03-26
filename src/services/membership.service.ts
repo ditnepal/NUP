@@ -124,6 +124,14 @@ export class MembershipService extends BaseService {
       }
     });
 
+    await auditService.log({
+      action: 'MEMBERSHIP_VERIFIED',
+      userId: verifierId,
+      entityType: 'Member',
+      entityId: member.id,
+      details: { note }
+    });
+
     await notificationService.notify({
       userId: member.userId || '', // If linked to user
       title: 'Membership Verified',
@@ -211,10 +219,19 @@ export class MembershipService extends BaseService {
     // For now, we simulate it with a random string.
     const qrCodeData = `QR-${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
     
-    return await this.db.member.update({
+    const member = await this.db.member.update({
       where: { id: memberId },
       data: { qrCodeData }
     });
+
+    await auditService.log({
+      action: 'MEMBERSHIP_CARD_GENERATED',
+      entityType: 'Member',
+      entityId: member.id,
+      details: { qrCodeData }
+    });
+
+    return member;
   }
 
   /**
@@ -224,23 +241,41 @@ export class MembershipService extends BaseService {
     const expiryDate = new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
-    return await this.db.member.update({
+    const member = await this.db.member.update({
       where: { id: memberId },
       data: {
         expiryDate,
         status: 'ACTIVE'
       }
     });
+
+    await auditService.log({
+      action: 'MEMBERSHIP_RENEWED',
+      entityType: 'Member',
+      entityId: member.id,
+      details: { newExpiryDate: expiryDate }
+    });
+
+    return member;
   }
 
   /**
    * Transfer Membership to another OrgUnit
    */
   async transfer(memberId: string, newOrgUnitId: string) {
-    return await this.db.member.update({
+    const member = await this.db.member.update({
       where: { id: memberId },
       data: { orgUnitId: newOrgUnitId }
     });
+
+    await auditService.log({
+      action: 'MEMBERSHIP_TRANSFERRED',
+      entityType: 'Member',
+      entityId: member.id,
+      details: { newOrgUnitId }
+    });
+
+    return member;
   }
 
   /**
@@ -252,13 +287,22 @@ export class MembershipService extends BaseService {
     const history = JSON.parse(member.suspensionHistory || '[]');
     history.push({ reason, date: new Date() });
 
-    return await this.db.member.update({
+    const updatedMember = await this.db.member.update({
       where: { id: memberId },
       data: {
         status: 'SUSPENDED',
         suspensionHistory: JSON.stringify(history)
       }
     });
+
+    await auditService.log({
+      action: 'MEMBERSHIP_SUSPENDED',
+      entityType: 'Member',
+      entityId: member.id,
+      details: { reason }
+    });
+
+    return updatedMember;
   }
 
   /**
@@ -270,20 +314,29 @@ export class MembershipService extends BaseService {
     const history = JSON.parse(member.terminationHistory || '[]');
     history.push({ reason, date: new Date() });
 
-    return await this.db.member.update({
+    const updatedMember = await this.db.member.update({
       where: { id: memberId },
       data: {
         status: 'TERMINATED',
         terminationHistory: JSON.stringify(history)
       }
     });
+
+    await auditService.log({
+      action: 'MEMBERSHIP_TERMINATED',
+      entityType: 'Member',
+      entityId: member.id,
+      details: { reason }
+    });
+
+    return updatedMember;
   }
 
   /**
    * Reject Membership Application
    */
   async reject(memberId: string, reason?: string) {
-    return await this.db.member.update({
+    const member = await this.db.member.update({
       where: { id: memberId },
       data: {
         status: 'REJECTED',
@@ -291,6 +344,15 @@ export class MembershipService extends BaseService {
         terminationHistory: reason ? JSON.stringify([{ reason, date: new Date() }]) : undefined
       }
     });
+
+    await auditService.log({
+      action: 'MEMBERSHIP_REJECTED',
+      entityType: 'Member',
+      entityId: member.id,
+      details: { reason }
+    });
+
+    return member;
   }
 
   /**
@@ -314,7 +376,7 @@ export class MembershipService extends BaseService {
       throw new Error('No parent unit found to escalate to');
     }
 
-    return await this.db.member.update({
+    const updatedMember = await this.db.member.update({
       where: { id: memberId },
       data: {
         isEscalated: true,
@@ -323,6 +385,80 @@ export class MembershipService extends BaseService {
         escalationNote: note || undefined
       }
     });
+
+    await auditService.log({
+      action: 'MEMBERSHIP_ESCALATED',
+      entityType: 'Member',
+      entityId: member.id,
+      details: { note, escalatedToUnitId: unit.parentId }
+    });
+
+    return updatedMember;
+  }
+
+  async getMembers(filters: { status?: string; isEscalated?: boolean; orgUnitIds?: string[] }) {
+    const query: any = {};
+    if (filters.status) query.status = filters.status;
+    if (filters.isEscalated !== undefined) query.isEscalated = filters.isEscalated;
+    if (filters.orgUnitIds) query.orgUnitId = { in: filters.orgUnitIds };
+
+    const members = await this.db.member.findMany({
+      where: query,
+      include: {
+        orgUnit: { select: { name: true, level: true } },
+        user: { select: { email: true, displayName: true, phoneNumber: true } },
+        verifiedBy: { select: { displayName: true } },
+        approvedBy: { select: { displayName: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Attach audit logs to each member
+    const membersWithLogs = await Promise.all(
+      members.map(async (m) => {
+        const logs = await auditService.getLogsForEntity('Member', m.id);
+        return {
+          ...m,
+          auditTrail: logs.map(l => ({
+            id: l.id,
+            action: l.action,
+            timestamp: l.timestamp.toISOString(),
+            details: l.details ? JSON.parse(l.details) : undefined,
+            userDisplayName: l.user?.displayName || l.userId,
+            userId: l.userId
+          })),
+        };
+      })
+    );
+
+    return membersWithLogs;
+  }
+
+  async getMemberById(id: string) {
+    const member = await this.db.member.findUnique({
+      where: { id },
+      include: { 
+        orgUnit: true, 
+        user: { select: { email: true, displayName: true, phoneNumber: true } },
+        verifiedBy: { select: { displayName: true } },
+        approvedBy: { select: { displayName: true } }
+      }
+    });
+
+    if (!member) return null;
+
+    const logs = await auditService.getLogsForEntity('Member', member.id);
+    return {
+      ...member,
+      auditTrail: logs.map(l => ({
+        id: l.id,
+        action: l.action,
+        timestamp: l.timestamp.toISOString(),
+        details: l.details ? JSON.parse(l.details) : undefined,
+        userDisplayName: l.user?.displayName || l.userId,
+        userId: l.userId
+      })),
+    };
   }
 
   private calculateAge(dob: Date): number {

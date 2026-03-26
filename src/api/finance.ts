@@ -227,22 +227,7 @@ router.get('/analytics', authenticate, checkPermission('FINANCE', 'VIEW'), async
 router.get('/transactions', authenticate, checkPermission('FINANCE', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
-    const where: any = {};
-    if (accessibleUnitIds) {
-      where.orgUnitId = { in: accessibleUnitIds };
-    }
-
-    const transactions = await prisma.transaction.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      include: {
-        donation: { include: { donor: true, campaign: true } },
-        member: true,
-        renewalRequest: true,
-        recordedBy: true,
-        reviewedBy: true,
-      },
-    });
+    const transactions = await financeService.getTransactions(accessibleUnitIds);
     res.json(transactions);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });

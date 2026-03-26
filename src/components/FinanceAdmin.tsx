@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { DollarSign, TrendingUp, Users, PieChart, FileText, Search, RefreshCw, Smartphone, Landmark, Plus, Edit2, Trash2, CheckCircle, XCircle, Globe, Settings } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart, FileText, Search, RefreshCw, Smartphone, Landmark, Plus, Edit2, Trash2, CheckCircle, XCircle, Globe, Settings, History } from 'lucide-react';
 import { StatCard } from './ui/StatCard';
 import { TransactionTable } from './ui/TransactionTable';
 import { FinanceAnalytics, Transaction, PaymentIntegration, UserProfile } from '../types';
@@ -16,7 +16,14 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [integrations, setIntegrations] = useState<PaymentIntegration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'integrations'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'integrations'>(
+    can('FINANCE', 'UPDATE') ? 'overview' : 'transactions'
+  );
+
+  const availableTabs = (['overview', 'transactions', 'integrations'] as const).filter(tab => {
+    if (tab === 'integrations') return can('FINANCE', 'UPDATE');
+    return true;
+  });
   const [transactionSearch, setTransactionSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
@@ -241,7 +248,7 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
       </div>
 
       <div className="flex bg-gray-100 p-1.5 rounded-xl mb-8 w-full md:w-fit overflow-x-auto no-scrollbar shadow-inner border border-gray-200">
-        {(['overview', 'transactions', 'integrations'] as const).map((tab) => (
+        {availableTabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -723,6 +730,41 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                               Reviewed by <span className="font-bold text-gray-900">{selectedTransaction.reviewedBy.displayName}</span> on {new Date(selectedTransaction.reviewedAt!).toLocaleDateString()}
                             </div>
                             <CheckCircle size={16} className="text-emerald-500" />
+                          </div>
+                        )}
+
+                        {/* Audit Trail Section */}
+                        {selectedTransaction.auditTrail && selectedTransaction.auditTrail.length > 0 && (
+                          <div className="space-y-3 pt-4 border-t border-gray-100">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                              <History size={12} />
+                              Operational Audit Trail
+                            </label>
+                            <div className="space-y-3">
+                              {selectedTransaction.auditTrail.map((log, idx) => (
+                                <div key={idx} className="flex gap-3 text-[11px]">
+                                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5" />
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-0.5">
+                                      <span className="font-bold text-gray-900">{log.action.replace(/_/g, ' ')}</span>
+                                      <span className="text-[10px] text-gray-400 font-mono">
+                                        {new Date(log.timestamp).toLocaleString()}
+                                      </span>
+                                    </div>
+                                    <div className="text-gray-500 line-clamp-2">
+                                      {log.details && typeof log.details === 'object' 
+                                        ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
+                                        : 'System recorded action'}
+                                    </div>
+                                    {log.user && (
+                                      <div className="text-[10px] text-emerald-600 font-medium mt-0.5">
+                                        by {log.user.displayName || log.user.email}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
 

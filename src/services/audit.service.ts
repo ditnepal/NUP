@@ -27,6 +27,14 @@ export class AuditService extends BaseService {
       // Fail silently for audit logs to not block main operations
     }
   }
+
+  async getLogsForEntity(entityType: string, entityId: string) {
+    return this.db.auditLog.findMany({
+      where: { entityType, entityId },
+      include: { user: { select: { displayName: true } } },
+      orderBy: { timestamp: 'desc' },
+    });
+  }
 }
 
 export const auditService = new AuditService();

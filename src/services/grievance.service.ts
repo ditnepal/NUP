@@ -51,11 +51,11 @@ export class GrievanceService {
       where.orgUnitId = { in: orgUnitIds };
     }
 
-    return prisma.grievance.findMany({
+    const grievances = await prisma.grievance.findMany({
       where,
       include: {
         category: true,
-        reporter: { select: { displayName: true, email: true } },
+        reporter: { select: { id: true, displayName: true, email: true } },
         assignments: { include: { user: { select: { displayName: true } } } },
         responses: {
           include: { user: { select: { displayName: true } } },
@@ -64,6 +64,24 @@ export class GrievanceService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Attach audit logs to each grievance
+    const grievancesWithAudit = await Promise.all(grievances.map(async (g) => {
+      const logs = await auditService.getLogsForEntity('Grievance', g.id);
+      return {
+        ...g,
+        auditTrail: logs.map(l => ({
+          id: l.id,
+          action: l.action,
+          userId: l.userId || '',
+          user: l.user ? { displayName: l.user.displayName } : undefined,
+          details: l.details ? JSON.parse(l.details) : undefined,
+          timestamp: l.timestamp.toISOString(),
+        })),
+      };
+    }));
+
+    return grievancesWithAudit;
   }
 
   async assignGrievance(grievanceId: string, userId: string, assignerId: string) {
@@ -109,6 +127,14 @@ export class GrievanceService {
       });
     }
 
+    await auditService.log({
+      action: data.isInternal ? 'GRIEVANCE_INTERNAL_NOTE_ADDED' : 'GRIEVANCE_RESPONSE_ADDED',
+      userId: data.userId,
+      entityType: 'Grievance',
+      entityId: data.grievanceId,
+      details: { isInternal: data.isInternal },
+    });
+
     return response;
   }
 
@@ -132,10 +158,19 @@ export class GrievanceService {
   }
 
   async escalateGrievance(grievanceId: string, userId: string) {
-    return prisma.grievance.update({
+    const grievance = await prisma.grievance.update({
       where: { id: grievanceId },
       data: { status: 'ESCALATED' },
     });
+
+    await auditService.log({
+      action: 'GRIEVANCE_ESCALATED',
+      userId,
+      entityType: 'Grievance',
+      entityId: grievanceId,
+    });
+
+    return grievance;
   }
 }
 

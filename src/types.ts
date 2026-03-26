@@ -185,6 +185,7 @@ export interface Transaction {
   member?: { fullName: string };
   renewalRequestId?: string;
   renewalRequest?: { id: string };
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface PaymentIntegration {
@@ -202,6 +203,7 @@ export interface PaymentIntegration {
   metadata?: string;
   createdAt: string;
   updatedAt: string;
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface GrievanceCategory {
@@ -231,22 +233,20 @@ export interface Grievance {
       displayName: string;
     };
   }[];
-}
-
-export interface AuditLog {
-  id?: string;
-  action: string;
-  performedBy: string;
-  details: string;
-  timestamp: string;
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface AuditLogEntry {
   id: string;
   action: string;
-  performedBy: string;
+  userId: string;
+  userDisplayName?: string;
+  user?: {
+    displayName: string;
+    email?: string;
+  };
   timestamp: string;
-  details: string;
+  details: any;
 }
 
 export interface Member {
@@ -642,6 +642,25 @@ export interface Booth {
   coordinatorId?: string;
   createdAt?: string;
   updatedAt?: string;
+  auditTrail?: AuditLogEntry[];
+}
+
+export interface ElectionResult {
+  id: string;
+  cycleId: string;
+  candidateId: string;
+  constituencyId?: string;
+  boothId?: string;
+  votesReceived: number;
+  isWinner: boolean;
+  verifiedById?: string;
+  verifiedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  candidate?: Candidate;
+  constituency?: Constituency;
+  booth?: Booth;
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface ElectionIncident {
@@ -658,6 +677,7 @@ export interface ElectionIncident {
   updatedAt: string;
   booth?: Booth;
   pollingStation?: PollingStation;
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface CmsSection {

@@ -12,7 +12,17 @@ interface Props {
 
 export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const { can } = usePermissions(user);
-  const [activeTab, setActiveTab] = useState<Tab>('templates');
+  
+  const availableTabs = (['templates', 'segments', 'campaigns'] as const).filter(tab => {
+    if (tab === 'templates' || tab === 'segments') {
+      return can('COMMUNICATION', 'CREATE') || can('COMMUNICATION', 'UPDATE');
+    }
+    return true;
+  });
+
+  const [activeTab, setActiveTab] = useState<Tab>(
+    availableTabs.includes('templates') ? 'templates' : 'campaigns'
+  );
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
@@ -363,24 +373,30 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
       </div>
 
       <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
-        <button 
-          onClick={() => setActiveTab('templates')}
-          className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'templates' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          <Layout size={18} /> Templates
-        </button>
-        <button 
-          onClick={() => setActiveTab('segments')}
-          className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'segments' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          <Target size={18} /> Segments
-        </button>
-        <button 
-          onClick={() => setActiveTab('campaigns')}
-          className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'campaigns' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          <Megaphone size={18} /> Campaigns
-        </button>
+        {availableTabs.includes('templates') && (
+          <button 
+            onClick={() => setActiveTab('templates')}
+            className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'templates' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            <Layout size={18} /> Templates
+          </button>
+        )}
+        {availableTabs.includes('segments') && (
+          <button 
+            onClick={() => setActiveTab('segments')}
+            className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'segments' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            <Target size={18} /> Segments
+          </button>
+        )}
+        {availableTabs.includes('campaigns') && (
+          <button 
+            onClick={() => setActiveTab('campaigns')}
+            className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'campaigns' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            <Megaphone size={18} /> Campaigns
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

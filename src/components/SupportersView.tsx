@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Supporter, IssueCategory, SupporterLevel } from '../types';
+import { Supporter, IssueCategory, SupporterLevel, UserProfile } from '../types';
 import { Search, UserPlus, Phone, MapPin, HeartHandshake, X, Edit2, Trash2, Eye } from 'lucide-react';
 import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { StatCard } from './ui/StatCard';
+import { usePermissions } from '../hooks/usePermissions';
 
 const Button = ({ children, variant = 'primary', className = '', ...props }: any) => {
   const base = "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -21,8 +22,9 @@ const Button = ({ children, variant = 'primary', className = '', ...props }: any
   );
 };
 
-export const SupportersView = ({ supporters, onRefresh }: { supporters: Supporter[], onRefresh: () => void }) => {
+export const SupportersView = ({ supporters, onRefresh, user }: { supporters: Supporter[], onRefresh: () => void, user: UserProfile }) => {
   const { t } = useTranslation();
+  const { can } = usePermissions(user);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +45,7 @@ export const SupportersView = ({ supporters, onRefresh }: { supporters: Supporte
 
   const handleAddSupporter = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!can('SUPPORTERS', 'CREATE')) return;
     const formData = new FormData(e.currentTarget);
     setLoading(true);
     setError(null);
@@ -73,7 +76,7 @@ export const SupportersView = ({ supporters, onRefresh }: { supporters: Supporte
 
   const handleEditSupporter = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!editingSupporter) return;
+    if (!editingSupporter || !can('SUPPORTERS', 'UPDATE')) return;
     const formData = new FormData(e.currentTarget);
     setLoading(true);
     setError(null);
@@ -103,6 +106,7 @@ export const SupportersView = ({ supporters, onRefresh }: { supporters: Supporte
   };
 
   const handleDeleteSupporter = async (id: string) => {
+    if (!can('SUPPORTERS', 'DELETE')) return;
     if (!window.confirm("Are you sure you want to delete this supporter?")) return;
     setIsDeleting(id);
     try {
@@ -122,10 +126,12 @@ export const SupportersView = ({ supporters, onRefresh }: { supporters: Supporte
           <h2 className="text-2xl font-bold text-slate-800">Supporter CRM</h2>
           <p className="text-slate-500">Manage contacts, volunteers, and issue-based outreach</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <UserPlus size={20} />
-          Add Supporter
-        </Button>
+        {can('SUPPORTERS', 'CREATE') && (
+          <Button onClick={() => setIsModalOpen(true)}>
+            <UserPlus size={20} />
+            Add Supporter
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -169,7 +175,7 @@ export const SupportersView = ({ supporters, onRefresh }: { supporters: Supporte
                 <th className="pb-3 font-semibold">Support Level</th>
                 <th className="pb-3 font-semibold">Key Issues</th>
                 <th className="pb-3 font-semibold">Last Contact</th>
-                <th className="pb-3 font-semibold text-right">Actions</th>
+                {(can('SUPPORTERS', 'VIEW') || can('SUPPORTERS', 'UPDATE') || can('SUPPORTERS', 'DELETE')) && <th className="pb-3 font-semibold text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -210,34 +216,42 @@ export const SupportersView = ({ supporters, onRefresh }: { supporters: Supporte
                   <td className="py-3 text-slate-500">
                     {supporter.lastContactedAt ? new Date(supporter.lastContactedAt).toLocaleDateString() : 'Never'}
                   </td>
-                  <td className="py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => setViewingSupporter(supporter)}
-                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button 
-                        onClick={() => setEditingSupporter(supporter)}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteSupporter(supporter.id!)}
-                        disabled={isDeleting === supporter.id}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
+                  {(can('SUPPORTERS', 'VIEW') || can('SUPPORTERS', 'UPDATE') || can('SUPPORTERS', 'DELETE')) && (
+                    <td className="py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        {can('SUPPORTERS', 'VIEW') && (
+                          <button 
+                            onClick={() => setViewingSupporter(supporter)}
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        )}
+                        {can('SUPPORTERS', 'UPDATE') && (
+                          <button 
+                            onClick={() => setEditingSupporter(supporter)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {can('SUPPORTERS', 'DELETE') && (
+                          <button 
+                            onClick={() => handleDeleteSupporter(supporter.id!)}
+                            disabled={isDeleting === supporter.id}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filteredSupporters.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">
+                  <td colSpan={6} className="py-8 text-center text-slate-500">
                     No supporters found matching your criteria.
                   </td>
                 </tr>

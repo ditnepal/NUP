@@ -38,7 +38,8 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'surveys' | 'polls'>('surveys');
+  const isAdminOrStaff = user?.role === 'ADMIN' || user?.role === 'STAFF';
+  const [activeTab, setActiveTab] = useState<'surveys' | 'polls'>(isAdminOrStaff ? 'surveys' : 'polls');
   const [showCreateSurvey, setShowCreateSurvey] = useState(false);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
   const [showTakeSurvey, setShowTakeSurvey] = useState(false);
@@ -63,8 +64,6 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
-  const isAdminOrStaff = user?.role === 'ADMIN' || user?.role === 'STAFF';
 
   useEffect(() => {
     fetchData();

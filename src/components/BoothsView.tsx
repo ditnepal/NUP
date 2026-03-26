@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Booth } from '../types';
+import { Booth, UserProfile } from '../types';
 import { Search, MapPin, Users, AlertCircle, Plus, X, CheckCircle2, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
+import { usePermissions } from '../hooks/usePermissions';
 
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden ${className}`}>
@@ -26,8 +27,9 @@ const Button = ({ children, variant = 'primary', className = '', ...props }: any
   );
 };
 
-export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?: () => void }) => {
+export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRefresh?: () => void, user: UserProfile }) => {
   const { t } = useTranslation();
+  const { can } = usePermissions(user);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,6 +61,9 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (editingBooth && !can('ELECTION', 'UPDATE')) return;
+    if (!editingBooth && !can('ELECTION', 'CREATE')) return;
+
     setIsLoading(true);
     setMessage(null);
     const formData = new FormData(e.currentTarget);
@@ -97,6 +102,7 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
   };
 
   const handleDelete = async (id: string) => {
+    if (!can('ELECTION', 'DELETE')) return;
     if (!window.confirm('Are you sure you want to delete this booth?')) return;
     
     setIsLoading(true);
@@ -113,11 +119,13 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
   };
 
   const openEditModal = (booth: Booth) => {
+    if (!can('ELECTION', 'UPDATE')) return;
     setEditingBooth(booth);
     setIsModalOpen(true);
   };
 
   const openAddModal = () => {
+    if (!can('ELECTION', 'CREATE')) return;
     setEditingBooth(null);
     setIsModalOpen(true);
   };
@@ -129,10 +137,12 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
           <h2 className="text-2xl font-bold text-slate-800">Booth Management</h2>
           <p className="text-slate-500">Track booth-level organization and election readiness</p>
         </div>
-        <Button onClick={openAddModal}>
-          <Plus size={20} />
-          Add Booth
-        </Button>
+        {can('ELECTION', 'CREATE') && (
+          <Button onClick={openAddModal}>
+            <Plus size={20} />
+            Add Booth
+          </Button>
+        )}
       </div>
 
       {message && (
@@ -215,7 +225,7 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
                 <th className="pb-3 font-semibold">Location</th>
                 <th className="pb-3 font-semibold">Voters/Target</th>
                 <th className="pb-3 font-semibold">Status</th>
-                <th className="pb-3 font-semibold text-right">Actions</th>
+                {(can('ELECTION', 'UPDATE') || can('ELECTION', 'DELETE')) && <th className="pb-3 font-semibold text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -264,27 +274,33 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
                       )}
                     </div>
                   </td>
-                  <td className="py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => openEditModal(booth)}
-                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(booth.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+                  {(can('ELECTION', 'UPDATE') || can('ELECTION', 'DELETE')) && (
+                    <td className="py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        {can('ELECTION', 'UPDATE') && (
+                          <button 
+                            onClick={() => openEditModal(booth)}
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        )}
+                        {can('ELECTION', 'DELETE') && (
+                          <button 
+                            onClick={() => handleDelete(booth.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filteredBooths.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-500">
+                  <td colSpan={5} className="py-8 text-center text-slate-500">
                     No booths found matching your criteria.
                   </td>
                 </tr>

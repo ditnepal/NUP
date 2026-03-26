@@ -15,7 +15,17 @@ interface MembershipAdminProps {
 
 export const MembershipAdmin: React.FC<MembershipAdminProps> = ({ user }) => {
   const { can } = usePermissions(user);
-  const [activeTab, setActiveTab] = useState<'overview' | 'intake' | 'members' | 'renewals'>('overview');
+  
+  const availableTabs = [
+    { id: 'overview', permission: { module: 'MEMBERSHIP', action: 'VIEW' } },
+    { id: 'intake', permission: { module: 'MEMBERSHIP', action: 'APPROVE' } },
+    { id: 'members', permission: { module: 'MEMBERSHIP', action: 'VIEW' } },
+    { id: 'renewals', permission: { module: 'MEMBERSHIP', action: 'UPDATE' } },
+  ].filter(tab => can(tab.permission.module as any, tab.permission.action as any));
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'intake' | 'members' | 'renewals'>(
+    (availableTabs[0]?.id as any) || 'overview'
+  );
   const [members, setMembers] = useState<Member[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [renewals, setRenewals] = useState<any[]>([]);

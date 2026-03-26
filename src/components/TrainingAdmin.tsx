@@ -369,7 +369,9 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl font-bold text-slate-900">Training Management</h1>
-            <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">Phase 1B: Course Builder</span>
+            <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">
+              {can('TRAINING', 'CREATE') ? 'Phase 1B: Course Builder' : 'Read-Only Access'}
+            </span>
           </div>
           
           {/* Breadcrumbs */}

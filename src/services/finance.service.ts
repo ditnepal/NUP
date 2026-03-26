@@ -844,6 +844,45 @@ export class FinanceService {
 
     return { success: true };
   }
+
+  async getTransactions(orgUnitIds?: string[] | null) {
+    const where: any = {};
+    if (orgUnitIds) {
+      where.orgUnitId = { in: orgUnitIds };
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where,
+      orderBy: { date: 'desc' },
+      include: {
+        donation: { include: { donor: true, campaign: true } },
+        member: true,
+        renewalRequest: true,
+        recordedBy: true,
+        reviewedBy: true,
+      },
+    });
+
+    // Attach audit logs to each transaction
+    const transactionsWithLogs = await Promise.all(
+      transactions.map(async (tx) => {
+        const logs = await auditService.getLogsForEntity('Transaction', tx.id);
+        return {
+          ...tx,
+          auditTrail: logs.map(l => ({
+            id: l.id,
+            action: l.action,
+            timestamp: l.timestamp.toISOString(),
+            details: l.details ? JSON.parse(l.details) : undefined,
+            user: l.user ? { displayName: l.user.displayName } : undefined,
+            userId: l.userId
+          })),
+        };
+      })
+    );
+
+    return transactionsWithLogs;
+  }
 }
 
 export const financeService = new FinanceService();
