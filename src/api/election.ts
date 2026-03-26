@@ -46,7 +46,8 @@ const candidateSchema = z.object({
 
 const incidentSchema = z.object({
   cycleId: z.string().uuid(),
-  pollingStationId: z.string().uuid().optional(),
+  pollingStationId: z.string().uuid().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
+  boothId: z.string().uuid().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
   type: z.enum(['VIOLENCE', 'FRAUD', 'TECHNICAL', 'LOGISTICAL', 'OTHER']),
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
   status: z.enum(['REPORTED', 'INVESTIGATING', 'RESOLVED', 'DISMISSED']).optional(),
@@ -163,6 +164,27 @@ router.post('/polling-stations', authenticate, authorize(['ADMIN', 'STAFF']), as
     const data = pollingStationSchema.parse(req.body);
     const station = await electionService.createPollingStation(data);
     res.status(201).json(station);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/polling-stations/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = pollingStationSchema.partial().parse(req.body);
+    const station = await electionService.updatePollingStation(id, data);
+    res.json(station);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/polling-stations/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await electionService.deletePollingStation(id);
+    res.json({ message: 'Polling station deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

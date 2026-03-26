@@ -34,6 +34,19 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
   const [editingBooth, setEditingBooth] = useState<Booth | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [pollingStations, setPollingStations] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchPollingStations = async () => {
+      try {
+        const response = await api.get('/election/polling-stations');
+        setPollingStations(response);
+      } catch (error) {
+        console.error('Failed to fetch polling stations:', error);
+      }
+    };
+    fetchPollingStations();
+  }, []);
 
   const filteredBooths = useMemo(() => {
     return booths.filter(b => {
@@ -50,9 +63,10 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
     setMessage(null);
     const formData = new FormData(e.currentTarget);
     
+    const pollingStationId = formData.get('pollingStationId') as string;
     const data = {
       name: formData.get('name') as string,
-      pollingStationId: formData.get('pollingStationId') as string,
+      pollingStationId: pollingStationId || null,
       ward: Number(formData.get('ward')),
       localLevel: formData.get('localLevel') as string,
       district: formData.get('district') as string,
@@ -60,6 +74,7 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
       totalVoters: Number(formData.get('totalVoters')),
       targetVotes: Number(formData.get('targetVotes')),
       status: formData.get('status') as 'READY' | 'NEEDS_ATTENTION' | 'CRITICAL',
+      readinessNote: formData.get('readinessNote') as string,
     };
 
     try {
@@ -233,14 +248,21 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
                     )}
                   </td>
                   <td className="py-3">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                      ${booth.status === 'READY' ? 'bg-emerald-100 text-emerald-700' :
-                        booth.status === 'NEEDS_ATTENTION' ? 'bg-orange-100 text-orange-700' :
-                        'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {booth.status.replace('_', ' ')}
-                    </span>
+                    <div className="flex flex-col items-start gap-1">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                        ${booth.status === 'READY' ? 'bg-emerald-100 text-emerald-700' :
+                          booth.status === 'NEEDS_ATTENTION' ? 'bg-orange-100 text-orange-700' :
+                          'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {booth.status.replace('_', ' ')}
+                      </span>
+                      {booth.readinessNote && (
+                        <span className="text-xs text-slate-500 max-w-[200px] truncate" title={booth.readinessNote}>
+                          {booth.readinessNote}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-3 text-right">
                     <div className="flex justify-end gap-2">
@@ -297,8 +319,13 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
                       <input name="name" defaultValue={editingBooth?.name} required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-semibold text-slate-700">Polling Station ID</label>
-                      <input name="pollingStationId" defaultValue={editingBooth?.pollingStationId} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                      <label className="text-sm font-semibold text-slate-700">Polling Station</label>
+                      <select name="pollingStationId" defaultValue={editingBooth?.pollingStationId} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Select Polling Station (Optional)</option>
+                        {pollingStations.map(ps => (
+                          <option key={ps.id} value={ps.id}>{ps.name} ({ps.location})</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="space-y-1">
                       <label className="text-sm font-semibold text-slate-700">Province</label>
@@ -331,6 +358,10 @@ export const BoothsView = ({ booths, onRefresh }: { booths: Booth[], onRefresh?:
                     <div className="space-y-1">
                       <label className="text-sm font-semibold text-slate-700">Target Votes</label>
                       <input type="number" name="targetVotes" defaultValue={editingBooth?.targetVotes} min="0" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-sm font-semibold text-slate-700">Readiness Note</label>
+                      <textarea name="readinessNote" defaultValue={editingBooth?.readinessNote} rows={2} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" placeholder="Optional notes about booth readiness..." />
                     </div>
                   </div>
                 </div>

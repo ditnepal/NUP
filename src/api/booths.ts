@@ -7,7 +7,7 @@ const router = express.Router();
 
 const boothSchema = z.object({
   name: z.string().min(2),
-  pollingStationId: z.string().optional(),
+  pollingStationId: z.string().nullable().optional().transform(val => val === '' ? null : val),
   ward: z.number(),
   localLevel: z.string(),
   district: z.string(),
@@ -15,6 +15,7 @@ const boothSchema = z.object({
   totalVoters: z.number().default(0),
   targetVotes: z.number().default(0),
   status: z.enum(['READY', 'NEEDS_ATTENTION', 'CRITICAL']).optional(),
+  readinessNote: z.string().optional(),
 });
 
 // @route   GET /api/v1/booths

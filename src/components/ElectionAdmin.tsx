@@ -28,8 +28,10 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
   const [incidents, setIncidents] = useState<any[]>([]);
   const [results, setResults] = useState<any[]>([]);
   const [readiness, setReadiness] = useState<any[]>([]);
+  const [pollingStations, setPollingStations] = useState<any[]>([]);
+  const [booths, setBooths] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'incidents' | 'results' | 'readiness' | 'constituencies' | 'cycles' | 'pollingStations'>(defaultTab as any);
   
   // Modal state
   const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false);
@@ -37,15 +39,17 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
   const [isConstituencyModalOpen, setIsConstituencyModalOpen] = useState(false);
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [isPollingStationModalOpen, setIsPollingStationModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: 'candidate' | 'cycle' | 'constituency' | 'incident' | 'result' } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: 'candidate' | 'cycle' | 'constituency' | 'incident' | 'result' | 'pollingStation' } | null>(null);
   
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
   const [editingCycle, setEditingCycle] = useState<any | null>(null);
   const [editingConstituency, setEditingConstituency] = useState<Constituency | null>(null);
   const [editingIncident, setEditingIncident] = useState<any | null>(null);
   const [editingResult, setEditingResult] = useState<any | null>(null);
+  const [editingPollingStation, setEditingPollingStation] = useState<any | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -81,7 +85,8 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
     severity: 'LOW',
     description: '',
     status: 'REPORTED',
-    pollingStationId: ''
+    pollingStationId: '',
+    boothId: ''
   });
 
   const [resultForm, setResultForm] = useState({
@@ -90,6 +95,17 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
     votesReceived: 0,
     isWinner: false,
     verified: false
+  });
+
+  const [pollingStationForm, setPollingStationForm] = useState({
+    name: '',
+    code: '',
+    location: '',
+    constituencyId: '',
+    ward: 1,
+    localLevel: '',
+    district: '',
+    province: ''
   });
 
   useEffect(() => {
@@ -104,12 +120,16 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
 
   const fetchCycles = async () => {
     try {
-      const [cyclesData, constData] = await Promise.all([
+      const [cyclesData, constData, stationsData, boothsData] = await Promise.all([
         api.get('/election/cycles'),
-        api.get('/election/constituencies')
+        api.get('/election/constituencies'),
+        api.get('/election/polling-stations'),
+        api.get('/booths')
       ]);
       setCycles(cyclesData);
       setConstituencies(constData);
+      setPollingStations(stationsData);
+      setBooths(boothsData);
       
       // Ensure a valid cycle is selected
       if (cyclesData.length > 0) {
@@ -218,6 +238,35 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
     setIsConstituencyModalOpen(true);
   };
 
+  const openPollingStationModal = (station?: any) => {
+    if (station) {
+      setEditingPollingStation(station);
+      setPollingStationForm({
+        name: station.name,
+        code: station.code || '',
+        location: station.location || '',
+        constituencyId: station.constituencyId || '',
+        ward: station.ward || 1,
+        localLevel: station.localLevel || '',
+        district: station.district || '',
+        province: station.province || ''
+      });
+    } else {
+      setEditingPollingStation(null);
+      setPollingStationForm({
+        name: '',
+        code: '',
+        location: '',
+        constituencyId: '',
+        ward: 1,
+        localLevel: '',
+        district: '',
+        province: ''
+      });
+    }
+    setIsPollingStationModalOpen(true);
+  };
+
   const openIncidentModal = (incident?: any) => {
     if (incident) {
       setEditingIncident(incident);
@@ -226,7 +275,8 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
         severity: incident.severity,
         description: incident.description,
         status: incident.status,
-        pollingStationId: incident.pollingStationId || ''
+        pollingStationId: incident.pollingStationId || '',
+        boothId: incident.boothId || ''
       });
     } else {
       setEditingIncident(null);
@@ -235,7 +285,8 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
         severity: 'LOW',
         description: '',
         status: 'REPORTED',
-        pollingStationId: ''
+        pollingStationId: '',
+        boothId: ''
       });
     }
     setIsIncidentModalOpen(true);
@@ -297,6 +348,25 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
       setMessage({ type: 'success', text: `Constituency ${editingConstituency ? 'updated' : 'created'} successfully` });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Failed to save constituency' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePollingStationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (editingPollingStation) {
+        await api.put(`/election/polling-stations/${editingPollingStation.id}`, pollingStationForm);
+      } else {
+        await api.post('/election/polling-stations', pollingStationForm);
+      }
+      setIsPollingStationModalOpen(false);
+      fetchCycles(); // Also fetches polling stations
+      setMessage({ type: 'success', text: `Polling Station ${editingPollingStation ? 'updated' : 'created'} successfully` });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Failed to save polling station' });
     } finally {
       setIsSubmitting(false);
     }
@@ -383,6 +453,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
         case 'constituency': endpoint = `/election/constituencies/${id}`; break;
         case 'incident': endpoint = `/election/incidents/${id}`; break;
         case 'result': endpoint = `/election/results/${id}`; break;
+        case 'pollingStation': endpoint = `/election/polling-stations/${id}`; break;
       }
       
       await api.delete(endpoint);
@@ -390,7 +461,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
       setIsDeleteModalOpen(false);
       setDeleteTarget(null);
       
-      if (type === 'cycle' || type === 'constituency') {
+      if (type === 'cycle' || type === 'constituency' || type === 'pollingStation') {
         fetchCycles();
       } else {
         fetchCycleData();
@@ -402,7 +473,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
     }
   };
 
-  const confirmDelete = (id: string, type: 'candidate' | 'cycle' | 'constituency' | 'incident' | 'result') => {
+  const confirmDelete = (id: string, type: 'candidate' | 'cycle' | 'constituency' | 'incident' | 'result' | 'pollingStation') => {
     setDeleteTarget({ id, type });
     setIsDeleteModalOpen(true);
   };
@@ -440,6 +511,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                 else if (activeTab === 'constituencies') openConstituencyModal();
                 else if (activeTab === 'incidents') openIncidentModal();
                 else if (activeTab === 'results') openResultModal();
+                else if (activeTab === 'pollingStations') openPollingStationModal();
               }}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold"
             >
@@ -448,7 +520,8 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                activeTab === 'cycles' ? 'New Cycle' :
                activeTab === 'constituencies' ? 'New Constituency' :
                activeTab === 'incidents' ? 'Report Incident' :
-               activeTab === 'results' ? 'Enter Result' : 'Add New'}
+               activeTab === 'results' ? 'Enter Result' : 
+               activeTab === 'pollingStations' ? 'Add Polling Station' : 'Add New'}
             </button>
           )}
         </div>
@@ -524,6 +597,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
           { id: 'overview', label: 'Overview' },
           { id: 'candidates', label: 'Candidates' },
           { id: 'constituencies', label: 'Constituencies' },
+          { id: 'pollingStations', label: 'Polling Stations' },
           { id: 'cycles', label: 'Cycles' },
           { id: 'incidents', label: 'Incidents' },
           { id: 'results', label: 'Results' },
@@ -633,6 +707,53 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'pollingStations' && (
+          <div className="p-6">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="pb-3 font-bold text-slate-900">Name</th>
+                    <th className="pb-3 font-bold text-slate-900">Code</th>
+                    <th className="pb-3 font-bold text-slate-900">Location</th>
+                    <th className="pb-3 font-bold text-slate-900">Constituency</th>
+                    <th className="pb-3 font-bold text-slate-900">Booths</th>
+                    <th className="pb-3 font-bold text-slate-900 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {pollingStations.map(station => (
+                    <tr key={station.id} className="hover:bg-slate-50 transition-all">
+                      <td className="py-4 font-medium text-slate-900">{station.name}</td>
+                      <td className="py-4 text-slate-500">{station.code || 'N/A'}</td>
+                      <td className="py-4 text-slate-500">{station.location}</td>
+                      <td className="py-4 text-slate-500">{station.constituency?.name || 'N/A'}</td>
+                      <td className="py-4 text-slate-500">{station._count?.booths || 0}</td>
+                      <td className="py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => openPollingStationModal(station)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
+                            <Edit2 size={16} />
+                          </button>
+                          <button onClick={() => confirmDelete(station.id, 'pollingStation')} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {pollingStations.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-500 italic">
+                        No polling stations found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -945,6 +1066,138 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                   {isSubmitting ? 'Deleting...' : 'Confirm Delete'}
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Polling Station Modal */}
+      <AnimatePresence>
+        {isPollingStationModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-slate-900">
+                  {editingPollingStation ? 'Edit Polling Station' : 'New Polling Station'}
+                </h3>
+                <button onClick={() => setIsPollingStationModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handlePollingStationSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Name</label>
+                    <input 
+                      type="text"
+                      required
+                      value={pollingStationForm.name}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, name: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="Polling Station Name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Code</label>
+                    <input 
+                      type="text"
+                      value={pollingStationForm.code}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, code: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="e.g., PS-001"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Location</label>
+                    <input 
+                      type="text"
+                      required
+                      value={pollingStationForm.location}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, location: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="Physical address or description"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Constituency</label>
+                    <select 
+                      required
+                      value={pollingStationForm.constituencyId}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, constituencyId: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="">Select Constituency</option>
+                      {constituencies.map(con => (
+                        <option key={con.id} value={con.id}>{con.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Ward</label>
+                    <input 
+                      type="number"
+                      required
+                      min="1"
+                      value={pollingStationForm.ward}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, ward: parseInt(e.target.value) })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Local Level</label>
+                    <input 
+                      type="text"
+                      required
+                      value={pollingStationForm.localLevel}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, localLevel: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">District</label>
+                    <input 
+                      type="text"
+                      required
+                      value={pollingStationForm.district}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, district: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Province</label>
+                    <input 
+                      type="text"
+                      required
+                      value={pollingStationForm.province}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, province: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => setIsPollingStationModalOpen(false)}
+                    className="px-6 py-2 text-slate-600 font-bold hover:text-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-8 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save Polling Station'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

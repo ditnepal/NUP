@@ -31,6 +31,15 @@ const handleResponse = async (response: Response) => {
       if (error.details && Array.isArray(error.details)) {
         errorMessage += ': ' + error.details.map((d: any) => `${d.path.join('.')}: ${d.message}`).join(', ');
       }
+      
+      // Handle Unauthorized error (Invalid token)
+      if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Missing or invalid token'))) {
+        console.warn('Unauthorized: Invalid token. Clearing session...');
+        localStorage.removeItem('token');
+        // We can't easily trigger a redirect here without a more complex setup, 
+        // but clearing the token will force the user to log in again on the next refresh.
+        window.location.href = '/'; 
+      }
     } catch (e) {
       console.error('API Error (non-JSON):', text.substring(0, 100));
       if (response.status === 429) {

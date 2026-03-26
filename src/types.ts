@@ -490,6 +490,29 @@ export interface Notice {
   updatedAt: string;
 }
 
+export interface Lesson {
+  id: string;
+  courseId: string;
+  title: string;
+  content: string;
+  videoUrl?: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Course {
+  id: string;
+  programId: string;
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  createdAt: string;
+  updatedAt: string;
+  lessons?: Lesson[];
+}
+
 export interface TrainingProgram {
   id: string;
   name: string;
@@ -502,6 +525,7 @@ export interface TrainingProgram {
   attachmentUrl?: string;
   createdAt: string;
   updatedAt: string;
+  courses?: Course[];
 }
 
 export interface Volunteer {
@@ -532,6 +556,24 @@ export interface VolunteerApplication {
   updatedAt: string;
 }
 
+export interface PollingStation {
+  id: string;
+  name: string;
+  code?: string;
+  location: string;
+  constituencyId: string;
+  ward: number;
+  localLevel: string;
+  district: string;
+  province: string;
+  createdAt?: string;
+  updatedAt?: string;
+  constituency?: Constituency;
+  _count?: {
+    booths: number;
+  };
+}
+
 export interface Booth {
   id: string;
   name: string;
@@ -545,9 +587,26 @@ export interface Booth {
   voterCount?: number;
   targetVotes: number;
   status: 'READY' | 'NEEDS_ATTENTION' | 'CRITICAL';
+  readinessNote?: string;
   coordinatorId?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ElectionIncident {
+  id: string;
+  cycleId: string;
+  pollingStationId?: string;
+  boothId?: string;
+  reporterId: string;
+  type: 'VIOLENCE' | 'FRAUD' | 'TECHNICAL' | 'LOGISTICAL' | 'OTHER';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  description: string;
+  status: 'REPORTED' | 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED';
+  createdAt: string;
+  updatedAt: string;
+  booth?: Booth;
+  pollingStation?: PollingStation;
 }
 
 export interface CmsSection {

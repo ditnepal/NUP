@@ -683,6 +683,7 @@ model Booth {
   voterCount       Int?
   targetVotes      Int                   @default(0)
   status           String                @default("NEEDS_ATTENTION")
+  readinessNote    String?
   coordinatorId    String?
   orgUnitId        String?
   createdAt        DateTime              @default(now())
@@ -696,6 +697,7 @@ model Booth {
   pollingLogs      PollingDayLog[]
   supporters       Supporter[]
   deployments      VolunteerDeployment[]
+  incidents        ElectionIncident[]
 }
 
 model BoothTeamMember {
@@ -755,6 +757,7 @@ model ElectionIncident {
   id               String          @id @default(uuid())
   cycleId          String
   pollingStationId String?
+  boothId          String?
   reporterId       String
   type             String
   severity         String          @default("MEDIUM")
@@ -764,6 +767,7 @@ model ElectionIncident {
   updatedAt        DateTime        @updatedAt
   cycle            ElectionCycle   @relation(fields: [cycleId], references: [id])
   pollingStation   PollingStation? @relation(fields: [pollingStationId], references: [id])
+  booth            Booth?          @relation(fields: [boothId], references: [id])
   reporter         User            @relation("IncidentReporter", fields: [reporterId], references: [id])
 }
 

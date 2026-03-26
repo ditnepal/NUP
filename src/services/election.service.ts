@@ -124,8 +124,33 @@ export class ElectionService {
       where: constituencyId ? { constituencyId } : {},
       include: {
         _count: { select: { booths: true } },
+        constituency: true,
       },
     });
+  }
+
+  async updatePollingStation(id: string, data: Partial<{
+    name: string;
+    code?: string;
+    location: string;
+    constituencyId: string;
+    ward: number;
+    localLevel: string;
+    district: string;
+    province: string;
+  }>) {
+    return prisma.pollingStation.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deletePollingStation(id: string) {
+    const booths = await prisma.booth.count({ where: { pollingStationId: id } });
+    if (booths > 0) {
+      throw new Error('Cannot delete polling station with linked booths.');
+    }
+    return prisma.pollingStation.delete({ where: { id } });
   }
 
   // --- Candidates ---
@@ -255,6 +280,7 @@ export class ElectionService {
   async reportIncident(data: {
     cycleId: string;
     pollingStationId?: string;
+    boothId?: string;
     reporterId: string;
     type: string;
     severity: string;
@@ -284,6 +310,7 @@ export class ElectionService {
       include: {
         reporter: { select: { displayName: true, email: true } },
         pollingStation: true,
+        booth: true,
       },
       orderBy: { createdAt: 'desc' },
     });

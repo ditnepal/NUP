@@ -28,7 +28,7 @@ const courseSchema = z.object({
 const lessonSchema = z.object({
   courseId: z.string().uuid(),
   title: z.string().min(2),
-  content: z.string().min(10),
+  content: z.string().min(1),
   videoUrl: z.string().optional(),
   order: z.number().int(),
 });
@@ -69,16 +69,22 @@ router.get('/programs/portal', authenticate, async (req: AuthRequest, res) => {
     if (role === 'MEMBER') {
       where.audience = { in: ['PUBLIC', 'MEMBERS'] };
     } else if (role === 'ADMIN' || role === 'STAFF') {
-      // Admins see everything in portal too, or maybe just published?
-      // Usually portal is for published content.
-      where.audience = { in: ['PUBLIC', 'MEMBERS'] };
+      where.audience = { in: ['PUBLIC', 'MEMBERS', 'STAFF'] };
     } else {
       where.audience = 'PUBLIC';
     }
 
     const programs = await prisma.trainingProgram.findMany({
       where,
-      include: { courses: true },
+      include: { 
+        courses: {
+          include: {
+            lessons: {
+              orderBy: { order: 'asc' }
+            }
+          }
+        } 
+      },
       orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
     });
     res.json(programs);
@@ -97,7 +103,15 @@ router.get('/programs/public', async (req, res) => {
         status: 'PUBLISHED',
         audience: 'PUBLIC',
       },
-      include: { courses: true },
+      include: { 
+        courses: {
+          include: {
+            lessons: {
+              orderBy: { order: 'asc' }
+            }
+          }
+        } 
+      },
       orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
     });
     res.json(programs);
@@ -112,7 +126,15 @@ router.get('/programs/public', async (req, res) => {
 router.get('/programs/admin', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
   try {
     const programs = await prisma.trainingProgram.findMany({
-      include: { courses: true },
+      include: { 
+        courses: {
+          include: {
+            lessons: {
+              orderBy: { order: 'asc' }
+            }
+          }
+        } 
+      },
       orderBy: { createdAt: 'desc' },
     });
     res.json(programs);
@@ -197,6 +219,34 @@ router.post('/courses', authenticate, authorize(['ADMIN', 'STAFF']), async (req,
   }
 });
 
+// @route   PUT /api/v1/training/courses/:id
+// @desc    Update a course
+// @access  Private (Admin/Staff)
+router.put('/courses/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = courseSchema.parse(req.body);
+    const course = await prisma.course.update({
+      where: { id: req.params.id },
+      data,
+    });
+    res.json(course);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   DELETE /api/v1/training/courses/:id
+// @desc    Delete a course
+// @access  Private (Admin/Staff)
+router.delete('/courses/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    await prisma.course.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Course deleted' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // @route   POST /api/v1/training/courses/:id/enroll
 // @desc    Enroll in a course
 // @access  Private
@@ -217,6 +267,34 @@ router.post('/lessons', authenticate, authorize(['ADMIN', 'STAFF']), async (req,
     const data = lessonSchema.parse(req.body);
     const lesson = await prisma.lesson.create({ data });
     res.status(201).json(lesson);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   PUT /api/v1/training/lessons/:id
+// @desc    Update a lesson
+// @access  Private (Admin/Staff)
+router.put('/lessons/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const data = lessonSchema.parse(req.body);
+    const lesson = await prisma.lesson.update({
+      where: { id: req.params.id },
+      data,
+    });
+    res.json(lesson);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   DELETE /api/v1/training/lessons/:id
+// @desc    Delete a lesson
+// @access  Private (Admin/Staff)
+router.delete('/lessons/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    await prisma.lesson.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Lesson deleted' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
