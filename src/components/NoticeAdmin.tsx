@@ -71,6 +71,9 @@ export const NoticeAdmin: React.FC = () => {
         audience: formData.get('audience'),
         status: formData.get('status'),
         isPinned: formData.get('isPinned') === 'true',
+        isPopup: formData.get('isPopup') === 'true',
+        displayType: formData.get('displayType'),
+        targetPath: formData.get('targetPath'),
         publishAt: formData.get('publishAt'),
         expireAt: formData.get('expireAt'),
         externalUrl: formData.get('externalUrl'),
@@ -89,9 +92,28 @@ export const NoticeAdmin: React.FC = () => {
           <option value="PUBLISHED">PUBLISHED</option>
         </select>
       </div>
-      <label className="flex items-center gap-2 mb-2">
-        <input type="checkbox" name="isPinned" defaultChecked={editingItem?.isPinned} value="true" /> Pinned
-      </label>
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" name="isPinned" defaultChecked={editingItem?.isPinned} value="true" /> Pinned
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" name="isPopup" defaultChecked={editingItem?.isPopup} value="true" /> Is Popup
+        </label>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div>
+          <label className="text-xs text-gray-500">Display Type</label>
+          <select name="displayType" defaultValue={editingItem?.displayType || 'BANNER'} className="w-full p-2 border rounded">
+            <option value="BANNER">BANNER</option>
+            <option value="MODAL">MODAL</option>
+            <option value="TOAST">TOAST</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500">Target Path (Optional)</label>
+          <input name="targetPath" defaultValue={editingItem?.targetPath} placeholder="/dashboard" className="w-full p-2 border rounded" />
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-2 mb-2">
         <div>
           <label className="text-xs text-gray-500">Publish At</label>
@@ -121,6 +143,7 @@ export const NoticeAdmin: React.FC = () => {
             <tr>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</th>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Audience</th>
+              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
             </tr>
@@ -128,9 +151,23 @@ export const NoticeAdmin: React.FC = () => {
           <tbody className="divide-y divide-gray-200">
             {data.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 font-medium text-gray-900">{item.title}</td>
+                <td className="px-6 py-4 font-medium text-gray-900">
+                  <div className="flex items-center gap-2">
+                    {item.title}
+                    {item.isPinned && <Bell size={14} className="text-emerald-600" />}
+                  </div>
+                </td>
                 <td className="px-6 py-4 text-sm text-gray-500">{item.audience}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{item.status}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.isPopup ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {item.isPopup ? `Popup (${item.displayType})` : 'Standard'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                    {item.status}
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-right text-sm font-bold text-emerald-600 space-x-2">
                   <button onClick={() => handleEdit(item)} className="hover:underline">Edit</button>
                   <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline">Delete</button>

@@ -40,6 +40,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [isPollingStationModalOpen, setIsPollingStationModalOpen] = useState(false);
+  const [isReadinessModalOpen, setIsReadinessModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: 'candidate' | 'cycle' | 'constituency' | 'incident' | 'result' | 'pollingStation' } | null>(null);
@@ -50,6 +51,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
   const [editingIncident, setEditingIncident] = useState<any | null>(null);
   const [editingResult, setEditingResult] = useState<any | null>(null);
   const [editingPollingStation, setEditingPollingStation] = useState<any | null>(null);
+  const [editingBooth, setEditingBooth] = useState<any | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -106,6 +108,11 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
     localLevel: '',
     district: '',
     province: ''
+  });
+
+  const [readinessForm, setReadinessForm] = useState({
+    status: 'NEEDS_ATTENTION',
+    readinessNote: ''
   });
 
   useEffect(() => {
@@ -315,6 +322,15 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
     setIsResultModalOpen(true);
   };
 
+  const openReadinessModal = (booth: any) => {
+    setEditingBooth(booth);
+    setReadinessForm({
+      status: booth.status || 'NEEDS_ATTENTION',
+      readinessNote: booth.readinessNote || ''
+    });
+    setIsReadinessModalOpen(true);
+  };
+
   const handleCycleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -407,6 +423,21 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
       setMessage({ type: 'success', text: `Result ${editingResult ? 'updated' : 'entered'} successfully` });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Failed to save result' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReadinessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await api.put(`/election/booths/${editingBooth.id}/readiness`, readinessForm);
+      setIsReadinessModalOpen(false);
+      fetchCycleData();
+      setMessage({ type: 'success', text: 'Booth readiness updated successfully' });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Failed to update booth readiness' });
     } finally {
       setIsSubmitting(false);
     }
@@ -899,6 +930,10 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                       <div>
                         <h4 className="font-bold text-slate-900">{inc.type}</h4>
                         <p className="text-xs text-slate-500">
+                          {inc.pollingStation?.name && <span>{inc.pollingStation.name}</span>}
+                          {inc.booth?.name && <span> • {inc.booth.name}</span>}
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
                           Reported by {inc.reporter?.displayName || 'Unknown'} • {new Date(inc.createdAt).toLocaleString()}
                         </p>
                       </div>
@@ -993,6 +1028,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Deployments</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Outreach</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Readiness</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -1000,6 +1036,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                   <tr key={booth.id} className="hover:bg-slate-50/50 transition-all">
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-slate-900">{booth.name}</p>
+                      {booth.readinessNote && <p className="text-[10px] text-slate-500 italic">{booth.readinessNote}</p>}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${
@@ -1025,6 +1062,15 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                         ></div>
                       </div>
                       <span className="text-[10px] font-bold text-slate-500 mt-1 block">{booth.readinessScore}% Ready</span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button 
+                        onClick={() => openReadinessModal(booth)}
+                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                        title="Update Readiness"
+                      >
+                        <Edit2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -1525,6 +1571,7 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                       <option value="VIOLENCE">VIOLENCE</option>
                       <option value="FRAUD">FRAUD</option>
                       <option value="TECHNICAL">TECHNICAL</option>
+                      <option value="LOGISTICAL">LOGISTICAL</option>
                       <option value="OTHER">OTHER</option>
                     </select>
                   </div>
@@ -1539,6 +1586,34 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                       <option value="MEDIUM">MEDIUM</option>
                       <option value="HIGH">HIGH</option>
                       <option value="CRITICAL">CRITICAL</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Polling Station</label>
+                    <select 
+                      value={incidentForm.pollingStationId}
+                      onChange={(e) => setIncidentForm({ ...incidentForm, pollingStationId: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="">N/A</option>
+                      {pollingStations.map(ps => (
+                        <option key={ps.id} value={ps.id}>{ps.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Booth</label>
+                    <select 
+                      value={incidentForm.boothId}
+                      onChange={(e) => setIncidentForm({ ...incidentForm, boothId: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="">N/A</option>
+                      {booths.filter(b => !incidentForm.pollingStationId || b.pollingStationId === incidentForm.pollingStationId).map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -1659,6 +1734,60 @@ export function ElectionAdmin({ defaultTab = 'overview' }: { defaultTab?: 'overv
                 <button onClick={() => setIsResultModalOpen(false)} className="px-6 py-2 text-slate-600 font-bold">Cancel</button>
                 <button onClick={handleResultSubmit} disabled={isSubmitting} className="px-8 py-2 bg-emerald-600 text-white rounded-xl font-bold disabled:opacity-50">
                   {isSubmitting ? 'Saving...' : editingResult ? 'Update Result' : 'Save Result'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Readiness Modal */}
+      <AnimatePresence>
+        {isReadinessModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-slate-900">
+                  Update Booth Readiness: {editingBooth?.name}
+                </h3>
+                <button onClick={() => setIsReadinessModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handleReadinessSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
+                  <select 
+                    value={readinessForm.status}
+                    onChange={(e) => setReadinessForm({ ...readinessForm, status: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="READY">READY</option>
+                    <option value="NEEDS_ATTENTION">NEEDS ATTENTION</option>
+                    <option value="CRITICAL">CRITICAL</option>
+                    <option value="NOT_STARTED">NOT STARTED</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Readiness Note</label>
+                  <textarea 
+                    value={readinessForm.readinessNote}
+                    onChange={(e) => setReadinessForm({ ...readinessForm, readinessNote: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-32 resize-none"
+                    placeholder="Describe current readiness status, missing equipment, etc."
+                  />
+                </div>
+              </form>
+
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
+                <button onClick={() => setIsReadinessModalOpen(false)} className="px-6 py-2 text-slate-600 font-bold">Cancel</button>
+                <button onClick={handleReadinessSubmit} disabled={isSubmitting} className="px-8 py-2 bg-emerald-600 text-white rounded-xl font-bold disabled:opacity-50">
+                  {isSubmitting ? 'Saving...' : 'Update Readiness'}
                 </button>
               </div>
             </motion.div>

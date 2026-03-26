@@ -129,7 +129,71 @@ export class PgisService {
       typeCounts,
       topPriorities: priorities.slice(0, 5),
       areaStrengths: strengths,
+      signalCounts: {
+        grievances: await prisma.grievance.count({ where: { status: 'OPEN', orgUnitId } }),
+        incidents: await prisma.electionIncident.count({ where: { status: 'REPORTED', booth: orgUnitId ? { orgUnitId } : undefined } }),
+        surveyResponses: await prisma.surveyResponse.count(),
+        reports: reports.length
+      }
     };
+  }
+
+  // --- Unified Ground Signals ---
+  async getSignals(limit = 20) {
+    const [reports, grievances, incidents] = await Promise.all([
+      prisma.groundIntelligenceReport.findMany({
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { orgUnit: { select: { name: true } } }
+      }),
+      prisma.grievance.findMany({
+        take: limit,
+        where: { status: 'OPEN' },
+        orderBy: { createdAt: 'desc' },
+        include: { orgUnit: { select: { name: true } } }
+      }),
+      prisma.electionIncident.findMany({
+        take: limit,
+        where: { status: 'REPORTED' },
+        orderBy: { createdAt: 'desc' },
+        include: { booth: { include: { orgUnit: { select: { name: true } } } } }
+      })
+    ]);
+
+    const signals = [
+      ...reports.map(r => ({
+        id: r.id,
+        source: 'REPORT' as const,
+        type: r.type,
+        content: r.content,
+        priority: r.priority as any,
+        status: 'ACTIVE',
+        location: r.orgUnit?.name || r.locationName,
+        createdAt: r.createdAt.toISOString()
+      })),
+      ...grievances.map(g => ({
+        id: g.id,
+        source: 'GRIEVANCE' as const,
+        type: 'PUBLIC_ISSUE',
+        content: g.title + ': ' + g.description,
+        priority: g.priority.toUpperCase() as any,
+        status: g.status,
+        location: g.orgUnit?.name,
+        createdAt: g.createdAt.toISOString()
+      })),
+      ...incidents.map(i => ({
+        id: i.id,
+        source: 'INCIDENT' as const,
+        type: i.type,
+        content: i.description,
+        priority: i.severity as any,
+        status: i.status,
+        location: i.booth?.orgUnit?.name || i.booth?.name,
+        createdAt: i.createdAt.toISOString()
+      }))
+    ];
+
+    return signals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, limit);
   }
 }
 

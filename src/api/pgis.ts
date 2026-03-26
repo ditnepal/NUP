@@ -139,4 +139,15 @@ router.get('/overview', authenticate, authorize(['ADMIN', 'STAFF']), async (req,
   }
 });
 
+// Ground Signals (Unified Feed)
+router.get('/signals', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+    const signals = await pgisService.getSignals(limit);
+    res.json(signals);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

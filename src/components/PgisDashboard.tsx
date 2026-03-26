@@ -36,13 +36,31 @@ interface StrategicOverview {
   typeCounts: Record<string, number>;
   topPriorities: any[];
   areaStrengths: any[];
+  signalCounts: {
+    grievances: number;
+    incidents: number;
+    surveyResponses: number;
+    reports: number;
+  };
+}
+
+interface GroundSignal {
+  id: string;
+  source: 'REPORT' | 'GRIEVANCE' | 'INCIDENT' | 'SURVEY' | 'BOOTH';
+  type: string;
+  content: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  status: string;
+  location?: string;
+  createdAt: string;
 }
 
 export const PgisDashboard: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
+  const [signals, setSignals] = useState<GroundSignal[]>([]);
   const [overview, setOverview] = useState<StrategicOverview | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<'overview' | 'reports' | 'map'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'reports' | 'signals' | 'map'>('overview');
 
   useEffect(() => {
     fetchData();
@@ -51,12 +69,15 @@ export const PgisDashboard: React.FC = () => {
   const fetchData = async () => {
     try {
       // Stagger API calls
-      const rData = await api.get('/pgis/reports');
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const oData = await api.get('/pgis/overview');
+      const [rData, oData, sData] = await Promise.all([
+        api.get('/pgis/reports'),
+        api.get('/pgis/overview'),
+        api.get('/pgis/signals')
+      ]);
       
       setReports(rData);
       setOverview(oData);
+      setSignals(sData);
     } catch (error) {
       console.error('Error fetching PGIS data:', error);
     } finally {
@@ -105,6 +126,12 @@ export const PgisDashboard: React.FC = () => {
             Reports
           </button>
           <button 
+            onClick={() => setActiveView('signals')}
+            className={`px-6 py-2 rounded-lg font-bold transition-all ${activeView === 'signals' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
+          >
+            Signal Feed
+          </button>
+          <button 
             onClick={() => setActiveView('map')}
             className={`px-6 py-2 rounded-lg font-bold transition-all ${activeView === 'map' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
           >
@@ -135,12 +162,12 @@ export const PgisDashboard: React.FC = () => {
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
               <div className="flex items-center justify-between text-purple-600">
                 <MessageSquare size={20} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Total Reports</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Active Signals</span>
               </div>
-              <p className="text-4xl font-bold">{reports.length}</p>
+              <p className="text-4xl font-bold">{overview.signalCounts.reports + overview.signalCounts.grievances + overview.signalCounts.incidents}</p>
               <div className="flex items-center gap-1 text-xs text-gray-400 font-bold">
                 <Activity size={14} />
-                <span>Real-time updates active</span>
+                <span>{overview.signalCounts.grievances} Grievances | {overview.signalCounts.incidents} Incidents</span>
               </div>
             </div>
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
@@ -297,6 +324,60 @@ export const PgisDashboard: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeView === 'signals' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Unified Ground Signals</h2>
+            <div className="flex gap-2">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-widest">Reports</span>
+              <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-bold uppercase tracking-widest">Incidents</span>
+              <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-[10px] font-bold uppercase tracking-widest">Grievances</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4">
+            {signals.map((s) => (
+              <div key={s.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex gap-6 items-start hover:border-black transition-all cursor-pointer">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                  s.source === 'REPORT' ? 'bg-blue-50 text-blue-600' :
+                  s.source === 'INCIDENT' ? 'bg-red-50 text-red-600' :
+                  'bg-orange-50 text-orange-600'
+                }`}>
+                  {s.source === 'REPORT' ? <Activity size={24} /> :
+                   s.source === 'INCIDENT' ? <AlertTriangle size={24} /> :
+                   <MessageSquare size={24} />}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{s.source}</span>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{s.type.replace('_', ' ')}</span>
+                      </div>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{s.content}</p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${getPriorityColor(s.priority)}`}>
+                      {s.priority}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <MapPin size={14} />
+                      {s.location || 'Unknown Location'}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Activity size={14} />
+                      {new Date(s.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="text-gray-300 self-center" />
+              </div>
+            ))}
           </div>
         </div>
       )}

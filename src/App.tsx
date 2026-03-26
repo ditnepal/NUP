@@ -32,6 +32,7 @@ import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { MemberDashboard } from './components/MemberDashboard';
 import { EventDetailView } from './components/EventDetailView';
 import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
+import { NoticePopup } from './components/NoticePopup';
 import { Toaster } from 'sonner';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
@@ -245,6 +246,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
       <Toaster position="top-right" richColors />
+      <NoticePopup user={user} currentPath={currentView} />
       {/* Mobile Header */}
       <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2 text-emerald-600">

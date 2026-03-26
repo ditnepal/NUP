@@ -1358,6 +1358,9 @@ model Notice {
   audience      String    @default("PUBLIC") // PUBLIC, MEMBERS, STAFF
   status        String    @default("DRAFT")
   isPinned      Boolean   @default(false)
+  isPopup       Boolean   @default(false)
+  displayType   String    @default("BANNER") // BANNER, MODAL, TOAST
+  targetPath    String?   // Optional: target specific pages (e.g., "/dashboard")
   publishAt     DateTime?
   expireAt      DateTime?
   attachmentUrl String?

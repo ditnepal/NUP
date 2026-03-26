@@ -408,6 +408,16 @@ export class ElectionService {
   }
 
   // --- Analytics & Readiness ---
+  async updateBoothReadiness(id: string, data: {
+    status?: string;
+    readinessNote?: string;
+  }) {
+    return prisma.booth.update({
+      where: { id },
+      data,
+    });
+  }
+
   async getBoothReadiness(district?: string) {
     const booths = await prisma.booth.findMany({
       where: district ? { district } : {},

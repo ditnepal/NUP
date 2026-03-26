@@ -522,7 +522,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 <h2 className="text-4xl font-black tracking-tight uppercase">Notices</h2>
               </div>
               <div className="grid gap-6">
-                {notices.map((notice) => (
+                {notices.filter(n => !n.isPopup).map((notice) => (
                   <div key={notice.id} className={`bg-white rounded-3xl border ${notice.isPinned ? 'border-emerald-200 shadow-emerald-50' : 'border-slate-100'} shadow-sm p-8`}>
                     {notice.isPinned && (
                       <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4">

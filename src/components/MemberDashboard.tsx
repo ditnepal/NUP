@@ -553,7 +553,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                 </h3>
               </div>
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {notices.map((notice) => (
+                {notices.filter(n => !n.isPopup).map((notice) => (
                   <div key={notice.id} className={`p-4 rounded-2xl border ${notice.isPinned ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
                     <h4 className="font-bold text-slate-800 mb-1">{notice.title}</h4>
                     <p className="text-xs text-slate-600 mb-2">{notice.content}</p>

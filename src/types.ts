@@ -481,6 +481,9 @@ export interface Notice {
   audience: 'PUBLIC' | 'MEMBERS' | 'STAFF';
   status: 'DRAFT' | 'PUBLISHED';
   isPinned: boolean;
+  isPopup: boolean;
+  displayType: 'BANNER' | 'MODAL' | 'TOAST';
+  targetPath?: string;
   publishAt?: string;
   expireAt?: string;
   attachmentUrl?: string;
@@ -635,4 +638,66 @@ export interface CmsSectionContent {
   updatedAt: string;
   // Included content details
   content?: any; 
+}
+
+export interface GroundIntelligenceReport {
+  id: string;
+  reporterId: string;
+  type: 'SENTIMENT' | 'PUBLIC_ISSUE' | 'BOOTH_READINESS' | 'INCIDENT' | 'COMPETITOR_ACTIVITY';
+  content: string;
+  latitude?: number;
+  longitude?: number;
+  locationName?: string;
+  orgUnitId?: string;
+  sentimentScore?: number;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  createdAt: string;
+  updatedAt: string;
+  reporter?: { displayName: string; email: string };
+  orgUnit?: OrganizationUnit;
+}
+
+export interface CommunityPriority {
+  id: string;
+  orgUnitId: string;
+  issue: string;
+  description?: string;
+  rank: number;
+  createdAt: string;
+  updatedAt: string;
+  orgUnit?: OrganizationUnit;
+}
+
+export interface IntelligenceAlert {
+  id: string;
+  title: string;
+  content: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  orgUnitId?: string;
+  userId?: string;
+  isRead: boolean;
+  createdAt: string;
+  orgUnit?: OrganizationUnit;
+}
+
+export interface AreaStrengthScore {
+  id: string;
+  orgUnitId: string;
+  partyStrength: number;
+  oppositionStrength: number;
+  swingVoters: number;
+  lastUpdated: string;
+  orgUnit?: OrganizationUnit;
+}
+
+export interface GroundSignal {
+  id: string;
+  source: 'REPORT' | 'GRIEVANCE' | 'INCIDENT' | 'SURVEY' | 'BOOTH';
+  type: string;
+  content: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  status: string;
+  location?: string;
+  createdAt: string;
+  metadata?: any;
 }

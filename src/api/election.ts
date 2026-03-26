@@ -340,6 +340,20 @@ router.get('/booth-readiness', authenticate, authorize(['ADMIN', 'STAFF']), asyn
   }
 });
 
+router.put('/booths/:id/readiness', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = z.object({
+      status: z.string().optional(),
+      readinessNote: z.string().optional(),
+    }).parse(req.body);
+    const booth = await electionService.updateBoothReadiness(id, data);
+    res.json(booth);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Booth Operations (Polling Log)
 router.post('/booths/:id/logs', authenticate, async (req, res) => {
   try {
