@@ -52,6 +52,8 @@ import financeRouter from './src/api/finance';
 import electionRouter from './src/api/election';
 import warroomRouter from './src/api/warroom';
 import usersRouter from './src/api/users';
+import systemConfigRouter from './src/api/systemConfig';
+import { systemConfigService } from './src/services/systemConfig.service';
 
 export async function createApp() {
   const app = express();
@@ -95,6 +97,7 @@ export async function createApp() {
 
   // Move user-alerts higher to ensure it's matched
   app.use('/api/v1/user-alerts', notificationsRouter);
+  app.use('/api/v1/system-config', systemConfigRouter);
 
   // Serve uploaded documents
   const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -180,6 +183,14 @@ export async function createApp() {
 async function startServer() {
   const PORT = 3000;
   const app = await createApp();
+
+  // Initialize default system configs
+  try {
+    await systemConfigService.initializeDefaults();
+    console.log('[SYSTEM] Default system configurations initialized');
+  } catch (error) {
+    console.error('[SYSTEM] Error initializing system configurations:', error);
+  }
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER] Running on http://0.0.0.0:${PORT}`);

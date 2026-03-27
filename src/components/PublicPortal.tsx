@@ -25,13 +25,24 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   const [surveys, setSurveys] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
+  const [systemConfig, setSystemConfig] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPublicData();
     fetchCategories();
     fetchPublicSurveysAndPolls();
+    fetchSystemConfig();
   }, []);
+
+  const fetchSystemConfig = async () => {
+    try {
+      const config = await api.get('/public/config');
+      setSystemConfig(config);
+    } catch (error) {
+      console.error('Error fetching system config:', error);
+    }
+  };
 
   useEffect(() => {
     fetchNews();
@@ -165,7 +176,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                 <Globe size={20} />
               </div>
-              <span className="font-black text-xl tracking-tight text-slate-800">NUP</span>
+              <span className="font-black text-xl tracking-tight text-slate-800">{systemConfig['PARTY_NAME'] || 'NUP'}</span>
             </div>
             
             <div className="hidden md:flex items-center gap-8">
@@ -791,10 +802,10 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-2 text-emerald-400 mb-8">
                 <Globe size={32} />
-                <span className="font-black text-3xl tracking-tight">NUP</span>
+                <span className="font-black text-3xl tracking-tight">{systemConfig['PARTY_NAME'] || 'NUP'}</span>
               </div>
               <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-                The Nepal United Party is dedicated to building a prosperous, transparent, and inclusive nation for all citizens.
+                {systemConfig['PARTY_TAGLINE'] || 'The Nepal United Party is dedicated to building a prosperous, transparent, and inclusive nation for all citizens.'}
               </p>
             </div>
             
@@ -811,16 +822,16 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             <div>
               <h4 className="font-bold text-lg mb-6 uppercase tracking-widest text-emerald-400">Contact</h4>
               <ul className="space-y-4 text-slate-400">
-                <li>Kathmandu, Nepal</li>
-                <li>info@nup.org.np</li>
-                <li>+977 1 4XXXXXX</li>
+                <li>{systemConfig['CONTACT_ADDRESS'] || 'Kathmandu, Nepal'}</li>
+                <li>{systemConfig['CONTACT_EMAIL'] || 'info@nup.org.np'}</li>
+                <li>{systemConfig['CONTACT_PHONE'] || '+977 1 4XXXXXX'}</li>
               </ul>
             </div>
           </div>
           
           <div className="pt-12 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-slate-500 text-sm">
-              © 2026 Nepal United Party. All rights reserved.
+              © 2026 {systemConfig['PARTY_NAME'] || 'Nepal United Party'}. All rights reserved.
             </p>
             <div className="flex gap-8 text-sm text-slate-500">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>

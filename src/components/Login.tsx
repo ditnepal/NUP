@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Globe, KeyRound, AlertCircle, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { api } from '../lib/api';
@@ -20,6 +20,20 @@ export const Login = ({
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [systemConfig, setSystemConfig] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetchSystemConfig();
+  }, []);
+
+  const fetchSystemConfig = async () => {
+    try {
+      const config = await api.get('/public/config');
+      setSystemConfig(config);
+    } catch (error) {
+      console.error('Error fetching system config:', error);
+    }
+  };
   
   const [requirePasswordChange, setRequirePasswordChange] = useState(initialRequirePasswordChange);
   const [newPassword, setNewPassword] = useState('');
@@ -165,7 +179,7 @@ export const Login = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" 
-              placeholder="admin@nup.org.np"
+              placeholder={`admin@${systemConfig['PARTY_NAME']?.toLowerCase().replace(/\s+/g, '') || 'nup'}.org`}
             />
           </div>
           <div className="space-y-1">

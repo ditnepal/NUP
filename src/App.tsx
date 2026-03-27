@@ -33,13 +33,14 @@ import { MemberDashboard } from './components/MemberDashboard';
 import { EventDetailView } from './components/EventDetailView';
 import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
 import { NoticePopup } from './components/NoticePopup';
+import { SystemSettings } from './components/SystemSettings';
 import { Toaster } from 'sonner';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
 import { usePermissions } from './hooks/usePermissions';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -58,6 +59,20 @@ export default function App() {
   const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [booths, setBooths] = useState<Booth[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [systemConfig, setSystemConfig] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetchSystemConfig();
+  }, []);
+
+  const fetchSystemConfig = async () => {
+    try {
+      const config = await api.get('/public/config');
+      setSystemConfig(config);
+    } catch (error) {
+      console.error('Error fetching system config:', error);
+    }
+  };
 
   useEffect(() => {
     // Close sidebar on view change on mobile
@@ -230,7 +245,7 @@ export default function App() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, show: can('DASHBOARD', 'VIEW') && user.role !== 'MEMBER' },
     { id: 'member-dashboard', label: 'Member Portal', icon: Award, show: user.role === 'MEMBER' },
-    { id: 'warroom', label: 'War Room', icon: ShieldAlert, show: can('WAR_ROOM', 'VIEW') },
+    { id: 'warroom', label: 'War Room', icon: ShieldAlert, show: can('WAR_ROOM', 'VIEW') && systemConfig['ENABLE_WAR_ROOM'] !== 'false' },
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone, show: can('COMMUNICATION', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
     { id: 'supporters', label: 'Supporters', icon: Users, show: can('SUPPORTERS', 'VIEW') },
     { id: 'booths', label: 'Booths', icon: MapPin, show: can('BOOTHS', 'VIEW') },
@@ -250,7 +265,8 @@ export default function App() {
     { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' },
     { id: 'grievances', label: 'Grievances', icon: ShieldAlert, show: can('GRIEVANCES', 'VIEW') },
     { id: 'surveys', label: 'Surveys', icon: ClipboardList, show: can('SURVEYS', 'VIEW') },
-    { id: 'pgis', label: 'PGIS', icon: Shield, show: can('PGIS', 'VIEW') },
+    { id: 'pgis', label: 'PGIS', icon: Shield, show: can('PGIS', 'VIEW') && systemConfig['ENABLE_PGIS'] !== 'false' },
+    { id: 'settings', label: 'Settings', icon: Settings, show: user.role === 'ADMIN' },
   ];
 
   const filteredNavItems = navItems.filter(item => item.show);
@@ -263,7 +279,7 @@ export default function App() {
       <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2 text-emerald-600">
           <Globe size={24} />
-          <span className="font-black text-xl tracking-tight text-slate-800">PPOS</span>
+          <span className="font-black text-xl tracking-tight text-slate-800">{systemConfig['PARTY_NAME'] || 'PPOS'}</span>
         </div>
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -292,7 +308,7 @@ export default function App() {
             <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
               <Globe size={24} />
             </div>
-            <span className="font-black text-xl tracking-tight text-slate-800">PPOS</span>
+            <span className="font-black text-xl tracking-tight text-slate-800">{systemConfig['PARTY_NAME'] || 'PPOS'}</span>
           </div>
         </div>
 
@@ -737,6 +753,7 @@ export default function App() {
         {currentView === 'surveys' && <SurveyPolls user={user} />}
         {currentView === 'pgis' && <PgisDashboard />}
         {currentView === 'warroom' && <WarRoomDashboard />}
+        {currentView === 'settings' && <SystemSettings />}
         {currentView === 'donations' && <DonationPortal />}
         {currentView === 'profile' && <UserProfileDashboard user={user} onLogout={handleLogout} />}
         {currentView === 'member-dashboard' && (

@@ -396,4 +396,26 @@ router.get('/sections', async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/public/config
+// @desc    Get public system configurations
+// @access  Public
+router.get('/config', async (req, res) => {
+  try {
+    const keys = ['PARTY_NAME', 'PARTY_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'DEFAULT_LANGUAGE'];
+    const configs = await prisma.systemConfig.findMany({
+      where: { key: { in: keys } }
+    });
+    
+    const configMap = configs.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    res.json(configMap);
+  } catch (error: any) {
+    console.error('[Public API] Error fetching config:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;
