@@ -525,11 +525,11 @@ router.post('/:id/reject', authenticate, checkPermission('MEMBERSHIP', 'REJECT',
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
-    const member = await membershipService.reject(id, reason);
+    const { reason, decisionNote } = req.body;
+    const member = await membershipService.reject(id, decisionNote || reason);
     res.json(member);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -542,12 +542,12 @@ router.post('/:id/verify', authenticate, checkPermission('MEMBERSHIP', 'VERIFY',
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const { note } = req.body;
+    const { note, decisionNote } = req.body;
     
-    const updatedMember = await membershipService.verify(id, req.user?.id!, note);
+    const updatedMember = await membershipService.verify(id, req.user?.id!, decisionNote || note);
     res.json(updatedMember);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -560,12 +560,12 @@ router.post('/:id/approve', authenticate, checkPermission('MEMBERSHIP', 'APPROVE
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const { note } = req.body;
+    const { note, decisionNote } = req.body;
 
-    const updatedMember = await membershipService.approve(id, req.user?.id!, note);
+    const updatedMember = await membershipService.approve(id, req.user?.id!, decisionNote || note);
     res.json(updatedMember);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -578,12 +578,12 @@ router.post('/:id/escalate', authenticate, checkPermission('MEMBERSHIP', 'ESCALA
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const { note } = req.body;
+    const { note, decisionNote } = req.body;
 
-    const updatedMember = await membershipService.escalate(id, note);
+    const updatedMember = await membershipService.escalate(id, decisionNote || note);
     res.json(updatedMember);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -711,11 +711,11 @@ router.post('/:id/suspend', authenticate, checkPermission('MEMBERSHIP', 'SUSPEND
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
-    const member = await membershipService.suspend(id, reason);
+    const { reason, decisionNote } = req.body;
+    const member = await membershipService.suspend(id, decisionNote || reason);
     res.json(member);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 });
 
@@ -728,11 +728,11 @@ router.post('/:id/terminate', authenticate, checkPermission('MEMBERSHIP', 'TERMI
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
-    const member = await membershipService.terminate(id, reason);
+    const { reason, decisionNote } = req.body;
+    const member = await membershipService.terminate(id, decisionNote || reason);
     res.json(member);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 });
 

@@ -3,9 +3,13 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();
 
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:/app/applet/prisma/dev.db';
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL !== 'file:/app/applet/prisma/dev.db') {
+  console.error('[FATAL] DATABASE_URL is missing or invalid in .env');
+  console.error('[FATAL] Expected: file:/app/applet/prisma/dev.db');
+  console.error(`[FATAL] Received: ${process.env.DATABASE_URL}`);
+  process.exit(1);
 }
+
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
@@ -180,13 +184,6 @@ async function startServer() {
 
 if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   console.log('[SERVER] Starting server initialization...');
-  try {
-    console.log('[SERVER] Running prisma generate...');
-    const { execSync } = await import('child_process');
-    execSync('npx prisma generate', { stdio: 'inherit' });
-  } catch (err) {
-    console.error('[SERVER] Failed to run prisma generate:', err);
-  }
   startServer().catch(err => {
     console.error('[SERVER] Failed to start server:', err);
   });

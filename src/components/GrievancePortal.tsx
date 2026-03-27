@@ -10,7 +10,6 @@ import {
   User,
   ArrowRight,
   ShieldAlert,
-  History,
   MessageSquare,
   Settings
 } from 'lucide-react';
@@ -20,6 +19,7 @@ import { Grievance } from '../types';
 import { GrievanceStatusBadge, GrievancePriorityBadge } from './ui/GrievanceBadges';
 import { StatCard } from './ui/StatCard';
 import { usePermissions } from '../hooks/usePermissions';
+import { AuditTrail } from './ui/AuditTrail';
 
 interface GrievancePortalProps {
   user: any;
@@ -46,6 +46,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
   
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [responseContent, setResponseContent] = useState('');
+  const [decisionNote, setDecisionNote] = useState('');
   const [isInternalResponse, setIsInternalResponse] = useState(false);
   const [assigneeId, setAssigneeId] = useState('');
 
@@ -119,8 +120,12 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
   const handleAssign = async () => {
     if (!selectedGrievance || !assigneeId) return;
     try {
-      await api.post(`/grievances/${selectedGrievance.id}/assign`, { userId: assigneeId });
+      await api.post(`/grievances/${selectedGrievance.id}/assign`, { 
+        userId: assigneeId,
+        decisionNote 
+      });
       setAssigneeId('');
+      setDecisionNote('');
       const updated = await api.get('/grievances');
       setGrievances(updated);
       setSelectedGrievance(updated.find((g: any) => g.id === selectedGrievance.id) || null);
@@ -131,8 +136,13 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
 
   const handleStatusChange = async (action: 'resolve' | 'escalate') => {
     if (!selectedGrievance) return;
+    if (action === 'resolve' && !decisionNote.trim()) {
+      alert('Decision note is required for resolving a grievance.');
+      return;
+    }
     try {
-      await api.post(`/grievances/${selectedGrievance.id}/${action}`, {});
+      await api.post(`/grievances/${selectedGrievance.id}/${action}`, { decisionNote });
+      setDecisionNote('');
       const updated = await api.get('/grievances');
       setGrievances(updated);
       setSelectedGrievance(updated.find((g: any) => g.id === selectedGrievance.id) || null);
@@ -431,7 +441,10 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                   <span>Reported by {selectedGrievance.reporter.displayName} on {new Date(selectedGrievance.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
-              <button onClick={() => setSelectedGrievance(null)} className="text-slate-400 hover:text-slate-900">
+              <button onClick={() => {
+                setSelectedGrievance(null);
+                setDecisionNote('');
+              }} className="text-slate-400 hover:text-slate-900">
                 <Plus size={24} className="rotate-45" />
               </button>
             </div>
@@ -445,6 +458,20 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
               {(can('GRIEVANCES', 'UPDATE') || can('GRIEVANCES', 'ESCALATE')) && selectedGrievance.status !== 'RESOLVED' && selectedGrievance.status !== 'CLOSED' && (
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                   <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider">Admin Actions</h3>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Decision Note (Required for Resolve) *</label>
+                    <textarea 
+                      value={decisionNote}
+                      onChange={e => setDecisionNote(e.target.value.substring(0, 300))}
+                      maxLength={300}
+                      placeholder="Explain the reason for assignment, resolution (Required), or escalation..."
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-900 outline-none"
+                      rows={2}
+                    />
+                    <div className="text-[10px] text-slate-400 text-right">{decisionNote.length}/300</div>
+                  </div>
+
                   <div className="flex flex-wrap items-center gap-4">
                     {can('GRIEVANCES', 'UPDATE') && (
                       <div className="flex items-center gap-2">
@@ -479,7 +506,10 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                     {can('GRIEVANCES', 'UPDATE') && (
                       <button 
                         onClick={() => handleStatusChange('resolve')}
-                        className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-200"
+                        disabled={!decisionNote.trim()}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          decisionNote.trim() ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        }`}
                       >
                         Mark Resolved
                       </button>
@@ -522,39 +552,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                 </div>
 
                 {/* Audit Trail Section */}
-                {selectedGrievance.auditTrail && selectedGrievance.auditTrail.length > 0 && (
-                  <div className="space-y-4 pt-6 border-t border-slate-100">
-                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 uppercase tracking-widest opacity-60">
-                      <History size={14} />
-                      Operational Audit Trail
-                    </h3>
-                    <div className="space-y-4">
-                      {selectedGrievance.auditTrail.map((log, idx) => (
-                        <div key={idx} className="flex gap-3 text-xs">
-                          <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5" />
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start mb-0.5">
-                              <span className="font-bold text-slate-900">{log.action.replace(/_/g, ' ')}</span>
-                              <span className="text-[10px] text-slate-400 font-mono">
-                                {new Date(log.timestamp).toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="text-slate-500 line-clamp-2">
-                              {log.details && typeof log.details === 'object' 
-                                ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
-                                : 'System recorded action'}
-                            </div>
-                            {log.user && (
-                              <div className="text-[10px] text-slate-600 font-medium mt-1">
-                                by {log.user.displayName || log.user.email}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <AuditTrail logs={selectedGrievance.auditTrail} className="pt-6 border-t border-slate-100" />
 
                 {/* Add Response Form */}
                 {selectedGrievance.status !== 'CLOSED' && (

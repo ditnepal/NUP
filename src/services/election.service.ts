@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma';
+import { safeJsonParse } from '../lib/json';
 import { auditService } from './audit.service';
 
 export class ElectionService {
@@ -45,7 +46,13 @@ export class ElectionService {
     });
   }
 
-  async deleteElectionCycle(id: string) {
+  async deleteElectionCycle(id: string, userId?: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for deleting an election cycle.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const [candidates, results, incidents] = await Promise.all([
       prisma.candidate.count({ where: { electionCycleId: id } }),
       prisma.electionResult.count({ where: { cycleId: id } }),
@@ -56,7 +63,19 @@ export class ElectionService {
       throw new Error('Cannot delete election cycle with linked candidates, results, or incidents.');
     }
 
-    return prisma.electionCycle.delete({ where: { id } });
+    const cycle = await prisma.electionCycle.delete({ where: { id } });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'ELECTION_CYCLE_DELETED',
+        entityType: 'ElectionCycle',
+        entityId: id,
+        details: { name: cycle.name, year: cycle.year, note, decisionNote: note },
+      });
+    }
+
+    return cycle;
   }
 
   // --- Constituencies & Polling Stations ---
@@ -96,7 +115,13 @@ export class ElectionService {
     });
   }
 
-  async deleteConstituency(id: string) {
+  async deleteConstituency(id: string, userId?: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for deleting a constituency.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const [candidates, results, stations] = await Promise.all([
       prisma.candidate.count({ where: { constituencyId: id } }),
       prisma.electionResult.count({ where: { constituencyId: id } }),
@@ -107,7 +132,19 @@ export class ElectionService {
       throw new Error('Cannot delete constituency with linked candidates, results, or polling stations.');
     }
 
-    return prisma.constituency.delete({ where: { id } });
+    const constituency = await prisma.constituency.delete({ where: { id } });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'CONSTITUENCY_DELETED',
+        entityType: 'Constituency',
+        entityId: id,
+        details: { name: constituency.name, code: constituency.code, note, decisionNote: note },
+      });
+    }
+
+    return constituency;
   }
 
   async createPollingStation(data: {
@@ -154,12 +191,30 @@ export class ElectionService {
     });
   }
 
-  async deletePollingStation(id: string) {
+  async deletePollingStation(id: string, userId?: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for deleting a polling station.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const booths = await prisma.booth.count({ where: { pollingStationId: id } });
     if (booths > 0) {
       throw new Error('Cannot delete polling station with linked booths.');
     }
-    return prisma.pollingStation.delete({ where: { id } });
+    const station = await prisma.pollingStation.delete({ where: { id } });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'POLLING_STATION_DELETED',
+        entityType: 'PollingStation',
+        entityId: id,
+        details: { name: station.name, code: station.code, note, decisionNote: note },
+      });
+    }
+
+    return station;
   }
 
   // --- Candidates ---
@@ -217,7 +272,13 @@ export class ElectionService {
     });
   }
 
-  async deleteCandidate(id: string) {
+  async deleteCandidate(id: string, userId?: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for deleting a candidate.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     // Check for election results
     const resultsCount = await prisma.electionResult.count({
       where: { candidateId: id },
@@ -236,9 +297,21 @@ export class ElectionService {
       throw new Error('Cannot delete candidate with existing documents. Please remove documents first.');
     }
 
-    return prisma.candidate.delete({
+    const candidate = await prisma.candidate.delete({
       where: { id },
     });
+
+    if (userId) {
+      await auditService.log({
+        userId,
+        action: 'CANDIDATE_DELETED',
+        entityType: 'Candidate',
+        entityId: id,
+        details: { name: candidate.name, position: candidate.position, note, decisionNote: note },
+      });
+    }
+
+    return candidate;
   }
 
   // --- Booth Operations ---
@@ -341,7 +414,7 @@ export class ElectionService {
           action: l.action,
           userId: l.userId || '',
           userDisplayName: l.user?.displayName || l.userId,
-          details: l.details ? JSON.parse(l.details) : undefined,
+          details: safeJsonParse(l.details),
           timestamp: l.timestamp.toISOString(),
         })),
       };
@@ -353,8 +426,9 @@ export class ElectionService {
     severity?: string;
     description?: string;
     userId?: string;
+    note?: string;
   }) {
-    const { userId, ...updateData } = data;
+    const { userId, note, ...updateData } = data;
     const incident = await prisma.electionIncident.update({
       where: { id },
       data: updateData,
@@ -366,14 +440,26 @@ export class ElectionService {
         action: 'ELECTION_INCIDENT_UPDATED',
         entityType: 'ElectionIncident',
         entityId: incident.id,
-        details: updateData,
+        details: { 
+          ...updateData, 
+          note,
+          decisionNote: note,
+          targetType: 'ElectionIncident',
+          targetId: incident.id
+        },
       });
     }
 
     return incident;
   }
 
-  async deleteIncident(id: string, userId?: string) {
+  async deleteIncident(id: string, userId?: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for deleting an incident.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const incident = await prisma.electionIncident.delete({ where: { id } });
 
     if (userId) {
@@ -382,7 +468,7 @@ export class ElectionService {
         action: 'ELECTION_INCIDENT_DELETED',
         entityType: 'ElectionIncident',
         entityId: id,
-        details: { type: incident.type, description: incident.description },
+        details: { type: incident.type, description: incident.description, note, decisionNote: note },
       });
     }
 
@@ -470,7 +556,7 @@ export class ElectionService {
           action: l.action,
           userId: l.userId || '',
           userDisplayName: l.user?.displayName || l.userId,
-          details: l.details ? JSON.parse(l.details) : undefined,
+          details: safeJsonParse(l.details),
           timestamp: l.timestamp.toISOString(),
         })),
       };
@@ -482,8 +568,9 @@ export class ElectionService {
     isWinner?: boolean;
     verifiedById?: string;
     userId?: string;
+    note?: string;
   }) {
-    const { userId, ...updateData } = data;
+    const { userId, note, ...updateData } = data;
     const result = await prisma.electionResult.update({
       where: { id },
       data: {
@@ -498,7 +585,13 @@ export class ElectionService {
         action: 'ELECTION_RESULT_UPDATED',
         entityType: 'ElectionResult',
         entityId: result.id,
-        details: updateData,
+        details: { 
+          ...updateData, 
+          note,
+          decisionNote: note,
+          targetType: 'ElectionResult',
+          targetId: result.id
+        },
       });
     }
 
@@ -508,14 +601,26 @@ export class ElectionService {
         action: 'ELECTION_RESULT_VERIFIED',
         entityType: 'ElectionResult',
         entityId: result.id,
-        details: `Verified result via update`,
+        details: { 
+          message: `Verified result via update`,
+          note,
+          decisionNote: note,
+          targetType: 'ElectionResult',
+          targetId: result.id
+        },
       });
     }
 
     return result;
   }
 
-  async deleteResult(id: string, userId?: string) {
+  async deleteResult(id: string, userId?: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for deleting a result.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const result = await prisma.electionResult.delete({ where: { id } });
 
     if (userId) {
@@ -524,7 +629,7 @@ export class ElectionService {
         action: 'ELECTION_RESULT_DELETED',
         entityType: 'ElectionResult',
         entityId: id,
-        details: { candidateId: result.candidateId, votes: result.votesReceived },
+        details: { candidateId: result.candidateId, votes: result.votesReceived, note, decisionNote: note },
       });
     }
 
@@ -536,8 +641,9 @@ export class ElectionService {
     status?: string;
     readinessNote?: string;
     userId?: string;
+    note?: string;
   }) {
-    const { userId, ...updateData } = data;
+    const { userId, note, ...updateData } = data;
     const booth = await prisma.booth.update({
       where: { id },
       data: updateData,
@@ -549,7 +655,13 @@ export class ElectionService {
         action: 'ELECTION_BOOTH_READINESS_UPDATED',
         entityType: 'Booth',
         entityId: booth.id,
-        details: updateData,
+        details: { 
+          ...updateData, 
+          note,
+          decisionNote: note,
+          targetType: 'Booth',
+          targetId: booth.id
+        },
       });
     }
 
@@ -590,7 +702,7 @@ export class ElectionService {
           action: l.action,
           userId: l.userId || '',
           userDisplayName: l.user?.displayName || l.userId,
-          details: l.details ? JSON.parse(l.details) : undefined,
+          details: safeJsonParse(l.details),
           timestamp: l.timestamp.toISOString(),
         })),
       };

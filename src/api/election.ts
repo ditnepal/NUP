@@ -113,10 +113,11 @@ router.put('/cycles/:id', authenticate, checkPermission('ELECTION', 'UPDATE', as
 router.delete('/cycles/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
   const cycle = await prisma.electionCycle.findUnique({ where: { id: req.params.id } });
   return cycle?.orgUnitId || undefined;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await electionService.deleteElectionCycle(id);
+    const { note, decisionNote } = req.body;
+    await electionService.deleteElectionCycle(id, req.user?.id, decisionNote || note);
     res.json({ message: 'Election cycle deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -161,10 +162,11 @@ router.put('/constituencies/:id', authenticate, checkPermission('ELECTION', 'UPD
 router.delete('/constituencies/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
   const constituency = await prisma.constituency.findUnique({ where: { id: req.params.id } });
   return constituency?.orgUnitId || undefined;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await electionService.deleteConstituency(id);
+    const { note, decisionNote } = req.body;
+    await electionService.deleteConstituency(id, req.user?.id, decisionNote || note);
     res.json({ message: 'Constituency deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -210,10 +212,11 @@ router.put('/polling-stations/:id', authenticate, checkPermission('ELECTION', 'U
 router.delete('/polling-stations/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
   const station = await prisma.pollingStation.findUnique({ where: { id: req.params.id } });
   return station?.orgUnitId || undefined;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await electionService.deletePollingStation(id);
+    const { note, decisionNote } = req.body;
+    await electionService.deletePollingStation(id, req.user?.id, decisionNote || note);
     res.json({ message: 'Polling station deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -260,10 +263,11 @@ router.put('/candidates/:id', authenticate, checkPermission('ELECTION', 'UPDATE'
 router.delete('/candidates/:id', authenticate, checkPermission('ELECTION', 'DELETE', async (req) => {
   const candidate = await prisma.candidate.findUnique({ where: { id: req.params.id } });
   return candidate?.orgUnitId || undefined;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await electionService.deleteCandidate(id);
+    const { note, decisionNote } = req.body;
+    await electionService.deleteCandidate(id, req.user?.id, decisionNote || note);
     res.json({ message: 'Candidate deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -302,10 +306,12 @@ router.put('/incidents/:id', authenticate, checkPermission('ELECTION', 'UPDATE',
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const data = incidentSchema.partial().parse(req.body);
+    const { note, decisionNote, ...rest } = req.body;
+    const data = incidentSchema.partial().parse(rest);
     const incident = await electionService.updateIncident(id, {
       ...data,
-      userId: req.user?.id
+      userId: req.user?.id,
+      note: decisionNote || note
     });
     res.json(incident);
   } catch (error: any) {
@@ -319,7 +325,8 @@ router.delete('/incidents/:id', authenticate, checkPermission('ELECTION', 'DELET
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await electionService.deleteIncident(id, req.user?.id);
+    const { note, decisionNote } = req.body;
+    await electionService.deleteIncident(id, req.user?.id, decisionNote || note);
     res.json({ message: 'Incident deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -360,11 +367,13 @@ router.put('/results/:id', authenticate, checkPermission('ELECTION', 'UPDATE', a
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const data = resultSchema.partial().parse(req.body);
+    const { note, decisionNote, ...rest } = req.body;
+    const data = resultSchema.partial().parse(rest);
     const result = await electionService.updateResult(id, {
       ...data,
       verifiedById: data.verified ? req.user?.id : undefined,
-      userId: req.user?.id
+      userId: req.user?.id,
+      note: decisionNote || note
     });
     res.json(result);
   } catch (error: any) {
@@ -378,7 +387,8 @@ router.delete('/results/:id', authenticate, checkPermission('ELECTION', 'DELETE'
 }), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await electionService.deleteResult(id, req.user?.id);
+    const { note, decisionNote } = req.body;
+    await electionService.deleteResult(id, req.user?.id, decisionNote || note);
     res.json({ message: 'Result deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -400,13 +410,15 @@ router.get('/booth-readiness', authenticate, checkPermission('ELECTION', 'VIEW')
 router.put('/booths/:id/readiness', authenticate, checkPermission('ELECTION', 'APPROVE'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
+    const { note, decisionNote, ...rest } = req.body;
     const data = z.object({
       status: z.string().optional(),
       readinessNote: z.string().optional(),
-    }).parse(req.body);
+    }).parse(rest);
     const booth = await electionService.updateBoothReadiness(id, {
       ...data,
-      userId: req.user?.id
+      userId: req.user?.id,
+      note: decisionNote || note
     });
     res.json(booth);
   } catch (error: any) {

@@ -80,7 +80,7 @@ router.get('/programs/portal', authenticate, async (req: AuthRequest, res) => {
     }
 
     if (req.user?.id) {
-      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user.id);
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user);
       where.OR = [
         { orgUnitId: { in: accessibleUnitIds } },
         { orgUnitId: null }
@@ -138,7 +138,7 @@ router.get('/programs/public', async (req, res) => {
 // @access  Private (Admin/Staff)
 router.get('/programs/admin', authenticate, checkPermission('TRAINING', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
     const programs = await prisma.trainingProgram.findMany({
       where: {
         OR: [
@@ -176,7 +176,7 @@ router.post('/programs', authenticate, checkPermission('TRAINING', 'CREATE'), as
         data.orgUnitId = user.orgUnitId;
       }
     } else {
-      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (!accessibleUnitIds.includes(data.orgUnitId)) {
         return res.status(403).json({ error: 'Cannot create program for an organization unit outside your scope' });
       }
@@ -258,7 +258,7 @@ router.post('/courses', authenticate, checkPermission('TRAINING', 'CREATE'), asy
         data.orgUnitId = user.orgUnitId;
       }
     } else {
-      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (!accessibleUnitIds.includes(data.orgUnitId)) {
         return res.status(403).json({ error: 'Cannot create course for an organization unit outside your scope' });
       }
@@ -330,7 +330,7 @@ router.post('/lessons', authenticate, checkPermission('TRAINING', 'CREATE'), asy
         data.orgUnitId = user.orgUnitId;
       }
     } else {
-      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (!accessibleUnitIds.includes(data.orgUnitId)) {
         return res.status(403).json({ error: 'Cannot create lesson for an organization unit outside your scope' });
       }

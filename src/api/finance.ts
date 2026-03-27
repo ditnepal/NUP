@@ -199,9 +199,10 @@ router.post('/donations/:id/refund', authenticate, checkPermission('FINANCE', 'U
   return donation?.transaction?.orgUnitId || undefined;
 }), async (req: AuthRequest, res) => {
   try {
-    const { reason } = req.body;
-    if (!reason) return res.status(400).json({ error: 'Reason for refund is required' });
-    const result = await financeService.processRefund(req.params.id, reason, req.user?.id!);
+    const { reason, decisionNote } = req.body;
+    const finalReason = decisionNote || reason;
+    if (!finalReason) return res.status(400).json({ error: 'Reason for refund is required' });
+    const result = await financeService.processRefund(req.params.id, finalReason, req.user?.id!);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -242,7 +243,8 @@ router.post('/transactions/:id/verify', authenticate, checkPermission('FINANCE',
   return transaction?.orgUnitId || undefined;
 }), async (req: AuthRequest, res) => {
   try {
-    const result = await financeService.verifyTransaction(req.params.id, req.user?.id!);
+    const { note, decisionNote } = req.body;
+    const result = await financeService.verifyTransaction(req.params.id, req.user?.id!, decisionNote || note);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -257,9 +259,9 @@ router.post('/transactions/:id/reject', authenticate, checkPermission('FINANCE',
   return transaction?.orgUnitId || undefined;
 }), async (req: AuthRequest, res) => {
   try {
-    const { reason } = req.body;
-    if (!reason) return res.status(400).json({ error: 'Reason for rejection is required' });
-    const result = await financeService.rejectTransaction(req.params.id, reason, req.user?.id!);
+    const { reason, decisionNote } = req.body;
+    if (!reason && !decisionNote) return res.status(400).json({ error: 'Reason for rejection is required' });
+    const result = await financeService.rejectTransaction(req.params.id, decisionNote || reason, req.user?.id!);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

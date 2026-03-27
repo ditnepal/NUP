@@ -4,17 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "prisma generate",
     "dev": "tsx server.ts",
     "start": "tsx server.ts",
+    "backup:db": "node scripts/backup-db.cjs",
     "build": "prisma generate && vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "prisma generate && tsc --noEmit",
+    "lint": "tsc --noEmit",
     "db:push": "prisma db push",
     "db:seed": "tsx seed.ts",
     "db:studio": "prisma studio",
-    "test": "prisma generate && vitest run"
+    "test": "vitest run"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

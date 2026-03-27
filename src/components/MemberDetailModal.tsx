@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Member, UserProfile } from '../types';
-import { FileText, Video, User, History } from 'lucide-react';
+import { FileText, Video, User } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
+import { AuditTrail } from './ui/AuditTrail';
 
 interface MemberDetailModalProps {
   member: Member;
@@ -152,33 +153,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, us
         </div>
 
         {/* Operational Audit Trail */}
-        {member.auditTrail && member.auditTrail.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="flex items-center gap-2 mb-4">
-              <History size={16} className="text-slate-400" />
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Operational Audit Trail</h3>
-            </div>
-            <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-              {member.auditTrail.map((log) => (
-                <div key={log.id} className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-[11px]">
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="font-bold text-slate-700 uppercase tracking-tight">{log.action}</span>
-                    <span className="text-slate-400 font-mono">{new Date(log.timestamp).toLocaleString()}</span>
-                  </div>
-                  <p className="text-slate-600 leading-relaxed mb-1">
-                    {log.details && typeof log.details === 'object' 
-                      ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
-                      : log.details}
-                  </p>
-                  <div className="flex items-center gap-1 text-slate-400 font-medium">
-                    <span>Performed by:</span>
-                    <span className="text-slate-700">{log.userDisplayName || log.userId}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <AuditTrail logs={member.auditTrail} />
 
         {showNoteInput && (
           <div className={`mt-8 p-4 rounded-xl border ${
@@ -189,20 +164,27 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, us
               showNoteInput === 'REJECT' ? 'text-rose-600' : 
               showNoteInput === 'ESCALATE' ? 'text-purple-600' : 'text-blue-600'
             }`}>
-              {showNoteInput === 'REJECT' ? 'Rejection Reason' : 
-               showNoteInput === 'ESCALATE' ? 'Escalation Note' : 'Review Note (Optional)'}
+              {showNoteInput === 'REJECT' ? 'Rejection Reason (Required) *' : 
+               showNoteInput === 'ESCALATE' ? 'Escalation Note' : 'Decision Note (Optional)'}
             </label>
             <textarea
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              maxLength={300}
+              onChange={(e) => setNote(e.target.value.substring(0, 300))}
               className={`w-full p-3 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 ${
                 showNoteInput === 'REJECT' ? 'border-rose-200 focus:ring-rose-500' : 
                 showNoteInput === 'ESCALATE' ? 'border-purple-200 focus:ring-purple-500' : 'border-blue-200 focus:ring-blue-500'
               }`}
-              placeholder={showNoteInput === 'REJECT' ? "Explain why this application is being rejected..." : 
-                           showNoteInput === 'ESCALATE' ? "Explain why this is being escalated to parent scope..." : "Add a note about this verification/approval..."}
+              placeholder={showNoteInput === 'REJECT' ? "Explain why this application is being rejected (Required)..." : 
+                           showNoteInput === 'ESCALATE' ? "Explain why this is being escalated to parent scope..." : "Add a decision note for this action..."}
               rows={3}
             />
+            <div className={`text-[10px] text-right mt-1 ${
+              showNoteInput === 'REJECT' ? 'text-rose-400' : 
+              showNoteInput === 'ESCALATE' ? 'text-purple-400' : 'text-blue-400'
+            }`}>
+              {note.length}/300
+            </div>
           </div>
         )}
 
@@ -217,8 +199,11 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, us
           {(member.status === 'PENDING' || member.status === 'VERIFIED') && can('MEMBERSHIP', 'APPROVE') && (
             <button 
               onClick={() => handleAction('REJECT')} 
+              disabled={showNoteInput === 'REJECT' && !note.trim()}
               className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                showNoteInput === 'REJECT' ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white border border-rose-200 text-rose-600 hover:bg-rose-50'
+                showNoteInput === 'REJECT' 
+                  ? (note.trim() ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-slate-300 text-white cursor-not-allowed') 
+                  : 'bg-white border border-rose-200 text-rose-600 hover:bg-rose-50'
               }`}
             >
               {showNoteInput === 'REJECT' ? 'Confirm Rejection' : 'Reject Application'}

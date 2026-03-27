@@ -1,3 +1,4 @@
+import { safeJsonParse } from '../lib/json';
 import { BaseService } from './base.service';
 import { auditService } from './audit.service';
 import { notificationService } from './notification.service';
@@ -129,7 +130,12 @@ export class MembershipService extends BaseService {
       userId: verifierId,
       entityType: 'Member',
       entityId: member.id,
-      details: { note }
+      details: { 
+        note,
+        decisionNote: note,
+        targetType: 'Member',
+        targetId: member.id
+      }
     });
 
     await notificationService.notify({
@@ -194,7 +200,15 @@ export class MembershipService extends BaseService {
           userId: approverId,
           entityType: 'Member',
           entityId: member.id,
-          details: { membershipId }
+          details: { 
+            membershipId,
+            note,
+            decisionNote: note,
+            previousState: 'PENDING',
+            newState: 'ACTIVE',
+            targetType: 'Member',
+            targetId: member.id
+          }
         });
 
         return member;
@@ -282,6 +296,12 @@ export class MembershipService extends BaseService {
    * Suspend Membership
    */
   async suspend(memberId: string, reason: string) {
+    if (!reason || reason.trim().length === 0) {
+      throw new Error('Decision note is required for suspension.');
+    }
+    if (reason.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const member = await this.db.member.findUnique({ where: { id: memberId } });
     if (!member) throw new Error('Member not found');
     const history = JSON.parse(member.suspensionHistory || '[]');
@@ -299,7 +319,14 @@ export class MembershipService extends BaseService {
       action: 'MEMBERSHIP_SUSPENDED',
       entityType: 'Member',
       entityId: member.id,
-      details: { reason }
+      details: { 
+        reason,
+        decisionNote: reason,
+        previousState: member.status,
+        newState: 'SUSPENDED',
+        targetType: 'Member',
+        targetId: member.id
+      }
     });
 
     return updatedMember;
@@ -309,6 +336,12 @@ export class MembershipService extends BaseService {
    * Terminate Membership
    */
   async terminate(memberId: string, reason: string) {
+    if (!reason || reason.trim().length === 0) {
+      throw new Error('Decision note is required for termination.');
+    }
+    if (reason.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const member = await this.db.member.findUnique({ where: { id: memberId } });
     if (!member) throw new Error('Member not found');
     const history = JSON.parse(member.terminationHistory || '[]');
@@ -326,7 +359,14 @@ export class MembershipService extends BaseService {
       action: 'MEMBERSHIP_TERMINATED',
       entityType: 'Member',
       entityId: member.id,
-      details: { reason }
+      details: { 
+        reason,
+        decisionNote: reason,
+        previousState: member.status,
+        newState: 'TERMINATED',
+        targetType: 'Member',
+        targetId: member.id
+      }
     });
 
     return updatedMember;
@@ -336,6 +376,12 @@ export class MembershipService extends BaseService {
    * Reject Membership Application
    */
   async reject(memberId: string, reason?: string) {
+    if (!reason || reason.trim().length === 0) {
+      throw new Error('Decision note is required for rejection.');
+    }
+    if (reason.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const member = await this.db.member.update({
       where: { id: memberId },
       data: {
@@ -349,7 +395,14 @@ export class MembershipService extends BaseService {
       action: 'MEMBERSHIP_REJECTED',
       entityType: 'Member',
       entityId: member.id,
-      details: { reason }
+      details: { 
+        reason,
+        decisionNote: reason,
+        previousState: 'PENDING',
+        newState: 'REJECTED',
+        targetType: 'Member',
+        targetId: member.id
+      }
     });
 
     return member;
@@ -390,7 +443,13 @@ export class MembershipService extends BaseService {
       action: 'MEMBERSHIP_ESCALATED',
       entityType: 'Member',
       entityId: member.id,
-      details: { note, escalatedToUnitId: unit.parentId }
+      details: { 
+        note, 
+        decisionNote: note,
+        escalatedToUnitId: unit.parentId,
+        targetType: 'Member',
+        targetId: member.id
+      }
     });
 
     return updatedMember;
@@ -423,7 +482,7 @@ export class MembershipService extends BaseService {
             id: l.id,
             action: l.action,
             timestamp: l.timestamp.toISOString(),
-            details: l.details ? JSON.parse(l.details) : undefined,
+            details: safeJsonParse(l.details),
             userDisplayName: l.user?.displayName || l.userId,
             userId: l.userId
           })),
@@ -454,7 +513,7 @@ export class MembershipService extends BaseService {
         id: l.id,
         action: l.action,
         timestamp: l.timestamp.toISOString(),
-        details: l.details ? JSON.parse(l.details) : undefined,
+        details: safeJsonParse(l.details),
         userDisplayName: l.user?.displayName || l.userId,
         userId: l.userId
       })),

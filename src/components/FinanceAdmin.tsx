@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { DollarSign, TrendingUp, Users, PieChart, FileText, Search, RefreshCw, Smartphone, Landmark, Plus, Edit2, Trash2, CheckCircle, XCircle, Globe, Settings, History } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart, FileText, Search, RefreshCw, Smartphone, Landmark, Plus, Edit2, Trash2, CheckCircle, XCircle, Globe, Settings } from 'lucide-react';
 import { StatCard } from './ui/StatCard';
 import { TransactionTable } from './ui/TransactionTable';
 import { FinanceAnalytics, Transaction, PaymentIntegration, UserProfile } from '../types';
 import { usePermissions } from '../hooks/usePermissions';
+import { AuditTrail } from './ui/AuditTrail';
 
 interface FinanceAdminProps {
   user: UserProfile | null;
@@ -77,11 +78,16 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
   }, [activeTab, fetchData]);
 
   const handleRefund = async (donationId: string, note?: string) => {
-    const reason = note || prompt('Reason for refund:');
-    if (!reason) return;
+    const reason = note || reconciliationNote;
+    if (!reason) {
+      alert('Please provide a reason for the refund in the reconciliation note field.');
+      return;
+    }
+    if (!confirm('Are you sure you want to refund this transaction?')) return;
     try {
-      await api.post(`/finance/donations/${donationId}/refund`, { reason });
+      await api.post(`/finance/donations/${donationId}/refund`, { decisionNote: reason });
       alert('Refund processed successfully');
+      setReconciliationNote('');
       setShowDetailModal(false);
       fetchData();
     } catch (error: any) {
@@ -92,8 +98,9 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
   const handleVerify = async (id: string) => {
     if (!confirm('Are you sure you want to verify this payment?')) return;
     try {
-      await api.post(`/finance/transactions/${id}/verify`, {});
+      await api.post(`/finance/transactions/${id}/verify`, { decisionNote: reconciliationNote });
       alert('Payment verified successfully');
+      setReconciliationNote('');
       setShowDetailModal(false);
       fetchData();
     } catch (error: any) {
@@ -102,11 +109,16 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
   };
 
   const handleReject = async (id: string, note?: string) => {
-    const reason = note || prompt('Reason for rejection:');
-    if (!reason) return;
+    const reason = note || reconciliationNote;
+    if (!reason) {
+      alert('Please provide a reason for rejection in the reconciliation note field.');
+      return;
+    }
+    if (!confirm('Are you sure you want to reject this transaction?')) return;
     try {
-      await api.post(`/finance/transactions/${id}/reject`, { reason });
+      await api.post(`/finance/transactions/${id}/reject`, { decisionNote: reason });
       alert('Payment rejected');
+      setReconciliationNote('');
       setShowDetailModal(false);
       fetchData();
     } catch (error: any) {
@@ -703,15 +715,21 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                         <div className="space-y-2">
                           <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
                             <Landmark size={14} className="text-emerald-600" />
-                            Reconciliation Note
+                            Decision Note / Reconciliation Reason {selectedTransaction.status === 'PENDING' ? '(Required for Rejection) *' : (selectedTransaction.status === 'COMPLETED' ? '(Required for Refund) *' : '(Optional)')} (Max 300 chars)
                           </label>
                           <textarea 
                             rows={3}
-                            placeholder="Add internal notes for audit trail..."
+                            placeholder={selectedTransaction.status === 'PENDING' ? "Explain why this is being rejected (Required)..." : (selectedTransaction.status === 'COMPLETED' ? "Explain why this is being refunded (Required)..." : "Add internal notes for audit trail...")}
                             value={reconciliationNote}
-                            onChange={(e) => setReconciliationNote(e.target.value)}
-                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                            maxLength={300}
+                            onChange={(e) => setReconciliationNote(e.target.value.substring(0, 300))}
+                            className={`w-full p-4 bg-gray-50 border rounded-2xl focus:ring-2 outline-none text-sm ${
+                              (selectedTransaction.status === 'PENDING' || selectedTransaction.status === 'COMPLETED') && !reconciliationNote.trim() ? 'border-amber-200 focus:ring-amber-500' : 'border-gray-200 focus:ring-emerald-500'
+                            }`}
                           />
+                          <div className="text-[10px] text-gray-400 text-right mt-1">
+                            {reconciliationNote.length}/300
+                          </div>
                           <div className="flex justify-end">
                             {can('FINANCE', 'UPDATE') && (
                               <button 
@@ -734,39 +752,7 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                         )}
 
                         {/* Audit Trail Section */}
-                        {selectedTransaction.auditTrail && selectedTransaction.auditTrail.length > 0 && (
-                          <div className="space-y-3 pt-4 border-t border-gray-100">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                              <History size={12} />
-                              Operational Audit Trail
-                            </label>
-                            <div className="space-y-3">
-                              {selectedTransaction.auditTrail.map((log, idx) => (
-                                <div key={idx} className="flex gap-3 text-[11px]">
-                                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5" />
-                                  <div className="flex-1">
-                                    <div className="flex justify-between items-start mb-0.5">
-                                      <span className="font-bold text-gray-900">{log.action.replace(/_/g, ' ')}</span>
-                                      <span className="text-[10px] text-gray-400 font-mono">
-                                        {new Date(log.timestamp).toLocaleString()}
-                                      </span>
-                                    </div>
-                                    <div className="text-gray-500 line-clamp-2">
-                                      {log.details && typeof log.details === 'object' 
-                                        ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
-                                        : 'System recorded action'}
-                                    </div>
-                                    {log.user && (
-                                      <div className="text-[10px] text-emerald-600 font-medium mt-0.5">
-                                        by {log.user.displayName || log.user.email}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <AuditTrail logs={selectedTransaction.auditTrail} className="pt-4 border-t border-gray-100" />
 
                         <div className="flex gap-4 pt-4">
                           {selectedTransaction.status === 'PENDING' && (
@@ -774,7 +760,10 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                               {can('FINANCE', 'APPROVE') && (
                                 <button 
                                   onClick={() => handleReject(selectedTransaction.id, reconciliationNote)}
-                                  className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-bold hover:bg-rose-100 transition-all active:scale-95"
+                                  disabled={!reconciliationNote.trim()}
+                                  className={`flex-1 py-4 rounded-2xl font-bold transition-all active:scale-95 ${
+                                    reconciliationNote.trim() ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  }`}
                                 >
                                   Reject Transaction
                                 </button>
@@ -792,7 +781,10 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                           {selectedTransaction.status === 'COMPLETED' && selectedTransaction.category === 'DONATION' && selectedTransaction.donation?.id && can('FINANCE', 'UPDATE') && (
                             <button 
                               onClick={() => handleRefund(selectedTransaction.donation!.id, reconciliationNote)}
-                              className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-200 active:scale-95"
+                              disabled={!reconciliationNote.trim()}
+                              className={`flex-1 py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95 ${
+                                reconciliationNote.trim() ? 'bg-rose-600 text-white hover:bg-rose-700 shadow-rose-200' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              }`}
                             >
                               Refund Transaction
                             </button>

@@ -41,7 +41,7 @@ const segmentSchema = z.object({
 // @access  Private (Admin/Staff)
 router.get('/templates', authenticate, checkPermission('COMMUNICATION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
     const templates = await prisma.communicationTemplate.findMany({
       where: {
         OR: [
@@ -72,7 +72,7 @@ router.post('/templates', authenticate, checkPermission('COMMUNICATION', 'CREATE
       }
     } else {
       // Validate provided orgUnitId is within scope
-      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (!accessibleUnitIds.includes(data.orgUnitId)) {
         return res.status(403).json({ error: 'Cannot create template for an organization unit outside your scope' });
       }
@@ -126,7 +126,7 @@ router.delete('/templates/:id', authenticate, checkPermission('COMMUNICATION', '
 // @access  Private (Admin/Staff)
 router.get('/segments', authenticate, checkPermission('COMMUNICATION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
     const segments = await prisma.audienceSegment.findMany({
       where: {
         OR: [
@@ -155,7 +155,7 @@ router.post('/segments', authenticate, checkPermission('COMMUNICATION', 'CREATE'
         data.orgUnitId = user.orgUnitId;
       }
     } else {
-      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (!accessibleUnitIds.includes(data.orgUnitId)) {
         return res.status(403).json({ error: 'Cannot create segment for an organization unit outside your scope' });
       }
@@ -209,7 +209,7 @@ router.delete('/segments/:id', authenticate, checkPermission('COMMUNICATION', 'D
 // @access  Private (Admin/Staff)
 router.get('/campaigns', authenticate, checkPermission('COMMUNICATION', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
     const campaigns = await prisma.communicationCampaign.findMany({
       where: {
         OR: [
@@ -239,7 +239,7 @@ router.post('/campaigns', authenticate, checkPermission('COMMUNICATION', 'CREATE
         data.orgUnitId = user.orgUnitId;
       }
     } else {
-      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (!accessibleUnitIds.includes(data.orgUnitId)) {
         return res.status(403).json({ error: 'Cannot create campaign for an organization unit outside your scope' });
       }
@@ -340,7 +340,7 @@ const noticeSchema = z.object({
 // @access  Private (Admin/Staff)
 router.get('/notices', authenticate, checkPermission('NOTICE_POPUP', 'VIEW'), async (req: AuthRequest, res) => {
   try {
-    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
     const notices = await prisma.notice.findMany({
       where: {
         OR: [
@@ -370,7 +370,7 @@ router.post('/notices', authenticate, checkPermission('NOTICE_POPUP', 'CREATE'),
         data.orgUnitId = user.orgUnitId;
       }
     } else {
-      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (!accessibleUnitIds.includes(data.orgUnitId)) {
         return res.status(403).json({ error: 'Cannot create notice for an organization unit outside your scope' });
       }
@@ -432,7 +432,7 @@ router.get('/notices/public', async (req, res) => {
 // @access  Private (Member/Admin/Staff)
 router.get('/notices/members', authenticate, async (req: AuthRequest, res) => {
   try {
-    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!.id);
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
     const notices = await prisma.notice.findMany({
       where: {
         status: 'PUBLISHED',

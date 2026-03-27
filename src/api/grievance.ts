@@ -19,6 +19,8 @@ const grievanceSchema = z.object({
 
 const assignmentSchema = z.object({
   userId: z.string().uuid(),
+  decisionNote: z.string().max(300).optional(),
+  note: z.string().max(300).optional(),
 });
 
 const responseSchema = z.object({
@@ -116,11 +118,12 @@ router.post('/:id/assign', authenticate, checkPermission('GRIEVANCES', 'UPDATE',
   return grievance?.orgUnitId || undefined;
 }), async (req: AuthRequest, res) => {
   try {
-    const { userId } = assignmentSchema.parse(req.body);
+    const { userId, decisionNote, note } = assignmentSchema.parse(req.body);
     const assignment = await grievanceService.assignGrievance(
       req.params.id,
       userId,
-      req.user?.id as string
+      req.user?.id as string,
+      decisionNote || note
     );
     res.json(assignment);
   } catch (error: any) {
@@ -165,7 +168,8 @@ router.post('/:id/resolve', authenticate, checkPermission('GRIEVANCES', 'UPDATE'
   return grievance?.orgUnitId || undefined;
 }), async (req: AuthRequest, res) => {
   try {
-    const grievance = await grievanceService.resolveGrievance(req.params.id, req.user?.id as string);
+    const { note, decisionNote } = req.body;
+    const grievance = await grievanceService.resolveGrievance(req.params.id, req.user?.id as string, decisionNote || note);
     res.json(grievance);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -177,7 +181,8 @@ router.post('/:id/escalate', authenticate, checkPermission('GRIEVANCES', 'ESCALA
   return grievance?.orgUnitId || undefined;
 }), async (req: AuthRequest, res) => {
   try {
-    const grievance = await grievanceService.escalateGrievance(req.params.id, req.user?.id as string);
+    const { note, decisionNote } = req.body;
+    const grievance = await grievanceService.escalateGrievance(req.params.id, req.user?.id as string, decisionNote || note);
     res.json(grievance);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

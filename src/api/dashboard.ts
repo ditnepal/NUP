@@ -1,4 +1,6 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import prisma from '../lib/prisma';
 import { authenticate, AuthRequest } from './middleware/auth';
 import { checkPermission } from './middleware/permissions';
@@ -211,6 +213,30 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
   } catch (error) {
     console.error('Dashboard summary error:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/dashboard/diagnostics/db
+// @desc    Diagnostic info for database (Admin only)
+// @access  Private (Admin)
+router.get('/diagnostics/db', authenticate, async (req: AuthRequest, res) => {
+  try {
+    // Extra guard: Only ADMIN or STAFF can see this
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'STAFF') {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+    }
+
+    const userCount = await prisma.user.count();
+    const dbPath = '/app/applet/prisma/dev.db';
+    const stats = fs.existsSync(dbPath) ? fs.statSync(dbPath) : null;
+
+    res.json({
+      userCount,
+      dbFileStats: stats ? { size: stats.size } : 'Not found',
+      status: 'Database connection healthy'
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

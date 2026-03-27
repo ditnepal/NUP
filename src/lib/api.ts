@@ -122,13 +122,15 @@ export const api = {
     return handleResponse(response);
   },
 
-  delete: async (endpoint: string) => {
+  delete: async (endpoint: string, data?: any) => {
     const token = localStorage.getItem('token');
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
+      body: data ? JSON.stringify(data) : undefined,
     });
     return handleResponse(response);
   },

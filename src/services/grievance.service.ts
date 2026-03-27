@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma';
+import { safeJsonParse } from '../lib/json';
 import { auditService } from './audit.service';
 
 export class GrievanceService {
@@ -75,7 +76,7 @@ export class GrievanceService {
           action: l.action,
           userId: l.userId || '',
           user: l.user ? { displayName: l.user.displayName } : undefined,
-          details: l.details ? JSON.parse(l.details) : undefined,
+          details: safeJsonParse(l.details),
           timestamp: l.timestamp.toISOString(),
         })),
       };
@@ -84,7 +85,7 @@ export class GrievanceService {
     return grievancesWithAudit;
   }
 
-  async assignGrievance(grievanceId: string, userId: string, assignerId: string) {
+  async assignGrievance(grievanceId: string, userId: string, assignerId: string, decisionNote?: string) {
     return prisma.$transaction(async (tx) => {
       await tx.grievanceAssignment.updateMany({
         where: { grievanceId, status: 'ACTIVE' },
@@ -105,7 +106,7 @@ export class GrievanceService {
         userId: assignerId,
         entityType: 'Grievance',
         entityId: grievanceId,
-        details: { assignedTo: userId },
+        details: { assignedTo: userId, decisionNote },
       });
 
       return assignment;
@@ -138,7 +139,13 @@ export class GrievanceService {
     return response;
   }
 
-  async resolveGrievance(grievanceId: string, userId: string) {
+  async resolveGrievance(grievanceId: string, userId: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for resolving a grievance.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const grievance = await prisma.grievance.update({
       where: { id: grievanceId },
       data: {
@@ -152,12 +159,20 @@ export class GrievanceService {
       userId,
       entityType: 'Grievance',
       entityId: grievanceId,
+      details: { 
+        note,
+        decisionNote: note,
+        previousState: 'IN_PROGRESS',
+        newState: 'RESOLVED',
+        targetType: 'Grievance',
+        targetId: grievanceId
+      },
     });
 
     return grievance;
   }
 
-  async escalateGrievance(grievanceId: string, userId: string) {
+  async escalateGrievance(grievanceId: string, userId: string, note?: string) {
     const grievance = await prisma.grievance.update({
       where: { id: grievanceId },
       data: { status: 'ESCALATED' },
@@ -168,6 +183,14 @@ export class GrievanceService {
       userId,
       entityType: 'Grievance',
       entityId: grievanceId,
+      details: { 
+        note,
+        decisionNote: note,
+        previousState: 'IN_PROGRESS',
+        newState: 'ESCALATED',
+        targetType: 'Grievance',
+        targetId: grievanceId
+      },
     });
 
     return grievance;

@@ -15,12 +15,12 @@ import {
   FileText,
   Edit2,
   Trash2,
-  X,
-  History
+  X
 } from 'lucide-react';
 import { Candidate, Constituency } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePermissions } from '../hooks/usePermissions';
+import { AuditTrail } from './ui/AuditTrail';
 
 export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, defaultTab?: 'overview' | 'candidates' | 'incidents' | 'results' | 'readiness' | 'constituencies' | 'cycles' }) {
   const { can } = usePermissions(user);
@@ -58,8 +58,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
   const [isPollingStationModalOpen, setIsPollingStationModalOpen] = useState(false);
   const [isReadinessModalOpen, setIsReadinessModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: 'candidate' | 'cycle' | 'constituency' | 'incident' | 'result' | 'pollingStation' } | null>(null);
+  const [deleteNote, setDeleteNote] = useState('');
   
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
   const [editingCycle, setEditingCycle] = useState<any | null>(null);
@@ -77,7 +77,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     position: '',
     constituencyId: '',
     manifesto: '',
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    decisionNote: ''
   });
 
   const [cycleForm, setCycleForm] = useState({
@@ -86,7 +87,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     type: 'FEDERAL',
     startDate: '',
     endDate: '',
-    status: 'UPCOMING'
+    status: 'UPCOMING',
+    decisionNote: ''
   });
 
   const [constituencyForm, setConstituencyForm] = useState({
@@ -95,7 +97,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     type: 'FEDERAL',
     province: '',
     district: '',
-    totalVoters: 0
+    totalVoters: 0,
+    decisionNote: ''
   });
 
   const [incidentForm, setIncidentForm] = useState({
@@ -104,7 +107,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     description: '',
     status: 'REPORTED',
     pollingStationId: '',
-    boothId: ''
+    boothId: '',
+    decisionNote: ''
   });
 
   const [resultForm, setResultForm] = useState({
@@ -112,7 +116,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     constituencyId: '',
     votesReceived: 0,
     isWinner: false,
-    verified: false
+    verified: false,
+    decisionNote: ''
   });
 
   const [pollingStationForm, setPollingStationForm] = useState({
@@ -123,12 +128,14 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     ward: 1,
     localLevel: '',
     district: '',
-    province: ''
+    province: '',
+    decisionNote: ''
   });
 
   const [readinessForm, setReadinessForm] = useState({
     status: 'NEEDS_ATTENTION',
-    readinessNote: ''
+    readinessNote: '',
+    decisionNote: ''
   });
 
   useEffect(() => {
@@ -196,7 +203,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         position: candidate.position,
         constituencyId: candidate.constituencyId || '',
         manifesto: candidate.manifesto || '',
-        status: candidate.status
+        status: candidate.status,
+        decisionNote: ''
       });
     } else {
       setEditingCandidate(null);
@@ -205,7 +213,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         position: '',
         constituencyId: '',
         manifesto: '',
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        decisionNote: ''
       });
     }
     setIsCandidateModalOpen(true);
@@ -220,7 +229,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         type: cycle.type,
         startDate: cycle.startDate ? new Date(cycle.startDate).toISOString().split('T')[0] : '',
         endDate: cycle.endDate ? new Date(cycle.endDate).toISOString().split('T')[0] : '',
-        status: cycle.status
+        status: cycle.status,
+        decisionNote: ''
       });
     } else {
       setEditingCycle(null);
@@ -230,7 +240,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         type: 'FEDERAL',
         startDate: '',
         endDate: '',
-        status: 'UPCOMING'
+        status: 'UPCOMING',
+        decisionNote: ''
       });
     }
     setIsCycleModalOpen(true);
@@ -245,7 +256,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         type: constituency.type,
         province: constituency.province,
         district: constituency.district,
-        totalVoters: constituency.totalVoters || 0
+        totalVoters: constituency.totalVoters || 0,
+        decisionNote: ''
       });
     } else {
       setEditingConstituency(null);
@@ -255,7 +267,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         type: 'FEDERAL',
         province: '',
         district: '',
-        totalVoters: 0
+        totalVoters: 0,
+        decisionNote: ''
       });
     }
     setIsConstituencyModalOpen(true);
@@ -272,7 +285,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         ward: station.ward || 1,
         localLevel: station.localLevel || '',
         district: station.district || '',
-        province: station.province || ''
+        province: station.province || '',
+        decisionNote: ''
       });
     } else {
       setEditingPollingStation(null);
@@ -284,7 +298,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         ward: 1,
         localLevel: '',
         district: '',
-        province: ''
+        province: '',
+        decisionNote: ''
       });
     }
     setIsPollingStationModalOpen(true);
@@ -299,7 +314,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         description: incident.description,
         status: incident.status,
         pollingStationId: incident.pollingStationId || '',
-        boothId: incident.boothId || ''
+        boothId: incident.boothId || '',
+        decisionNote: ''
       });
     } else {
       setEditingIncident(null);
@@ -309,7 +325,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         description: '',
         status: 'REPORTED',
         pollingStationId: '',
-        boothId: ''
+        boothId: '',
+        decisionNote: ''
       });
     }
     setIsIncidentModalOpen(true);
@@ -323,7 +340,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         constituencyId: result.constituencyId || '',
         votesReceived: result.votesReceived,
         isWinner: result.isWinner || false,
-        verified: !!result.verifiedAt
+        verified: !!result.verifiedAt,
+        decisionNote: ''
       });
     } else {
       setEditingResult(null);
@@ -332,7 +350,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         constituencyId: '',
         votesReceived: 0,
         isWinner: false,
-        verified: false
+        verified: false,
+        decisionNote: ''
       });
     }
     setIsResultModalOpen(true);
@@ -342,7 +361,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     setEditingBooth(booth);
     setReadinessForm({
       status: booth.status || 'NEEDS_ATTENTION',
-      readinessNote: booth.readinessNote || ''
+      readinessNote: booth.readinessNote || '',
+      decisionNote: ''
     });
     setIsReadinessModalOpen(true);
   };
@@ -351,10 +371,11 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const payload = { ...cycleForm, decisionNote: cycleForm.decisionNote };
       if (editingCycle) {
-        await api.put(`/election/cycles/${editingCycle.id}`, cycleForm);
+        await api.put(`/election/cycles/${editingCycle.id}`, payload);
       } else {
-        await api.post('/election/cycles', cycleForm);
+        await api.post('/election/cycles', payload);
       }
       setIsCycleModalOpen(false);
       fetchCycles();
@@ -370,10 +391,11 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const payload = { ...constituencyForm, decisionNote: constituencyForm.decisionNote };
       if (editingConstituency) {
-        await api.put(`/election/constituencies/${editingConstituency.id}`, constituencyForm);
+        await api.put(`/election/constituencies/${editingConstituency.id}`, payload);
       } else {
-        await api.post('/election/constituencies', constituencyForm);
+        await api.post('/election/constituencies', payload);
       }
       setIsConstituencyModalOpen(false);
       fetchCycles(); // Also fetches constituencies
@@ -389,10 +411,11 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const payload = { ...pollingStationForm, decisionNote: pollingStationForm.decisionNote };
       if (editingPollingStation) {
-        await api.put(`/election/polling-stations/${editingPollingStation.id}`, pollingStationForm);
+        await api.put(`/election/polling-stations/${editingPollingStation.id}`, payload);
       } else {
-        await api.post('/election/polling-stations', pollingStationForm);
+        await api.post('/election/polling-stations', payload);
       }
       setIsPollingStationModalOpen(false);
       fetchCycles(); // Also fetches polling stations
@@ -408,7 +431,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const payload = { ...incidentForm, cycleId: selectedCycle.id };
+      const payload = { ...incidentForm, cycleId: selectedCycle.id, decisionNote: incidentForm.decisionNote };
       if (editingIncident) {
         await api.put(`/election/incidents/${editingIncident.id}`, payload);
       } else {
@@ -428,7 +451,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const payload = { ...resultForm, cycleId: selectedCycle.id };
+      const payload = { ...resultForm, cycleId: selectedCycle.id, decisionNote: resultForm.decisionNote };
       if (editingResult) {
         await api.put(`/election/results/${editingResult.id}`, payload);
       } else {
@@ -448,7 +471,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await api.put(`/election/booths/${editingBooth.id}/readiness`, readinessForm);
+      const payload = { ...readinessForm, decisionNote: readinessForm.decisionNote };
+      await api.put(`/election/booths/${editingBooth.id}/readiness`, payload);
       setIsReadinessModalOpen(false);
       fetchCycleData();
       setMessage({ type: 'success', text: 'Booth readiness updated successfully' });
@@ -468,7 +492,8 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
       const payload = {
         ...candidateForm,
         electionCycleId: selectedCycle.id,
-        constituencyId: candidateForm.constituencyId || undefined
+        constituencyId: candidateForm.constituencyId || undefined,
+        decisionNote: candidateForm.decisionNote
       };
 
       if (editingCandidate) {
@@ -490,6 +515,10 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
 
   const handleGenericDelete = async () => {
     if (!deleteTarget) return;
+    if (!deleteNote.trim()) {
+      setMessage({ type: 'error', text: 'Decision note is required for deletion.' });
+      return;
+    }
     setIsSubmitting(true);
     try {
       const { id, type } = deleteTarget;
@@ -503,10 +532,11 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
         case 'pollingStation': endpoint = `/election/polling-stations/${id}`; break;
       }
       
-      await api.delete(endpoint);
+      await api.delete(endpoint, { decisionNote: deleteNote });
       setMessage({ type: 'success', text: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully` });
       setIsDeleteModalOpen(false);
       setDeleteTarget(null);
+      setDeleteNote('');
       
       if (type === 'cycle' || type === 'constituency' || type === 'pollingStation') {
         fetchCycles();
@@ -522,6 +552,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
 
   const confirmDelete = (id: string, type: 'candidate' | 'cycle' | 'constituency' | 'incident' | 'result' | 'pollingStation') => {
     setDeleteTarget({ id, type });
+    setDeleteNote('');
     setIsDeleteModalOpen(true);
   };
 
@@ -1132,19 +1163,35 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   <Trash2 size={32} />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Delete</h3>
-                <p className="text-slate-500">Are you sure you want to delete this {deleteTarget?.type}? This action cannot be undone and will fail if there are linked records.</p>
+                <p className="text-slate-500 mb-4">Are you sure you want to delete this {deleteTarget?.type}? This action cannot be undone and will fail if there are linked records.</p>
+                <div className="text-left px-6">
+                  <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Reason for Deletion (Required) *</label>
+                  <textarea 
+                    value={deleteNote}
+                    onChange={(e) => setDeleteNote(e.target.value.substring(0, 300))}
+                    maxLength={300}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 h-20 resize-none text-sm"
+                    placeholder="Provide a reason for this deletion for the audit log (Required)..."
+                  />
+                  <div className="text-[10px] text-slate-400 text-right mt-1">{deleteNote.length}/300</div>
+                </div>
               </div>
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-center gap-3">
                 <button 
-                  onClick={() => setIsDeleteModalOpen(false)}
+                  onClick={() => {
+                    setIsDeleteModalOpen(false);
+                    setDeleteNote('');
+                  }}
                   className="px-6 py-2 text-slate-600 font-bold hover:text-slate-800"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleGenericDelete}
-                  disabled={isSubmitting}
-                  className="px-8 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                  disabled={isSubmitting || !deleteNote.trim()}
+                  className={`px-8 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                    !deleteNote.trim() ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-100'
+                  }`}
                 >
                   {isSubmitting ? 'Deleting...' : 'Confirm Delete'}
                 </button>
@@ -1262,6 +1309,15 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                       className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Decision Note (Audit Log)</label>
+                    <textarea 
+                      value={pollingStationForm.decisionNote}
+                      onChange={(e) => setPollingStationForm({ ...pollingStationForm, decisionNote: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-20 resize-none"
+                      placeholder="Reason for this update..."
+                    />
+                  </div>
                 </div>
                 
                 <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
@@ -1362,6 +1418,15 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     onChange={(e) => setCandidateForm({ ...candidateForm, manifesto: e.target.value })}
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-32 resize-none"
                     placeholder="Brief summary of candidate's manifesto"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Decision Note (Audit Log)</label>
+                  <textarea 
+                    value={candidateForm.decisionNote}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, decisionNote: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-20 resize-none"
+                    placeholder="Reason for this update..."
                   />
                 </div>
               </form>
@@ -1466,6 +1531,15 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     <option value="COMPLETED">COMPLETED</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Decision Note (Audit Log)</label>
+                  <textarea 
+                    value={cycleForm.decisionNote}
+                    onChange={(e) => setCycleForm({ ...cycleForm, decisionNote: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-20 resize-none"
+                    placeholder="Reason for this update..."
+                  />
+                </div>
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
@@ -1562,6 +1636,15 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     value={constituencyForm.totalVoters}
                     onChange={(e) => setConstituencyForm({ ...constituencyForm, totalVoters: parseInt(e.target.value) })}
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Decision Note (Audit Log)</label>
+                  <textarea 
+                    value={constituencyForm.decisionNote}
+                    onChange={(e) => setConstituencyForm({ ...constituencyForm, decisionNote: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-20 resize-none"
+                    placeholder="Reason for this update..."
                   />
                 </div>
               </form>
@@ -1675,32 +1758,18 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-32 resize-none"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Decision Note (Audit Log)</label>
+                  <textarea 
+                    value={incidentForm.decisionNote}
+                    onChange={(e) => setIncidentForm({ ...incidentForm, decisionNote: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-20 resize-none"
+                    placeholder="Reason for this update..."
+                  />
+                </div>
 
                 {/* Audit Trail */}
-                {editingIncident?.auditTrail && editingIncident.auditTrail.length > 0 && (
-                  <div className="pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-2 mb-3">
-                      <History size={14} className="text-slate-400" />
-                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Incident History</h4>
-                    </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
-                      {editingIncident.auditTrail.map((log: any) => (
-                        <div key={log.id} className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px]">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-slate-700 uppercase">{log.action}</span>
-                            <span className="text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
-                          </div>
-                          <p className="text-slate-600 mb-1">
-                            {log.details && typeof log.details === 'object' 
-                              ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
-                              : log.details}
-                          </p>
-                          <p className="text-slate-400 italic">By: {log.userDisplayName || log.userId}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <AuditTrail logs={editingIncident?.auditTrail} className="pt-4 border-t border-slate-100" />
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
@@ -1791,32 +1860,18 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     <span className="text-sm font-bold text-slate-700">Verified</span>
                   </label>
                 </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Decision Note (Audit Log)</label>
+                  <textarea 
+                    value={resultForm.decisionNote}
+                    onChange={(e) => setResultForm({ ...resultForm, decisionNote: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 h-20 resize-none"
+                    placeholder="Reason for this update..."
+                  />
+                </div>
 
                 {/* Audit Trail */}
-                {editingResult?.auditTrail && editingResult.auditTrail.length > 0 && (
-                  <div className="pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-2 mb-3">
-                      <History size={14} className="text-slate-400" />
-                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Result History</h4>
-                    </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
-                      {editingResult.auditTrail.map((log: any) => (
-                        <div key={log.id} className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px]">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-slate-700 uppercase">{log.action}</span>
-                            <span className="text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
-                          </div>
-                          <p className="text-slate-600 mb-1">
-                            {log.details && typeof log.details === 'object' 
-                              ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
-                              : log.details}
-                          </p>
-                          <p className="text-slate-400 italic">By: {log.userDisplayName || log.userId}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <AuditTrail logs={editingResult?.auditTrail} className="pt-4 border-t border-slate-100" />
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
@@ -1873,30 +1928,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                 </div>
 
                 {/* Audit Trail */}
-                {editingBooth?.auditTrail && editingBooth.auditTrail.length > 0 && (
-                  <div className="pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-2 mb-3">
-                      <History size={14} className="text-slate-400" />
-                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Readiness History</h4>
-                    </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
-                      {editingBooth.auditTrail.map((log: any) => (
-                        <div key={log.id} className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px]">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-slate-700 uppercase">{log.action}</span>
-                            <span className="text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
-                          </div>
-                          <p className="text-slate-600 mb-1">
-                            {log.details && typeof log.details === 'object' 
-                              ? Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')
-                              : log.details}
-                          </p>
-                          <p className="text-slate-400 italic">By: {log.userDisplayName || log.userId}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <AuditTrail logs={editingBooth?.auditTrail} className="pt-4 border-t border-slate-100" />
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">

@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma';
+import { safeJsonParse } from '../lib/json';
 import { auditService } from './audit.service';
 
 /**
@@ -230,6 +231,12 @@ export class FinanceService {
   }
 
   async processRefund(donationId: string, reason: string, recordedById: string) {
+    if (!reason || reason.trim().length === 0) {
+      throw new Error('Decision note is required for processing a refund.');
+    }
+    if (reason.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const donation = await prisma.donation.findUnique({
       where: { id: donationId },
       include: { transaction: true, donor: true, campaign: true },
@@ -707,7 +714,7 @@ export class FinanceService {
     };
   }
 
-  async verifyTransaction(id: string, reviewerId: string) {
+  async verifyTransaction(id: string, reviewerId: string, note?: string) {
     const transaction = await prisma.transaction.findUnique({
       where: { id },
       include: {
@@ -733,6 +740,7 @@ export class FinanceService {
         reviewedById: reviewerId,
         reviewedAt: new Date(),
         updatedAt: new Date(),
+        reconciliationNote: note ? `${transaction.reconciliationNote || ''}\n[${new Date().toISOString()}] VERIFIED: ${note}`.trim() : undefined
       }
     });
 
@@ -783,13 +791,28 @@ export class FinanceService {
       userId: reviewerId,
       entityType: 'Transaction',
       entityId: id,
-      details: { amount: transaction.amount, category: transaction.category },
+      details: { 
+        amount: transaction.amount, 
+        category: transaction.category,
+        note,
+        decisionNote: note,
+        previousState: 'PENDING',
+        newState: 'COMPLETED',
+        targetType: 'Transaction',
+        targetId: id
+      },
     });
 
     return { success: true };
   }
 
   async rejectTransaction(id: string, reason: string, reviewerId: string) {
+    if (!reason || reason.trim().length === 0) {
+      throw new Error('Decision note is required for rejecting a transaction.');
+    }
+    if (reason.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const transaction = await prisma.transaction.findUnique({
       where: { id },
       include: {
@@ -839,7 +862,15 @@ export class FinanceService {
       userId: reviewerId,
       entityType: 'Transaction',
       entityId: id,
-      details: { amount: transaction.amount, reason },
+      details: { 
+        amount: transaction.amount, 
+        reason,
+        decisionNote: reason,
+        previousState: 'PENDING',
+        newState: 'REJECTED',
+        targetType: 'Transaction',
+        targetId: id
+      },
     });
 
     return { success: true };
@@ -873,7 +904,7 @@ export class FinanceService {
             id: l.id,
             action: l.action,
             timestamp: l.timestamp.toISOString(),
-            details: l.details ? JSON.parse(l.details) : undefined,
+            details: safeJsonParse(l.details),
             user: l.user ? { displayName: l.user.displayName } : undefined,
             userId: l.userId
           })),
