@@ -17,13 +17,6 @@ const officeSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   isActive: z.boolean().optional(),
-  isPublic: z.boolean().optional(),
-  description: z.string().optional(),
-  province: z.string().optional(),
-  district: z.string().optional(),
-  locality: z.string().optional(),
-  ward: z.number().optional(),
-  municipality: z.string().optional(),
 });
 
 // @route   GET /api/v1/offices

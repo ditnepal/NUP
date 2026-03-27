@@ -97,13 +97,6 @@ export interface Office {
   latitude?: number;
   longitude?: number;
   isActive: boolean;
-  isPublic: boolean;
-  description?: string;
-  province?: string;
-  district?: string;
-  locality?: string;
-  ward?: number;
-  municipality?: string;
   createdAt?: string;
   updatedAt?: string;
 }

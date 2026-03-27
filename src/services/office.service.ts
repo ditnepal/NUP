@@ -11,16 +11,22 @@ export class OfficeService extends BaseService {
     latitude?: number;
     longitude?: number;
     isActive?: boolean;
-    isPublic?: boolean;
-    description?: string;
-    province?: string;
-    district?: string;
-    locality?: string;
-    ward?: number;
-    municipality?: string;
   }) {
+    // Only pass fields that exist in the schema
+    const { name, type, orgUnitId, address, contactNumber, email, latitude, longitude, isActive } = data;
     return await this.db.office.create({
-      data
+      data: {
+        name,
+        type,
+        orgUnitId,
+        address,
+        contactNumber,
+        email,
+        latitude,
+        longitude,
+        isActive: isActive ?? true
+      },
+      include: { orgUnit: true }
     });
   }
 
@@ -34,17 +40,21 @@ export class OfficeService extends BaseService {
     latitude?: number;
     longitude?: number;
     isActive: boolean;
-    isPublic: boolean;
-    description?: string;
-    province?: string;
-    district?: string;
-    locality?: string;
-    ward?: number;
-    municipality?: string;
   }>) {
+    // Only pass fields that exist in the schema
+    const allowedFields = ['name', 'type', 'orgUnitId', 'address', 'contactNumber', 'email', 'latitude', 'longitude', 'isActive'];
+    const filteredData: any = {};
+    
+    for (const key of allowedFields) {
+      if (key in data) {
+        filteredData[key] = (data as any)[key];
+      }
+    }
+
     return await this.db.office.update({
       where: { id },
-      data
+      data: filteredData,
+      include: { orgUnit: true }
     });
   }
 

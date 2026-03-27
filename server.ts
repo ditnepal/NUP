@@ -1,17 +1,23 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 dotenv.config();
 
-if (!process.env.DATABASE_URL || process.env.DATABASE_URL !== 'file:/app/applet/prisma/dev.db') {
-  console.error('[FATAL] DATABASE_URL is missing or invalid in .env');
-  console.error('[FATAL] Expected: file:/app/applet/prisma/dev.db');
+const DEFAULT_DB_URL = `file:${path.join(process.cwd(), 'prisma/dev.db')}`;
+if (!process.env.DATABASE_URL) {
+  console.warn(`[WARN] DATABASE_URL is missing. Using default: ${DEFAULT_DB_URL}`);
+  process.env.DATABASE_URL = DEFAULT_DB_URL;
+}
+
+if (process.env.DATABASE_URL !== DEFAULT_DB_URL && process.env.DATABASE_URL !== 'file:/app/applet/prisma/dev.db') {
+  console.error('[FATAL] DATABASE_URL is invalid');
+  console.error(`[FATAL] Expected: ${DEFAULT_DB_URL} or file:/app/applet/prisma/dev.db`);
   console.error(`[FATAL] Received: ${process.env.DATABASE_URL}`);
   process.exit(1);
 }
 
 import { createServer as createViteServer } from 'vite';
-import path from 'path';
 import fs from 'fs';
 import { setupSwagger } from './src/lib/swagger';
 import rateLimit from 'express-rate-limit';

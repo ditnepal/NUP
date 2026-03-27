@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { OrganizationUnit, OrgCommittee, OrgOfficeBearer, Office, UserProfile } from '../types';
-import { Plus, ChevronRight, ChevronDown, MapPin, Building2, Users, Edit2, Trash2, X, Loader2, AlertCircle, CheckCircle2, Shield, UserPlus, Calendar, GitGraph, AlertTriangle } from 'lucide-react';
+import { Plus, ChevronRight, ChevronDown, MapPin, Building2, Users, Edit2, Trash2, X, Loader2, AlertCircle, CheckCircle2, Shield, UserPlus, Calendar, GitGraph, AlertTriangle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePermissions } from '../hooks/usePermissions';
 import { UserAdmin } from './UserAdmin';
@@ -589,6 +589,16 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                           <div className="text-xs text-slate-500 flex items-center gap-1">
                             <MapPin size={10} /> {office.address}
                           </div>
+                          {office.latitude && office.longitude && (
+                            <a 
+                              href={`https://www.google.com/maps?q=${office.latitude},${office.longitude}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5 mt-0.5"
+                            >
+                              <ExternalLink size={8} /> View on Map
+                            </a>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm font-medium text-slate-700">{(office as any).orgUnit?.name}</div>
@@ -609,9 +619,6 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                               <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full border border-emerald-100">Active</span>
                             ) : (
                               <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-100">Inactive</span>
-                            )}
-                            {office.isPublic && (
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full border border-blue-100">Public</span>
                             )}
                           </div>
                         </td>
@@ -968,29 +975,10 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">Province</label>
-                        <input name="province" defaultValue={editingOffice?.province || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">District</label>
-                        <input name="district" defaultValue={editingOffice?.district || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">Municipality</label>
-                        <input name="municipality" defaultValue={editingOffice?.municipality || ''} className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
-                      </div>
-                    </div>
-
                     <div className="flex items-center gap-6 py-2">
                       <div className="flex items-center gap-2">
                         <input type="checkbox" id="officeIsActive" name="isActive" defaultChecked={editingOffice ? editingOffice.isActive : true} className="w-4 h-4 text-blue-600 rounded border-slate-300" />
                         <label htmlFor="officeIsActive" className="text-sm font-semibold text-slate-700">Active</label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input type="checkbox" id="officeIsPublic" name="isPublic" defaultChecked={editingOffice ? editingOffice.isPublic : true} className="w-4 h-4 text-blue-600 rounded border-slate-300" />
-                        <label htmlFor="officeIsPublic" className="text-sm font-semibold text-slate-700">Publicly Visible</label>
                       </div>
                     </div>
 
@@ -1028,7 +1016,6 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                                   </p>
                                   <div className="flex gap-2 mt-2">
                                     <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full uppercase tracking-wider">{office.type}</span>
-                                    {office.isPublic && <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full uppercase tracking-wider">Public</span>}
                                     {!office.isActive && <span className="text-[10px] font-bold px-2 py-0.5 bg-red-50 text-red-600 rounded-full uppercase tracking-wider">Inactive</span>}
                                   </div>
                                 </div>
