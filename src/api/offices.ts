@@ -124,4 +124,25 @@ router.get('/public/finder', async (req, res) => {
   }
 });
 
+// @route   DELETE /api/v1/offices/:id
+// @desc    Delete an office
+// @access  Private (Admin)
+router.delete('/:id', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
+  try {
+    const office = await officeService.deleteOffice(req.params.id);
+
+    await auditService.log({
+      action: 'OFFICE_DELETED',
+      userId: req.user?.id,
+      entityType: 'Office',
+      entityId: office.id,
+      details: { name: office.name }
+    });
+
+    res.json({ message: 'Office deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

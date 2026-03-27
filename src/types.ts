@@ -50,6 +50,7 @@ export interface DashboardSummary {
   openGrievances?: number;
   activeSurveys?: number;
   totalDonations?: number;
+  totalOffices?: number;
   activeFundCampaigns?: number;
   childUnits?: ChildUnitSummary[];
   actionQueue?: DashboardActionItem[];

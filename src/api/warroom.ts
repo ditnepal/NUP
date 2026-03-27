@@ -23,7 +23,8 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'STAFF']), async (req
       intelReports,
       electionIncidents,
       areaScores,
-      pgisOverview
+      pgisOverview,
+      orgUnitInfo
     ] = await Promise.all([
       // Membership Stats
       prisma.member.groupBy({
@@ -76,11 +77,14 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'STAFF']), async (req
         include: { orgUnit: { select: { name: true, level: true } } }
       }),
       // PGIS Strategic Overview (includes hotspots and attentionNeeded)
-      pgisService.getStrategicOverview(orgUnitId)
+      pgisService.getStrategicOverview(orgUnitId),
+      // Org Unit Name
+      orgUnitId ? prisma.organizationUnit.findUnique({ where: { id: orgUnitId }, select: { name: true } }) : Promise.resolve({ name: 'National Command' })
     ]);
 
     // Aggregate data for dashboard
     const analytics = {
+      scopeName: (orgUnitInfo as any)?.name || 'National Command',
       members: membershipTrends.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.id }), {}),
       volunteers: volunteerCount,
       fundraising: fundraisingCampaigns,

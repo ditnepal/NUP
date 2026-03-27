@@ -107,10 +107,13 @@ export class PgisService {
 
   // --- Strategic Aggregation ---
   async getStrategicOverview(orgUnitId?: string) {
-    const reports = await prisma.groundIntelligenceReport.findMany({
-      where: orgUnitId ? { orgUnitId } : {},
-      select: { sentimentScore: true, type: true, priority: true, content: true, createdAt: true, orgUnit: { select: { name: true } } },
-    });
+    const [reports, orgUnit] = await Promise.all([
+      prisma.groundIntelligenceReport.findMany({
+        where: orgUnitId ? { orgUnitId } : {},
+        select: { sentimentScore: true, type: true, priority: true, content: true, createdAt: true, orgUnit: { select: { name: true } } },
+      }),
+      orgUnitId ? prisma.organizationUnit.findUnique({ where: { id: orgUnitId }, select: { name: true } }) : Promise.resolve({ name: 'National Command' })
+    ]);
 
     const avgSentiment = reports.length > 0
       ? reports.reduce((acc, r) => acc + (r.sentimentScore || 0), 0) / reports.length
@@ -200,6 +203,7 @@ export class PgisService {
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 10);
 
     return {
+      scopeName: orgUnit?.name || 'National Command',
       avgSentiment,
       typeCounts,
       topPriorities: priorities.slice(0, 5),

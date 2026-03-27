@@ -13,7 +13,7 @@ interface HierarchyAdminProps {
 
 export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
   const { can } = usePermissions(user);
-  const [activeTab, setActiveTab] = useState<'structure' | 'users'>('structure');
+  const [activeTab, setActiveTab] = useState<'structure' | 'users' | 'offices'>('structure');
   const [units, setUnits] = useState<OrganizationUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -266,6 +266,49 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
     }
   };
 
+  const handleDeleteOffice = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this office?')) return;
+    try {
+      await api.delete(`/offices/${id}`);
+      toast.success('Office deleted successfully');
+      if (selectedUnitForOffices) {
+        fetchOffices(selectedUnitForOffices.id);
+      }
+      if (activeTab === 'offices') {
+        fetchAllOffices();
+      }
+    } catch (error) {
+      console.error('Error deleting office:', error);
+      toast.error('Failed to delete office');
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+
+  const [allOffices, setAllOffices] = useState<Office[]>([]);
+  const [loadingAllOffices, setLoadingAllOffices] = useState(false);
+
+  const fetchAllOffices = async () => {
+    setLoadingAllOffices(true);
+    try {
+      const data = await api.get('/offices');
+      setAllOffices(data);
+    } catch (error) {
+      console.error('Error fetching all offices:', error);
+    } finally {
+      setLoadingAllOffices(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'offices') {
+      fetchAllOffices();
+    }
+  }, [activeTab]);
+
   const renderUnit = (unit: any, depth = 0) => {
     const isExpanded = expanded[unit.id];
     const hasChildren = unit.children && unit.children.length > 0;
@@ -394,6 +437,19 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
         </button>
         {isAdmin && (
           <button
+            onClick={() => setActiveTab('offices')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'offices'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <MapPin size={16} />
+            Offices
+          </button>
+        )}
+        {isAdmin && (
+          <button
             onClick={() => setActiveTab('users')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               activeTab === 'users'
@@ -451,6 +507,149 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
             </div>
           </div>
         </>
+      )}
+
+      {activeTab === 'offices' && isAdmin && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                <Building2 size={24} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">HQ Coverage</div>
+                <div className="text-2xl font-bold text-slate-800">
+                  {allOffices.filter(o => o.type === 'HEADQUARTERS').length}
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <MapPin size={24} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Regional Presence</div>
+                <div className="text-2xl font-bold text-slate-800">
+                  {allOffices.filter(o => o.type === 'REGIONAL').length}
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <Users size={24} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Contact Points</div>
+                <div className="text-2xl font-bold text-slate-800">
+                  {allOffices.filter(o => o.type === 'CONTACT_POINT').length}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Global Office Inventory</h3>
+                <p className="text-sm text-slate-500">Overview of all organizational locations across the hierarchy.</p>
+              </div>
+              <div className="flex gap-2">
+                <div className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100">
+                  Total: {allOffices.length}
+                </div>
+                <div className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-100">
+                  Active: {allOffices.filter(o => o.isActive).length}
+                </div>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-gray-200">
+                    <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Office Name</th>
+                    <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Unit / Level</th>
+                    <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {loadingAllOffices ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center">
+                        <Loader2 className="animate-spin text-blue-600 mx-auto" size={24} />
+                      </td>
+                    </tr>
+                  ) : allOffices.length > 0 ? (
+                    allOffices.map(office => (
+                      <tr key={office.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-slate-800">{office.name}</div>
+                          <div className="text-xs text-slate-500 flex items-center gap-1">
+                            <MapPin size={10} /> {office.address}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-slate-700">{(office as any).orgUnit?.name}</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{(office as any).orgUnit?.level}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full uppercase">
+                            {office.type.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-xs text-slate-600">{office.contactNumber || 'N/A'}</div>
+                          <div className="text-[10px] text-slate-400">{office.email || ''}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-1">
+                            {office.isActive ? (
+                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full border border-emerald-100">Active</span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-100">Inactive</span>
+                            )}
+                            {office.isPublic && (
+                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full border border-blue-100">Public</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => {
+                                setEditingOffice(office);
+                                setSelectedUnitForOffices((office as any).orgUnit);
+                                setIsOfficesModalOpen(true);
+                                setIsOfficeFormOpen(true);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteOffice(office.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-500 italic">
+                        No offices registered in the system.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
 
       {activeTab === 'users' && isAdmin && (
@@ -835,8 +1034,33 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                                 </div>
                               </div>
                               <div className="flex gap-1">
+                                <button 
+                                  onClick={() => copyToClipboard(office.address)}
+                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                  title="Copy Address"
+                                >
+                                  <GitGraph size={16} />
+                                </button>
+                                {office.latitude && office.longitude && (
+                                  <a 
+                                    href={`https://www.google.com/maps/search/?api=1&query=${office.latitude},${office.longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                    title="View on Map"
+                                  >
+                                    <MapPin size={16} />
+                                  </a>
+                                )}
                                 <button onClick={() => { setEditingOffice(office); setIsOfficeFormOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                   <Edit2 size={16} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteOffice(office.id)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                  title="Delete Office"
+                                >
+                                  <Trash2 size={16} />
                                 </button>
                               </div>
                             </div>

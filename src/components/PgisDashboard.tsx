@@ -15,7 +15,13 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Activity,
-  MapPin
+  MapPin,
+  Printer,
+  Copy,
+  Check,
+  FileText,
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 
 import { api } from '../lib/api';
@@ -32,6 +38,7 @@ interface Report {
 }
 
 interface StrategicOverview {
+  scopeName?: string;
   avgSentiment: number;
   typeCounts: Record<string, number>;
   topPriorities: any[];
@@ -63,10 +70,40 @@ export const PgisDashboard: React.FC = () => {
   const [overview, setOverview] = useState<StrategicOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<'overview' | 'reports' | 'signals' | 'map'>('overview');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleCopySummary = () => {
+    if (!overview) return;
+    
+    const summary = `
+PGIS STRATEGIC SUMMARY - ${overview.scopeName}
+Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+
+EXECUTIVE METRICS:
+- Average Sentiment: ${Math.round(overview.avgSentiment)}/100
+- Open Grievances: ${overview.signalCounts.grievances}
+- Reported Incidents: ${overview.signalCounts.incidents}
+- Intelligence Reports: ${overview.signalCounts.reports}
+
+CRITICAL PRIORITIES:
+${overview.attentionNeeded?.slice(0, 3).map((item: any) => `- [${item.priority}] ${item.type}: ${item.title} (${item.location})`).join('\n') || 'None identified'}
+
+TOP HOTSPOTS:
+${overview.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.totalIssues} issues`).join('\n') || 'None detected'}
+    `.trim();
+
+    navigator.clipboard.writeText(summary);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const fetchData = async () => {
     try {
@@ -104,46 +141,161 @@ export const PgisDashboard: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg">
             <Shield size={24} />
           </div>
           <div>
             <h1 className="text-4xl font-bold tracking-tight text-gray-900">Ground Intelligence</h1>
-            <p className="text-gray-500 mt-1">PGIS / War Room Strategic Overview</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded uppercase tracking-widest border border-blue-200">
+                Scope: {overview?.scopeName || 'National'}
+              </span>
+              <span className="text-gray-300">•</span>
+              <span className="text-gray-500 font-mono text-xs uppercase tracking-widest">
+                PGIS / War Room Strategic Overview
+              </span>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-          <button 
-            onClick={() => setActiveView('overview')}
-            className={`px-6 py-2 rounded-lg font-bold transition-all ${activeView === 'overview' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
-          >
-            Overview
-          </button>
-          <button 
-            onClick={() => setActiveView('reports')}
-            className={`px-6 py-2 rounded-lg font-bold transition-all ${activeView === 'reports' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
-          >
-            Reports
-          </button>
-          <button 
-            onClick={() => setActiveView('signals')}
-            className={`px-6 py-2 rounded-lg font-bold transition-all ${activeView === 'signals' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
-          >
-            Signal Feed
-          </button>
-          <button 
-            onClick={() => setActiveView('map')}
-            className={`px-6 py-2 rounded-lg font-bold transition-all ${activeView === 'map' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
-          >
-            Map View
-          </button>
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto print:hidden">
+          <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+            <button 
+              onClick={() => setActiveView('overview')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${activeView === 'overview' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
+            >
+              Overview
+            </button>
+            <button 
+              onClick={() => setActiveView('reports')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${activeView === 'reports' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
+            >
+              Reports
+            </button>
+            <button 
+              onClick={() => setActiveView('signals')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${activeView === 'signals' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-black'}`}
+            >
+              Signals
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={fetchData}
+              className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all text-gray-500"
+              title="Refresh Data"
+            >
+              <RefreshCw size={20} />
+            </button>
+            <button 
+              onClick={handleCopySummary}
+              className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all text-gray-500"
+              title="Copy Summary"
+            >
+              {copied ? <Check size={20} className="text-blue-500" /> : <Copy size={20} />}
+            </button>
+            <button 
+              onClick={handlePrint}
+              className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all text-gray-500"
+              title="Print Report"
+            >
+              <Printer size={20} />
+            </button>
+            <button 
+              onClick={handlePrint}
+              className="px-4 py-2 bg-black text-white rounded-xl hover:bg-gray-800 transition-all font-bold flex items-center gap-2 shadow-lg text-sm"
+            >
+              <FileText size={18} /> <span className="hidden sm:inline">Export Report</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {activeView === 'overview' && overview && (
         <div className="space-y-8">
+          {/* Leadership Snapshot / Executive Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white border-2 border-blue-100 p-8 rounded-[2rem] relative overflow-hidden shadow-sm print:border-gray-300 print:shadow-none"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-5 print:hidden">
+              <Globe size={120} className="text-blue-500" />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-50 rounded-2xl print:bg-gray-100">
+                    <Activity className="w-6 h-6 text-blue-600 print:text-black" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-gray-900 uppercase italic tracking-tight">Executive PGIS Snapshot</h2>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-0.5">Strategic Intelligence Summary</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleCopySummary}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all print:hidden"
+                >
+                  {copied ? <Check size={14} className="text-blue-600" /> : <Copy size={14} />}
+                  {copied ? 'Copied to Clipboard' : 'Copy Summary'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div className="space-y-6">
+                  <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-3 print:text-gray-700">Ground Sentiment</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-500">Average Score</span>
+                    <span className={`text-2xl font-black ${getSentimentColor(overview.avgSentiment)}`}>{Math.round(overview.avgSentiment)}/100</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-500">Total Intel Reports</span>
+                    <span className="text-2xl font-black text-gray-900">{overview.signalCounts.reports}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-500">Survey Count</span>
+                    <span className="text-2xl font-black text-gray-900">{overview.signalCounts.surveyResponses}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-3 print:text-gray-700">Public Signals</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-500">Open Grievances</span>
+                    <span className="text-2xl font-black text-amber-500">{overview.signalCounts.grievances}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-500">Reported Incidents</span>
+                    <span className="text-2xl font-black text-red-500">{overview.signalCounts.incidents}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-500">Critical Alerts</span>
+                    <span className="text-2xl font-black text-blue-600">
+                      {overview.attentionNeeded?.filter((a: any) => a.priority === 'CRITICAL').length || 0}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-3 print:text-gray-700">Regional Hotspots</h3>
+                  <div className="space-y-3">
+                    {overview.hotspots?.slice(0, 3).map((spot: any) => (
+                      <div key={spot.id} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600 font-black uppercase tracking-tight">{spot.name}</span>
+                        <span className="px-2 py-1 bg-gray-100 text-gray-900 rounded-lg font-mono font-bold">{spot.totalIssues} Issues</span>
+                      </div>
+                    ))}
+                    {(!overview.hotspots || overview.hotspots.length === 0) && (
+                      <p className="text-xs text-gray-400 italic">No hotspots identified</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
               <div className="flex items-center justify-between text-blue-600">

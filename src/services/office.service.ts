@@ -48,6 +48,12 @@ export class OfficeService extends BaseService {
     });
   }
 
+  async deleteOffice(id: string) {
+    return await this.db.office.delete({
+      where: { id }
+    });
+  }
+
   async getOfficesByUnit(unitId: string) {
     return await this.db.office.findMany({
       where: { orgUnitId: unitId, isActive: true },

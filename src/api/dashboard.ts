@@ -47,7 +47,7 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
         surveyWhere.orgUnitId = { in: accessibleUnitIds };
       }
 
-      const [totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, recentGrievances, criticalBoothsList] = await Promise.all([
+      const [totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, totalOffices, recentGrievances, criticalBoothsList] = await Promise.all([
         prisma.member.count({ where: memberWhere }),
         prisma.supporter.count({ where: supporterWhere }),
         prisma.booth.count({ where: boothWhere }),
@@ -55,6 +55,7 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
         prisma.issue.count({ where: issueWhere }),
         prisma.grievance.count({ where: grievanceWhere }),
         prisma.survey.count({ where: surveyWhere }),
+        prisma.office.count({ where: isScoped ? { orgUnitId: { in: accessibleUnitIds } } : {} }),
         prisma.grievance.findMany({ where: grievanceWhere, orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, title: true, priority: true, status: true, createdAt: true } }),
         prisma.booth.findMany({ where: { ...boothWhere, status: 'CRITICAL' }, orderBy: { updatedAt: 'desc' }, take: 5, select: { id: true, name: true, status: true, updatedAt: true } })
       ]);
@@ -64,7 +65,7 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
         ...criticalBoothsList.map(b => ({ id: b.id, type: 'BOOTH', title: b.name, status: b.status, date: b.updatedAt?.toISOString() }))
       ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
 
-      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, actionQueue };
+      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, totalOffices, actionQueue };
     } else if (role === 'FINANCE_OFFICER') {
       const transactionWhere: any = {};
       const donationWhere: any = { status: 'COMPLETED' };

@@ -19,7 +19,10 @@ import {
   Target,
   Globe,
   Activity,
-  Zap
+  Zap,
+  Printer,
+  Copy,
+  Check
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -48,6 +51,7 @@ export function WarRoomDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchAnalytics();
@@ -110,6 +114,38 @@ export function WarRoomDashboard() {
   const readyBooths = boothCounts.READY || 0;
   const readinessPercent = totalBooths > 0 ? Math.round((readyBooths / totalBooths) * 100) : 0;
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleCopySummary = () => {
+    if (!data) return;
+    
+    const summary = `
+STRATEGIC COMMAND SUMMARY - ${data.scopeName}
+Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+
+EXECUTIVE METRICS:
+- Total Volunteers: ${data.volunteers.toLocaleString()}
+- Booth Readiness: ${readyBooths} / ${totalBooths} (${readinessPercent}%)
+- Open Incidents: ${data.incidents.find((i: any) => i.status === 'REPORTED')?._count.id || 0}
+- Open Grievances: ${Object.values(data.grievances || {}).reduce((a: any, b: any) => a + b, 0)}
+
+CRITICAL PRIORITIES:
+${data.attentionNeeded?.slice(0, 3).map((item: any) => `- [${item.priority}] ${item.type}: ${item.title} (${item.location})`).join('\n') || 'None identified'}
+
+TOP HOTSPOTS:
+${data.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.totalIssues} issues`).join('\n') || 'None detected'}
+
+AI STRATEGIC SUMMARY:
+${aiSummary || 'Analysis pending...'}
+    `.trim();
+
+    navigator.clipboard.writeText(summary);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const grievanceData = Object.entries(analytics.grievances || {}).map(([name, count]) => ({ name, value: count }));
   const areaScores = (analytics.areaScores || []).map((s: any) => ({ 
     name: s.orgUnit.name, 
@@ -149,13 +185,21 @@ export function WarRoomDashboard() {
             <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg border border-emerald-500/20 flex-shrink-0">
               <ShieldAlert size={24} />
             </div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white uppercase italic leading-tight">National Command War Room</h1>
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white uppercase italic leading-tight">National Command War Room</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-500/30">
+                  Scope: {data?.scopeName || 'National'}
+                </span>
+                <span className="text-slate-600">•</span>
+                <span className="text-slate-500 font-mono text-[10px] uppercase tracking-widest">
+                  Strategic Intelligence Dashboard • Nepal 2026
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="text-slate-500 font-mono text-[10px] sm:text-xs uppercase tracking-widest">
-            Strategic Intelligence Dashboard • Real-time Aggregated Analytics • Nepal 2026
-          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full lg:w-auto">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full lg:w-auto print:hidden">
           <div className="text-right hidden sm:block">
             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Last Updated</p>
             <p className="text-sm font-mono text-emerald-500">{new Date(data.timestamp).toLocaleTimeString()}</p>
@@ -163,11 +207,29 @@ export function WarRoomDashboard() {
           <button 
             onClick={fetchAnalytics}
             disabled={refreshing}
-            className={`p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all text-slate-400 ${refreshing ? 'animate-spin' : ''}`}
+            className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all text-slate-400"
+            title="Refresh Data"
           >
-            <RefreshCw size={20} />
+            <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
           </button>
-          <button className="flex-1 lg:flex-none px-4 sm:px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 text-sm">
+          <button 
+            onClick={handleCopySummary}
+            className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all text-slate-400"
+            title="Copy Summary"
+          >
+            {copied ? <Check size={20} className="text-emerald-500" /> : <Copy size={20} />}
+          </button>
+          <button 
+            onClick={handlePrint}
+            className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-all text-slate-400"
+            title="Print Report"
+          >
+            <Printer size={20} />
+          </button>
+          <button 
+            onClick={handlePrint}
+            className="flex-1 lg:flex-none px-4 sm:px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 text-sm"
+          >
             <FileText size={18} /> <span className="hidden sm:inline">Generate Executive Report</span><span className="sm:hidden">Report</span>
           </button>
         </div>
@@ -179,6 +241,86 @@ export function WarRoomDashboard() {
         animate="visible"
         className="space-y-6"
       >
+        {/* Leadership Snapshot / Executive Summary */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-slate-900/50 border border-emerald-500/30 p-6 rounded-2xl relative overflow-hidden print:border-slate-300 print:bg-white print:text-black"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-5 print:hidden">
+            <FileText size={120} className="text-emerald-500" />
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-500/10 rounded-lg print:bg-slate-100">
+                  <Activity className="w-5 h-5 text-emerald-500 print:text-slate-900" />
+                </div>
+                <h2 className="text-lg font-black text-white uppercase italic tracking-wider print:text-black">Executive Leadership Snapshot</h2>
+              </div>
+              <button 
+                onClick={handleCopySummary}
+                className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all print:hidden"
+              >
+                {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                {copied ? 'Copied' : 'Copy Summary'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2 print:text-slate-700 print:border-slate-200">Operational Readiness</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400 print:text-slate-600">Booth Deployment</span>
+                  <span className="text-lg font-black text-white print:text-black">{readinessPercent}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400 print:text-slate-600">Active Volunteers</span>
+                  <span className="text-lg font-black text-white print:text-black">{data.volunteers.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400 print:text-slate-600">Fundraising Progress</span>
+                  <span className="text-lg font-black text-white print:text-black">
+                    {Math.round((data.fundraising.reduce((acc: number, curr: any) => acc + curr.currentAmount, 0) / data.fundraising.reduce((acc: number, curr: any) => acc + curr.goalAmount, 1)) * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2 print:text-slate-700 print:border-slate-200">Critical Signals</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400 print:text-slate-600">Open Incidents</span>
+                  <span className="text-lg font-black text-red-500">{data.incidents.find((i: any) => i.status === 'REPORTED')?._count.id || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400 print:text-slate-600">Pending Grievances</span>
+                  <span className="text-lg font-black text-amber-500">{(Object.values(data.grievances || {}) as number[]).reduce((a: number, b: number) => a + b, 0)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400 print:text-slate-600">Avg Sentiment</span>
+                  <span className="text-lg font-black text-blue-500">
+                    {Math.round(data.pgisOverview?.avgSentiment || 0)}/100
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2 print:text-slate-700 print:border-slate-200">Strategic Hotspots</h3>
+                <div className="space-y-2">
+                  {data.hotspots?.slice(0, 3).map((spot: any) => (
+                    <div key={spot.id} className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-bold print:text-slate-600">{spot.name}</span>
+                      <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-mono print:bg-slate-100 print:text-slate-900">{spot.totalIssues} Issues</span>
+                    </div>
+                  ))}
+                  {(!data.hotspots || data.hotspots.length === 0) && (
+                    <p className="text-xs text-slate-600 italic">No hotspots identified</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Command Layer: Critical Priorities & Hotspots */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Critical Priorities / Attention Needed */}
@@ -199,8 +341,8 @@ export function WarRoomDashboard() {
             </div>
 
             <div className="space-y-3">
-              {analytics.attentionNeeded && analytics.attentionNeeded.length > 0 ? (
-                analytics.attentionNeeded.map((item: any) => (
+              {data.attentionNeeded && data.attentionNeeded.length > 0 ? (
+                data.attentionNeeded.map((item: any) => (
                   <div key={item.id} className="flex items-start gap-4 p-3 rounded-xl bg-slate-800/30 border border-slate-800 hover:border-red-500/30 transition-all">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -251,8 +393,8 @@ export function WarRoomDashboard() {
             </div>
 
             <div className="space-y-3">
-              {analytics.hotspots && analytics.hotspots.length > 0 ? (
-                analytics.hotspots.map((spot: any, idx: number) => (
+              {data.hotspots && data.hotspots.length > 0 ? (
+                data.hotspots.map((spot: any, idx: number) => (
                   <div key={spot.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-800/30 border border-slate-800">
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-black text-slate-600 w-4">{idx + 1}</span>
@@ -297,7 +439,7 @@ export function WarRoomDashboard() {
                 <TrendingUp size={16} className="text-emerald-500" />
               </div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Volunteers</p>
-              <p className="text-2xl font-black text-white">{analytics.volunteers.toLocaleString()}</p>
+              <p className="text-2xl font-black text-white">{data.volunteers.toLocaleString()}</p>
             </motion.div>
             <motion.div variants={itemVariants} className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl hover:border-emerald-500/30 transition-all group">
               <div className="flex items-center justify-between mb-3">

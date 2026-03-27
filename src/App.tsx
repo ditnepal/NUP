@@ -522,6 +522,15 @@ export default function App() {
                   <p className="text-3xl font-bold text-indigo-600">{summary.activeSurveys.toLocaleString()}</p>
                 </div>
               )}
+              {summary.totalOffices !== undefined && (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-slate-500">Office Locations</p>
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><MapPin size={18} /></div>
+                  </div>
+                  <p className="text-3xl font-bold text-blue-600">{summary.totalOffices.toLocaleString()}</p>
+                </div>
+              )}
             </div>
 
             {summary.actionQueue && summary.actionQueue.length > 0 && (
