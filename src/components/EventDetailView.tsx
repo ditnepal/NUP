@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { Calendar, MapPin, Users, Clock, Loader2, ArrowLeft, UserPlus, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { UserProfile } from '../types';
+import { toast } from 'sonner';
 
 interface EventDetailViewProps {
   eventId: string;
@@ -49,7 +50,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, user,
       setEvent(data);
     } catch (error) {
       console.error('Error RSVPing to event:', error);
-      alert('Failed to RSVP. Please try again.');
+      toast.error('Failed to RSVP. Please try again.');
     } finally {
       setIsRSVPing(false);
     }

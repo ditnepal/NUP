@@ -70,15 +70,22 @@ export default function App() {
       if (token) {
         try {
           const userData = await api.get('/auth/me');
-          setUser(userData);
-          if (userData.role === 'MEMBER') {
-            setCurrentView('member-dashboard');
+          if (userData.requirePasswordChange) {
+            // Force re-login to change password
+            localStorage.removeItem('token');
+            setUser(null);
           } else {
-            setCurrentView('dashboard');
-            fetchData();
+            setUser(userData);
+            if (userData.role === 'MEMBER') {
+              setCurrentView('member-dashboard');
+            } else {
+              setCurrentView('dashboard');
+              fetchData();
+            }
           }
         } catch (error) {
           localStorage.removeItem('token');
+          setUser(null);
         }
       }
       setLoading(false);

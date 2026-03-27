@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Users, Briefcase, ClipboardList, CheckCircle, Clock, Plus, Search, Edit2, Trash2, X, Loader2 } from 'lucide-react';
+import { Users, Briefcase, ClipboardList, CheckCircle, Clock, Plus, Search, Edit2, Trash2, X, Loader2, AlertTriangle } from 'lucide-react';
 import { Volunteer } from '../types';
 import { VolunteerProfileView } from './VolunteerProfileView';
+import { toast } from 'sonner';
 
 export const VolunteerAdmin: React.FC = () => {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
@@ -12,6 +13,7 @@ export const VolunteerAdmin: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [editingVolunteer, setEditingVolunteer] = useState<Volunteer | null>(null);
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -72,23 +74,31 @@ export const VolunteerAdmin: React.FC = () => {
         await api.post('/volunteers', formData);
       }
       await fetchVolunteers();
+      toast.success(editingVolunteer ? 'Volunteer updated successfully' : 'Volunteer added successfully');
       setIsModalOpen(false);
     } catch (error) {
       console.error('Error saving volunteer:', error);
-      alert('Failed to save volunteer. Please try again.');
+      toast.error('Failed to save volunteer. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this volunteer?')) return;
+  const handleDelete = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/volunteers/${id}`);
+      await api.delete(`/volunteers/${deleteTarget}`);
+      toast.success('Volunteer deleted successfully');
       await fetchVolunteers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting volunteer:', error);
-      alert('Failed to delete volunteer.');
+      toast.error(error.message || 'Failed to delete volunteer.');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -305,6 +315,37 @@ export const VolunteerAdmin: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Volunteer</h3>
+              <p className="text-slate-500 mb-6">
+                Are you sure you want to delete this volunteer? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

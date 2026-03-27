@@ -61,7 +61,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    let isTemp = false;
+    let hashToCompare = user.passwordHash;
+    if (user.passwordHash.startsWith('TEMP_')) {
+      isTemp = true;
+      hashToCompare = user.passwordHash.replace('TEMP_', '');
+    }
+
+    const isMatch = await bcrypt.compare(password, hashToCompare);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -73,9 +80,59 @@ router.post('/login', async (req, res) => {
     const payload = { id: user.id, email: user.email, role: user.role };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
 
-    res.json({ token, user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role } });
+    res.json({ token, user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role, requirePasswordChange: isTemp } });
   } catch (error) {
     console.error('[AUTH LOGIN ERROR]', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: (error as any).errors });
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string().min(6),
+});
+
+// @route   POST /api/v1/auth/change-password
+// @desc    Change user password (used for forced change on first login)
+// @access  Private
+router.post('/change-password', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+    const userId = req.user?.id;
+
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.passwordHash) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let isTemp = false;
+    let hashToCompare = user.passwordHash;
+    if (user.passwordHash.startsWith('TEMP_')) {
+      isTemp = true;
+      hashToCompare = user.passwordHash.replace('TEMP_', '');
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, hashToCompare);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid current password' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const newPasswordHash = await bcrypt.hash(newPassword, salt);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('[AUTH CHANGE PASSWORD ERROR]', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });
     }
@@ -124,9 +181,17 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user?.id },
-      select: { id: true, email: true, displayName: true, role: true, phoneNumber: true, isActive: true, createdAt: true }
+      select: { id: true, email: true, displayName: true, role: true, phoneNumber: true, isActive: true, createdAt: true, passwordHash: true }
     });
-    res.json(user);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const { passwordHash, ...userWithoutPassword } = user;
+    const requirePasswordChange = passwordHash.startsWith('TEMP_');
+    
+    res.json({ ...userWithoutPassword, requirePasswordChange });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

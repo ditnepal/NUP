@@ -5,6 +5,7 @@ import { FundraiserCard } from './ui/FundraiserCard';
 import { StatCard } from './ui/StatCard';
 import { Fundraiser, FinanceAnalytics, UserProfile } from '../types';
 import { usePermissions } from '../hooks/usePermissions';
+import { toast } from 'sonner';
 
 interface FundraiserAdminProps {
   user: UserProfile | null;
@@ -63,7 +64,7 @@ export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
           : undefined
       };
       await api.post('/finance/campaigns', payload);
-      alert('Fundraiser created successfully');
+      toast.success('Fundraiser created successfully');
       setIsFundraiserModalOpen(false);
       setNewFundraiser({
         title: '',
@@ -77,7 +78,7 @@ export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
       });
       fetchData();
     } catch (error: any) {
-      alert(`Failed to create fundraiser: ${error.message}`);
+      toast.error(`Failed to create fundraiser: ${error.message}`);
     }
   };
 

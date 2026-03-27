@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { OrganizationUnit, OrgCommittee, OrgOfficeBearer, Office, UserProfile } from '../types';
-import { Plus, ChevronRight, ChevronDown, MapPin, Building2, Users, Edit2, Trash2, X, Loader2, AlertCircle, CheckCircle2, Shield, UserPlus, Calendar } from 'lucide-react';
+import { Plus, ChevronRight, ChevronDown, MapPin, Building2, Users, Edit2, Trash2, X, Loader2, AlertCircle, CheckCircle2, Shield, UserPlus, Calendar, GitGraph, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePermissions } from '../hooks/usePermissions';
+import { UserAdmin } from './UserAdmin';
+import { toast } from 'sonner';
 
 interface HierarchyAdminProps {
   user?: UserProfile | null;
@@ -11,6 +13,7 @@ interface HierarchyAdminProps {
 
 export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
   const { can } = usePermissions(user);
+  const [activeTab, setActiveTab] = useState<'structure' | 'users'>('structure');
   const [units, setUnits] = useState<OrganizationUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -34,12 +37,15 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
   const [parentId, setParentId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
-    fetchHierarchy();
-  }, []);
+    if (activeTab === 'structure') {
+      fetchHierarchy();
+    }
+  }, [activeTab]);
 
   const fetchHierarchy = async () => {
     try {
@@ -202,18 +208,23 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this unit? This action cannot be undone.')) return;
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     
     setLoading(true);
     try {
-      await api.delete(`/hierarchy/${id}`);
-      setMessage({ type: 'success', text: 'Unit deleted successfully' });
+      await api.delete(`/hierarchy/${deleteTarget}`);
+      toast.success('Unit deleted successfully');
       fetchHierarchy();
     } catch (error: any) {
       console.error('Error deleting unit:', error);
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to delete unit' });
+      toast.error(error.response?.data?.error || 'Failed to delete unit');
     } finally {
       setLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -366,46 +377,85 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
           <h1 className="text-2xl font-bold text-gray-900">Organization Hierarchy</h1>
           <p className="text-gray-500 text-sm">Manage structural units and geographic organizational scope.</p>
         </div>
-        {isAdmin && can('HIERARCHY', 'CREATE') && (
-          <button 
-            onClick={() => openAddModal(null)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 shadow-sm transition-all"
+      </div>
+
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => setActiveTab('structure')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            activeTab === 'structure'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          <GitGraph size={16} />
+          Structure
+        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'users'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+            }`}
           >
-            <Plus size={20} />
-            Add Root Unit
+            <Shield size={16} />
+            Users & Roles
           </button>
         )}
       </div>
 
-      {message && (
-        <div className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
-          message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'
-        }`}>
-          {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-          <p className="font-medium flex-1">{message.text}</p>
-          <button onClick={() => setMessage(null)} className="p-1 hover:bg-black/5 rounded-full">
-            <X size={16} />
-          </button>
-        </div>
-      )}
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Unit Name & Level</span>
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</span>
-        </div>
-        <div className="p-2 overflow-x-auto">
-          <div className="min-w-[400px]">
-            {rootUnits.length > 0 ? (
-              rootUnits.map(unit => renderUnit(unit))
-            ) : (
-              <div className="py-12 text-center text-gray-500">
-                No organizational units found. Start by adding a root unit.
-              </div>
+      {activeTab === 'structure' && (
+        <>
+          <div className="flex justify-end">
+            {isAdmin && can('HIERARCHY', 'CREATE') && (
+              <button 
+                onClick={() => openAddModal(null)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 shadow-sm transition-all"
+              >
+                <Plus size={20} />
+                Add Root Unit
+              </button>
             )}
           </div>
-        </div>
-      </div>
+
+          {message && (
+            <div className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
+              message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'
+            }`}>
+              {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+              <p className="font-medium flex-1">{message.text}</p>
+              <button onClick={() => setMessage(null)} className="p-1 hover:bg-black/5 rounded-full">
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Unit Name & Level</span>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</span>
+            </div>
+            <div className="p-2 overflow-x-auto">
+              <div className="min-w-[400px]">
+                {rootUnits.length > 0 ? (
+                  rootUnits.map(unit => renderUnit(unit))
+                ) : (
+                  <div className="py-12 text-center text-gray-500">
+                    No organizational units found. Start by adding a root unit.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'users' && isAdmin && (
+        <UserAdmin />
+      )}
 
       <AnimatePresence>
         {isModalOpen && (
@@ -904,6 +954,39 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">Delete Unit</h3>
+            <p className="text-slate-600 mb-8 leading-relaxed">
+              Are you sure you want to delete this unit? This action cannot be undone and may affect associated data.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-4 px-6 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-4 px-6 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200 active:scale-95"
+              >
+                Delete Unit
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

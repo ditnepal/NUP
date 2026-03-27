@@ -18,6 +18,7 @@ import { api } from '../lib/api';
 import { Grievance } from '../types';
 import { GrievanceStatusBadge, GrievancePriorityBadge } from './ui/GrievanceBadges';
 import { StatCard } from './ui/StatCard';
+import { toast } from 'sonner';
 import { usePermissions } from '../hooks/usePermissions';
 import { AuditTrail } from './ui/AuditTrail';
 
@@ -31,7 +32,9 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
   const [categories, setCategories] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'mine'>('mine');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'mine'>(
+    can('GRIEVANCES', 'UPDATE') ? 'all' : 'mine'
+  );
   
   const [showNewModal, setShowNewModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -137,17 +140,23 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
   const handleStatusChange = async (action: 'resolve' | 'escalate') => {
     if (!selectedGrievance) return;
     if (action === 'resolve' && !decisionNote.trim()) {
-      alert('Decision note is required for resolving a grievance.');
+      toast.error('Decision note is required for resolving a grievance.');
+      return;
+    }
+    if (action === 'escalate' && !decisionNote.trim()) {
+      toast.error('Decision note is required for escalating a grievance.');
       return;
     }
     try {
       await api.post(`/grievances/${selectedGrievance.id}/${action}`, { decisionNote });
+      toast.success(`Grievance ${action === 'resolve' ? 'resolved' : 'escalated'} successfully`);
       setDecisionNote('');
       const updated = await api.get('/grievances');
       setGrievances(updated);
       setSelectedGrievance(updated.find((g: any) => g.id === selectedGrievance.id) || null);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error ${action} grievance:`, error);
+      toast.error(error.message || `Failed to ${action} grievance`);
     }
   };
 
@@ -163,7 +172,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Grievance Portal</h1>
           <p className="text-slate-500 mt-2">Submit and track public complaints and internal issues.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {isAdminOrStaff && (
             <div className="flex bg-slate-100 p-1 rounded-xl mr-2">
               <button 
@@ -240,7 +249,25 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                 </tr>
               ) : filteredGrievances.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">No grievances found.</td>
+                  <td colSpan={7} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <MessageSquare className="w-12 h-12 text-slate-300 mb-4" />
+                      <p className="text-lg font-medium text-slate-900">No grievances found</p>
+                      <p className="text-sm text-slate-500 max-w-sm mt-1">
+                        {activeFilter === 'mine' 
+                          ? "You haven't submitted any grievances yet." 
+                          : "There are no grievances to display."}
+                      </p>
+                      {can('GRIEVANCES', 'CREATE') && (
+                        <button 
+                          onClick={() => setShowNewModal(true)}
+                          className="mt-4 text-emerald-600 font-medium hover:text-emerald-700"
+                        >
+                          Submit a Grievance
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ) : filteredGrievances.map((g) => (
                 <motion.tr 
@@ -460,12 +487,12 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                   <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider">Admin Actions</h3>
                   
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Decision Note (Required for Resolve) *</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Decision Note (Required for Resolve and Escalate) *</label>
                     <textarea 
                       value={decisionNote}
                       onChange={e => setDecisionNote(e.target.value.substring(0, 300))}
                       maxLength={300}
-                      placeholder="Explain the reason for assignment, resolution (Required), or escalation..."
+                      placeholder="Explain the reason for assignment, resolution (Required), or escalation (Required)..."
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-900 outline-none"
                       rows={2}
                     />
@@ -498,7 +525,10 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                     {can('GRIEVANCES', 'ESCALATE') && (
                       <button 
                         onClick={() => handleStatusChange('escalate')}
-                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200"
+                        disabled={!decisionNote.trim()}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          decisionNote.trim() ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        }`}
                       >
                         Escalate
                       </button>

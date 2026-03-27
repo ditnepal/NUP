@@ -61,13 +61,13 @@ export function WarRoomDashboard() {
       setError(null);
       
       // Generate AI Summary on the frontend
-      if (response && response.data) {
-        const summary = await aiService.generateStrategicSummary(response.data);
+      if (response) {
+        const summary = await aiService.generateStrategicSummary(response);
         setAiSummary(summary);
       }
     } catch (err) {
       console.error('Failed to fetch War Room analytics', err);
-      setError('Failed to load strategic data. Ensure you have NATIONAL_COMMAND permissions.');
+      setError('Failed to load strategic data. Ensure you have sufficient permissions.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -101,16 +101,17 @@ export function WarRoomDashboard() {
     );
   }
 
-  const { data: analytics } = data;
+  const analytics = data;
 
   // Prepare chart data
-  const boothData = analytics.booths.map((b: any) => ({ name: b.status, value: b._count.id }));
-  const totalBooths = analytics.booths.reduce((acc: number, curr: any) => acc + curr._count.id, 0);
-  const readyBooths = analytics.booths.find((b: any) => b.status === 'READY')?._count.id || 0;
+  const boothCounts = (analytics.booths || {}) as Record<string, number>;
+  const boothData = Object.entries(boothCounts).map(([name, count]) => ({ name, value: count }));
+  const totalBooths = Object.values(boothCounts).reduce((acc, curr) => acc + curr, 0);
+  const readyBooths = boothCounts.READY || 0;
   const readinessPercent = totalBooths > 0 ? Math.round((readyBooths / totalBooths) * 100) : 0;
 
-  const grievanceData = analytics.grievances.map((g: any) => ({ name: `${g.status} (${g.priority})`, value: g._count.id }));
-  const areaScores = analytics.areaScores.map((s: any) => ({ 
+  const grievanceData = Object.entries(analytics.grievances || {}).map(([name, count]) => ({ name, value: count }));
+  const areaScores = (analytics.areaScores || []).map((s: any) => ({ 
     name: s.orgUnit.name, 
     strength: s.partyStrength, 
     opposition: s.oppositionStrength,
@@ -176,8 +177,114 @@ export function WarRoomDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 xl:grid-cols-12 gap-6"
+        className="space-y-6"
       >
+        {/* Command Layer: Critical Priorities & Hotspots */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Critical Priorities / Attention Needed */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-slate-900/50 border border-red-500/20 p-6 rounded-2xl"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-red-500/10 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                </div>
+                <h2 className="text-lg font-black text-white uppercase italic tracking-wider">Critical Priorities</h2>
+              </div>
+              <span className="px-2 py-1 bg-red-500/20 text-red-500 text-[10px] font-black rounded uppercase tracking-widest animate-pulse">
+                Immediate Action
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {analytics.attentionNeeded && analytics.attentionNeeded.length > 0 ? (
+                analytics.attentionNeeded.map((item: any) => (
+                  <div key={item.id} className="flex items-start gap-4 p-3 rounded-xl bg-slate-800/30 border border-slate-800 hover:border-red-500/30 transition-all">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${
+                          item.type === 'INCIDENT' ? 'bg-orange-500/20 text-orange-500' : 'bg-blue-500/20 text-blue-500'
+                        }`}>
+                          {item.type}
+                        </span>
+                        <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">
+                          {item.priority}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold text-white line-clamp-1">{item.title}</h3>
+                      <div className="flex items-center gap-3 mt-2 text-[10px] text-slate-500 font-mono uppercase tracking-widest">
+                        <span className="flex items-center gap-1">
+                          <Map size={12} />
+                          {item.location || 'Unknown'}
+                        </span>
+                        <span>{new Date(item.createdAt).toLocaleTimeString()}</span>
+                      </div>
+                    </div>
+                    <button className="p-2 hover:bg-slate-700 rounded-lg text-slate-500 hover:text-white transition-colors">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-500 font-mono text-xs uppercase tracking-widest">
+                  No critical priorities identified
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Unit-Level Hotspots */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-500/10 rounded-lg">
+                  <Activity className="w-5 h-5 text-amber-500" />
+                </div>
+                <h2 className="text-lg font-black text-white uppercase italic tracking-wider">Unit-Level Hotspots</h2>
+              </div>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Top 5 by Volume</span>
+            </div>
+
+            <div className="space-y-3">
+              {analytics.hotspots && analytics.hotspots.length > 0 ? (
+                analytics.hotspots.map((spot: any, idx: number) => (
+                  <div key={spot.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-800/30 border border-slate-800">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black text-slate-600 w-4">{idx + 1}</span>
+                      <div>
+                        <h3 className="text-sm font-bold text-white">{spot.name}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">
+                            {spot.grievanceCount} Grievances
+                          </span>
+                          <span className="text-[9px] text-slate-700">•</span>
+                          <span className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">
+                            {spot.incidentCount} Incidents
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-black text-amber-500 leading-none">{spot.totalIssues}</div>
+                      <div className="text-[8px] text-slate-600 uppercase font-black tracking-widest">Total</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-500 font-mono text-xs uppercase tracking-widest">
+                  No hotspots detected
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Left Column: Core Metrics & Charts */}
         <div className="xl:col-span-8 space-y-6">
           {/* Top Stats */}
@@ -473,7 +580,8 @@ export function WarRoomDashboard() {
             </div>
           </div>
         </div>
-      </motion.div>
-    </div>
-  );
+      </div>
+    </motion.div>
+  </div>
+);
 }

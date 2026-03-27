@@ -86,15 +86,26 @@ export const AppEventsAdmin: React.FC<AppEventsAdminProps> = ({ user }) => {
       <table className="min-w-full bg-white">
         <thead>
           <tr>
-            <th className="py-2">Title</th>
-            <th className="py-2">Status</th>
-            <th className="py-2">Audience</th>
-            {can('COMMUNICATION', 'UPDATE') && <th className="py-2">Actions</th>}
+            <th className="py-2 text-left">Title</th>
+            <th className="py-2 text-left">Status</th>
+            <th className="py-2 text-left">Audience</th>
+            {can('COMMUNICATION', 'UPDATE') && <th className="py-2 text-left">Actions</th>}
           </tr>
         </thead>
         <tbody>
-          {events.map(event => (
-            <tr key={event.id}>
+          {events.length === 0 ? (
+            <tr>
+              <td colSpan={can('COMMUNICATION', 'UPDATE') ? 4 : 3} className="py-12 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <p className="text-lg font-medium text-slate-900">No events found</p>
+                  <p className="text-sm text-slate-500 max-w-sm mt-1">
+                    There are currently no events to display. Create one to get started.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          ) : events.map(event => (
+            <tr key={event.id} className="border-t">
               <td className="py-2">{event.title}</td>
               <td className="py-2">{event.status}</td>
               <td className="py-2">{event.audience}</td>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api } from '../lib/api';
 import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
+import { toast } from 'sonner';
 
 const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
   const { register, handleSubmit, getValues } = useForm();
@@ -18,7 +19,7 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: s
 
   const onSubmit = async (data: any) => {
     if (!selectedMethod) {
-      alert('Please select a payment method.');
+      toast.error('Please select a payment method.');
       return;
     }
     try {
@@ -33,10 +34,11 @@ const MembershipPublicVideo: React.FC<{ onBack: () => void; onSuccess?: (code: s
       if (videoFile) formData.append('video', videoFile);
 
       const result = await api.postFormData('/members/apply', formData);
+      toast.success('Application submitted successfully');
       setSuccess(result.trackingCode);
     } catch (err: any) {
       console.error('Submission error:', err);
-      alert(err.message || 'An error occurred during submission');
+      toast.error(err.message || 'An error occurred during submission');
     }
   };
 

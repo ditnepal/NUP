@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Supporter, IssueCategory, SupporterLevel, UserProfile } from '../types';
-import { Search, UserPlus, Phone, MapPin, HeartHandshake, X, Edit2, Trash2, Eye } from 'lucide-react';
+import { Search, UserPlus, Phone, MapPin, HeartHandshake, X, Edit2, Trash2, Eye, AlertTriangle } from 'lucide-react';
 import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { StatCard } from './ui/StatCard';
 import { usePermissions } from '../hooks/usePermissions';
+import { toast } from 'sonner';
 
 const Button = ({ children, variant = 'primary', className = '', ...props }: any) => {
   const base = "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -30,6 +31,7 @@ export const SupportersView = ({ supporters, onRefresh, user }: { supporters: Su
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupporter, setEditingSupporter] = useState<Supporter | null>(null);
   const [viewingSupporter, setViewingSupporter] = useState<Supporter | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,17 +107,24 @@ export const SupportersView = ({ supporters, onRefresh, user }: { supporters: Su
     }
   };
 
-  const handleDeleteSupporter = async (id: string) => {
+  const handleDeleteSupporter = (id: string) => {
     if (!can('SUPPORTERS', 'DELETE')) return;
-    if (!window.confirm("Are you sure you want to delete this supporter?")) return;
-    setIsDeleting(id);
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(deleteTarget);
     try {
-      await api.delete(`/supporters/${id}`);
+      await api.delete(`/supporters/${deleteTarget}`);
+      toast.success('Supporter deleted successfully');
       onRefresh();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting supporter:", error);
+      toast.error(error.message || 'Failed to delete supporter');
     } finally {
       setIsDeleting(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -473,6 +482,38 @@ export const SupportersView = ({ supporters, onRefresh, user }: { supporters: Su
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Supporter</h3>
+              <p className="text-slate-500 mb-6">
+                Are you sure you want to delete this supporter? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={isDeleting !== null}
+                  className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors disabled:opacity-50"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

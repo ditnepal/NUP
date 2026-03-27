@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { Heart, TrendingUp, Users, CheckCircle, Shield, CreditCard, Smartphone, Landmark, ArrowRight, Star, Info } from 'lucide-react';
 import { FundraisingCampaign } from '../types';
 import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
+import { toast } from 'sonner';
 
 export const DonationPortal: React.FC = () => {
   const [campaigns, setCampaigns] = useState<FundraisingCampaign[]>([]);
@@ -73,7 +74,7 @@ export const DonationPortal: React.FC = () => {
 
   const handleDonate = async () => {
     if (!selectedMethod) {
-      alert('Please select a payment method.');
+      toast.error('Please select a payment method.');
       return;
     }
 
@@ -136,7 +137,7 @@ export const DonationPortal: React.FC = () => {
         setStep('success');
       }
     } catch (error: any) {
-      alert(`Payment initiation failed: ${error.message}`);
+      toast.error(`Payment initiation failed: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }

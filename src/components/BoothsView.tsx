@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Booth, UserProfile } from '../types';
-import { Search, MapPin, Users, AlertCircle, Plus, X, CheckCircle2, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Search, MapPin, Users, AlertCircle, Plus, X, CheckCircle2, Edit2, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePermissions } from '../hooks/usePermissions';
+import { toast } from 'sonner';
 
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden ${className}`}>
@@ -36,6 +37,7 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
   const [editingBooth, setEditingBooth] = useState<Booth | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [pollingStations, setPollingStations] = useState<any[]>([]);
 
   React.useEffect(() => {
@@ -103,18 +105,23 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
 
   const handleDelete = async (id: string) => {
     if (!can('ELECTION', 'DELETE')) return;
-    if (!window.confirm('Are you sure you want to delete this booth?')) return;
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     
     setIsLoading(true);
     try {
-      await api.delete(`/booths/${id}`);
-      setMessage({ type: 'success', text: 'Booth deleted successfully' });
+      await api.delete(`/booths/${deleteTarget}`);
+      toast.success('Booth deleted successfully');
       onRefresh?.();
     } catch (error) {
       console.error("Error deleting booth:", error);
-      setMessage({ type: 'error', text: 'Failed to delete booth' });
+      toast.error('Failed to delete booth');
     } finally {
       setIsLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -392,6 +399,39 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">Delete Booth</h3>
+            <p className="text-slate-600 mb-8 leading-relaxed">
+              Are you sure you want to delete this booth? This action cannot be undone and will remove all associated data.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-4 px-6 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-4 px-6 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200 active:scale-95"
+              >
+                Delete Booth
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

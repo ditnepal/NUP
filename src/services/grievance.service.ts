@@ -86,6 +86,9 @@ export class GrievanceService {
   }
 
   async assignGrievance(grievanceId: string, userId: string, assignerId: string, decisionNote?: string) {
+    if (decisionNote && decisionNote.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     return prisma.$transaction(async (tx) => {
       await tx.grievanceAssignment.updateMany({
         where: { grievanceId, status: 'ACTIVE' },
@@ -173,6 +176,12 @@ export class GrievanceService {
   }
 
   async escalateGrievance(grievanceId: string, userId: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for escalating a grievance.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const grievance = await prisma.grievance.update({
       where: { id: grievanceId },
       data: { status: 'ESCALATED' },

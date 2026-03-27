@@ -8,6 +8,7 @@ import { MemberCardModal } from './MemberCardModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { Users, UserPlus, RefreshCw, CreditCard, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
+import { toast } from 'sonner';
 
 interface MembershipAdminProps {
   user: UserProfile | null;
@@ -119,9 +120,10 @@ export const MembershipAdmin: React.FC<MembershipAdminProps> = ({ user }) => {
   const handleProcessRenewal = async (id: string, action: 'APPROVE' | 'REJECT') => {
     try {
       await api.post(`/renewals/${id}/process`, { action });
+      toast.success(`Renewal ${action.toLowerCase()}d successfully`);
       await fetchRenewals();
     } catch (error: any) {
-      alert(`Failed to process renewal: ${error.message}`);
+      toast.error(`Failed to process renewal: ${error.message}`);
     }
   };
 
@@ -530,6 +532,7 @@ export const MembershipAdmin: React.FC<MembershipAdminProps> = ({ user }) => {
           title={`${confirmationAction?.type} Member`}
           message={`Are you sure you want to ${confirmationAction?.type?.toLowerCase()} ${selectedMember.fullName}?`}
           showReasonInput={confirmationAction?.type !== 'RENEW'}
+          isReasonRequired={['SUSPEND', 'TERMINATE'].includes(confirmationAction?.type || '')}
         />
       )}
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { usePermissions } from '../hooks/usePermissions';
+import { toast } from 'sonner';
 import { UserProfile, TrainingProgram, Course, Lesson } from '../types';
-import { Plus, Edit2, Trash2, Save, X, BookOpen, ExternalLink, Paperclip, Pin, CheckCircle, Clock, ChevronRight, ArrowLeft, Layers, FileText } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, BookOpen, ExternalLink, Paperclip, Pin, CheckCircle, Clock, ChevronRight, ArrowLeft, Layers, FileText, AlertTriangle } from 'lucide-react';
 
 interface Props {
   user: UserProfile;
@@ -27,6 +28,7 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
   const [editingCourse, setEditingCourse] = useState<Partial<Course> | null>(null);
   const [editingLesson, setEditingLesson] = useState<Partial<Lesson> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: 'PROGRAM' | 'COURSE' | 'LESSON' } | null>(null);
 
   useEffect(() => {
     fetchPrograms();
@@ -147,32 +149,35 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
   // --- Delete Handlers ---
 
   const handleDeleteProgram = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this program?')) return;
-    try {
-      await api.delete(`/training/programs/${id}`);
-      fetchPrograms();
-    } catch (error) {
-      alert('Failed to delete program');
-    }
+    setDeleteTarget({ id, type: 'PROGRAM' });
   };
 
   const handleDeleteCourse = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this course?')) return;
-    try {
-      await api.delete(`/training/courses/${id}`);
-      fetchPrograms();
-    } catch (error) {
-      alert('Failed to delete course');
-    }
+    setDeleteTarget({ id, type: 'COURSE' });
   };
 
   const handleDeleteLesson = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this lesson?')) return;
+    setDeleteTarget({ id, type: 'LESSON' });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/training/lessons/${id}`);
+      if (deleteTarget.type === 'PROGRAM') {
+        await api.delete(`/training/programs/${deleteTarget.id}`);
+        toast.success('Program deleted successfully');
+      } else if (deleteTarget.type === 'COURSE') {
+        await api.delete(`/training/courses/${deleteTarget.id}`);
+        toast.success('Course deleted successfully');
+      } else if (deleteTarget.type === 'LESSON') {
+        await api.delete(`/training/lessons/${deleteTarget.id}`);
+        toast.success('Lesson deleted successfully');
+      }
       fetchPrograms();
-    } catch (error) {
-      alert('Failed to delete lesson');
+    } catch (error: any) {
+      toast.error(error.message || `Failed to delete ${deleteTarget.type.toLowerCase()}`);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -240,8 +245,22 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
           ))}
           {programs.length === 0 && (
             <tr>
-              <td colSpan={4} className="px-6 py-10 text-center text-slate-500 italic">
-                No training programs found. Create one to get started.
+              <td colSpan={4} className="px-6 py-12 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <BookOpen className="w-12 h-12 text-slate-300 mb-4" />
+                  <p className="text-lg font-medium text-slate-900">No training programs found</p>
+                  <p className="text-sm text-slate-500 max-w-sm mt-1">
+                    Create your first training program to start onboarding and educating members.
+                  </p>
+                  {can('TRAINING', 'CREATE') && (
+                    <button 
+                      onClick={() => handleOpenProgramModal()}
+                      className="mt-4 text-emerald-600 font-medium hover:text-emerald-700"
+                    >
+                      Create Program
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           )}
@@ -564,6 +583,37 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
               </form>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Delete {deleteTarget.type.toLowerCase()}</h3>
+              <p className="text-slate-500 mb-6">
+                Are you sure you want to delete this {deleteTarget.type.toLowerCase()}? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'motion/react';
 import { api } from '../lib/api';
 import { DollarSign, TrendingUp, Users, PieChart, FileText, Search, RefreshCw, Smartphone, Landmark, Plus, Edit2, Trash2, CheckCircle, XCircle, Globe, Settings } from 'lucide-react';
 import { StatCard } from './ui/StatCard';
@@ -6,6 +7,8 @@ import { TransactionTable } from './ui/TransactionTable';
 import { FinanceAnalytics, Transaction, PaymentIntegration, UserProfile } from '../types';
 import { usePermissions } from '../hooks/usePermissions';
 import { AuditTrail } from './ui/AuditTrail';
+import { toast } from 'sonner';
+import { AlertTriangle } from 'lucide-react';
 
 interface FinanceAdminProps {
   user: UserProfile | null;
@@ -17,9 +20,7 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [integrations, setIntegrations] = useState<PaymentIntegration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'integrations'>(
-    can('FINANCE', 'UPDATE') ? 'overview' : 'transactions'
-  );
+  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'integrations'>('overview');
 
   const availableTabs = (['overview', 'transactions', 'integrations'] as const).filter(tab => {
     if (tab === 'integrations') return can('FINANCE', 'UPDATE');
@@ -32,6 +33,12 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [reconciliationNote, setReconciliationNote] = useState('');
   const [editingIntegration, setEditingIntegration] = useState<PaymentIntegration | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => Promise<void>;
+    variant?: 'danger' | 'primary';
+  } | null>(null);
   const [transactionFormData, setTransactionFormData] = useState({
     type: 'INCOME' as 'INCOME' | 'EXPENSE',
     category: 'OTHER',
@@ -80,60 +87,77 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
   const handleRefund = async (donationId: string, note?: string) => {
     const reason = note || reconciliationNote;
     if (!reason) {
-      alert('Please provide a reason for the refund in the reconciliation note field.');
+      toast.error('Please provide a reason for the refund in the reconciliation note field.');
       return;
     }
-    if (!confirm('Are you sure you want to refund this transaction?')) return;
-    try {
-      await api.post(`/finance/donations/${donationId}/refund`, { decisionNote: reason });
-      alert('Refund processed successfully');
-      setReconciliationNote('');
-      setShowDetailModal(false);
-      fetchData();
-    } catch (error: any) {
-      alert(`Refund failed: ${error.message}`);
-    }
+    setConfirmAction({
+      title: 'Confirm Refund',
+      message: 'Are you sure you want to refund this transaction? This action cannot be undone.',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.post(`/finance/donations/${donationId}/refund`, { decisionNote: reason });
+          toast.success('Refund processed successfully');
+          setReconciliationNote('');
+          setShowDetailModal(false);
+          fetchData();
+        } catch (error: any) {
+          toast.error(`Refund failed: ${error.message}`);
+        }
+      }
+    });
   };
 
   const handleVerify = async (id: string) => {
-    if (!confirm('Are you sure you want to verify this payment?')) return;
-    try {
-      await api.post(`/finance/transactions/${id}/verify`, { decisionNote: reconciliationNote });
-      alert('Payment verified successfully');
-      setReconciliationNote('');
-      setShowDetailModal(false);
-      fetchData();
-    } catch (error: any) {
-      alert(`Verification failed: ${error.message}`);
-    }
+    setConfirmAction({
+      title: 'Verify Payment',
+      message: 'Are you sure you want to verify this payment?',
+      onConfirm: async () => {
+        try {
+          await api.post(`/finance/transactions/${id}/verify`, { decisionNote: reconciliationNote });
+          toast.success('Payment verified successfully');
+          setReconciliationNote('');
+          setShowDetailModal(false);
+          fetchData();
+        } catch (error: any) {
+          toast.error(`Verification failed: ${error.message}`);
+        }
+      }
+    });
   };
 
   const handleReject = async (id: string, note?: string) => {
     const reason = note || reconciliationNote;
     if (!reason) {
-      alert('Please provide a reason for rejection in the reconciliation note field.');
+      toast.error('Please provide a reason for rejection in the reconciliation note field.');
       return;
     }
-    if (!confirm('Are you sure you want to reject this transaction?')) return;
-    try {
-      await api.post(`/finance/transactions/${id}/reject`, { decisionNote: reason });
-      alert('Payment rejected');
-      setReconciliationNote('');
-      setShowDetailModal(false);
-      fetchData();
-    } catch (error: any) {
-      alert(`Rejection failed: ${error.message}`);
-    }
+    setConfirmAction({
+      title: 'Reject Payment',
+      message: 'Are you sure you want to reject this transaction?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.post(`/finance/transactions/${id}/reject`, { decisionNote: reason });
+          toast.success('Payment rejected');
+          setReconciliationNote('');
+          setShowDetailModal(false);
+          fetchData();
+        } catch (error: any) {
+          toast.error(`Rejection failed: ${error.message}`);
+        }
+      }
+    });
   };
 
   const handleUpdateNote = async () => {
     if (!selectedTransaction) return;
     try {
       await api.patch(`/transactions/${selectedTransaction.id}/note`, { note: reconciliationNote });
-      alert('Note updated');
+      toast.success('Note updated');
       fetchData();
     } catch (error: any) {
-      alert(`Update failed: ${error.message}`);
+      toast.error(`Update failed: ${error.message}`);
     }
   };
 
@@ -152,9 +176,10 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
         description: '',
         date: new Date().toISOString().split('T')[0],
       });
+      toast.success('Transaction recorded successfully');
       fetchData();
     } catch (error: any) {
-      alert(`Error recording transaction: ${error.message}`);
+      toast.error(`Error recording transaction: ${error.message}`);
     }
   };
 
@@ -163,33 +188,43 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
     try {
       if (editingIntegration) {
         await api.patch(`/finance/integrations/${editingIntegration.id}`, formData);
+        toast.success('Integration updated successfully');
       } else {
         await api.post('/finance/integrations', formData);
+        toast.success('Integration created successfully');
       }
       setShowModal(false);
       setEditingIntegration(null);
       fetchData();
     } catch (error: any) {
-      alert(`Error saving integration: ${error.message}`);
+      toast.error(`Error saving integration: ${error.message}`);
     }
   };
 
   const handleDeleteIntegration = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this integration?')) return;
-    try {
-      await api.delete(`/finance/integrations/${id}`);
-      fetchData();
-    } catch (error: any) {
-      alert(`Error deleting integration: ${error.message}`);
-    }
+    setConfirmAction({
+      title: 'Delete Integration',
+      message: 'Are you sure you want to delete this integration?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/finance/integrations/${id}`);
+          toast.success('Integration deleted successfully');
+          fetchData();
+        } catch (error: any) {
+          toast.error(`Error deleting integration: ${error.message}`);
+        }
+      }
+    });
   };
 
   const toggleIntegrationStatus = async (integration: PaymentIntegration) => {
     try {
       await api.patch(`/finance/integrations/${integration.id}`, { enabled: !integration.enabled });
+      toast.success(`Integration ${integration.enabled ? 'disabled' : 'enabled'} successfully`);
       fetchData();
     } catch (error: any) {
-      alert(`Error toggling status: ${error.message}`);
+      toast.error(`Error toggling status: ${error.message}`);
     }
   };
 
@@ -1069,6 +1104,40 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
             </div>
           )}
         </>
+      )}
+      {confirmAction && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100"
+          >
+            <div className={`w-16 h-16 rounded-2xl ${confirmAction.variant === 'danger' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center mb-6`}>
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">{confirmAction.title}</h3>
+            <p className="text-slate-600 mb-8 leading-relaxed">
+              {confirmAction.message}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="flex-1 py-4 px-6 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await confirmAction.onConfirm();
+                  setConfirmAction(null);
+                }}
+                className={`flex-1 py-4 px-6 ${confirmAction.variant === 'danger' ? 'bg-red-600 hover:bg-red-700 shadow-red-200' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'} text-white rounded-2xl font-bold transition-all shadow-lg active:scale-95`}
+              >
+                Confirm
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

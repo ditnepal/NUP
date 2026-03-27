@@ -7,94 +7,110 @@ const router = express.Router();
 
 // @route   GET /api/v1/warroom/analytics
 // @desc    Get aggregated strategic analytics for the War Room
-// @access  Private (ADMIN, NATIONAL_COMMAND)
-router.get('/analytics', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']), async (req: AuthRequest, res) => {
+// @access  Private (ADMIN, STAFF)
+router.get('/analytics', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
   try {
+    const orgUnitId = req.user?.orgUnitId;
+
+    // Fetch all core metrics in parallel
     const [
       membershipTrends,
-      volunteerTrends,
-      fundraisingTrends,
-      grievanceTrends,
-      surveyTrends,
-      boothReadiness,
+      volunteerCount,
+      fundraisingCampaigns,
+      grievanceStats,
+      surveyStats,
+      boothStats,
       intelReports,
       electionIncidents,
       areaScores,
-      recentSignals
+      pgisOverview
     ] = await Promise.all([
-      // Membership Trends (Last 6 months)
+      // Membership Stats
       prisma.member.groupBy({
         by: ['status'],
+        where: orgUnitId ? { orgUnitId } : {},
         _count: { id: true }
       }),
-      // Volunteer Trends
-      prisma.volunteer.count(),
-      // Fundraising Trends
+      // Volunteer Count
+      prisma.volunteer.count({
+        where: orgUnitId ? { user: { orgUnitId } } : {}
+      }),
+      // Fundraising
       prisma.fundraisingCampaign.findMany({
+        where: orgUnitId ? { orgUnitId } : {},
         select: { title: true, goalAmount: true, currentAmount: true, status: true }
       }),
-      // Grievance Trends
+      // Grievances
       prisma.grievance.groupBy({
-        by: ['status', 'priority'],
+        by: ['status'],
+        where: orgUnitId ? { orgUnitId } : {},
         _count: { id: true }
       }),
-      // Survey Trends
+      // Surveys
       prisma.survey.findMany({
+        where: orgUnitId ? { orgUnitId } : {},
         include: { _count: { select: { responses: true } } }
       }),
-      // Booth Readiness
+      // Booths
       prisma.booth.groupBy({
         by: ['status'],
+        where: orgUnitId ? { orgUnitId } : {},
         _count: { id: true }
       }),
-      // Ground Intelligence (Sentiment)
+      // Intelligence Reports
       prisma.groundIntelligenceReport.findMany({
-        take: 50,
+        where: orgUnitId ? { orgUnitId } : {},
+        take: 10,
         orderBy: { createdAt: 'desc' },
-        select: { type: true, content: true, sentimentScore: true, createdAt: true }
+        include: { reporter: { select: { displayName: true } } }
       }),
       // Election Incidents
       prisma.electionIncident.groupBy({
-        by: ['severity', 'status'],
+        by: ['status', 'severity'],
+        where: orgUnitId ? { booth: { orgUnitId } } : {},
         _count: { id: true }
       }),
-      // Area Strength Scores
+      // Area Scores
       prisma.areaStrengthScore.findMany({
+        where: orgUnitId ? { orgUnitId } : {},
         include: { orgUnit: { select: { name: true, level: true } } }
       }),
-      // PGIS Signals (Unified Feed)
-      pgisService.getSignals(10)
+      // PGIS Strategic Overview (includes hotspots and attentionNeeded)
+      pgisService.getStrategicOverview(orgUnitId)
     ]);
 
-    // Aggregate data for AI analysis
-    const aggregatedData = {
-      members: membershipTrends,
-      volunteers: volunteerTrends,
-      fundraising: fundraisingTrends,
-      grievances: grievanceTrends,
-      surveys: surveyTrends,
-      booths: boothReadiness,
-      incidents: electionIncidents,
+    // Aggregate data for dashboard
+    const analytics = {
+      members: membershipTrends.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.id }), {}),
+      volunteers: volunteerCount,
+      fundraising: fundraisingCampaigns,
+      grievances: grievanceStats.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.id }), {}),
+      surveys: surveyStats,
+      booths: boothStats.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.id }), {}),
+      incidents: electionIncidents.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.id }), {}),
+      recentSignals: intelReports,
       areaScores: areaScores,
-      signals: recentSignals
+      pgisOverview,
+      hotspots: pgisOverview.hotspots,
+      attentionNeeded: pgisOverview.attentionNeeded,
+      lastUpdated: new Date().toISOString()
     };
 
-    res.json({
-      data: aggregatedData,
-      timestamp: new Date()
-    });
+    res.json(analytics);
   } catch (error) {
     console.error('War Room Analytics Error:', error);
-    res.status(500).json({ error: 'Failed to fetch strategic analytics' });
+    res.status(500).json({ error: 'Failed to aggregate war room data' });
   }
 });
 
 // @route   GET /api/v1/warroom/sentiment
 // @desc    Get ground reports for sentiment analysis
-// @access  Private (ADMIN, NATIONAL_COMMAND)
-router.get('/sentiment', authenticate, authorize(['ADMIN', 'NATIONAL_COMMAND']), async (req: AuthRequest, res) => {
+// @access  Private (ADMIN, STAFF)
+router.get('/sentiment', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
   try {
+    const orgUnitId = req.user?.orgUnitId;
     const reports = await prisma.groundIntelligenceReport.findMany({
+      where: orgUnitId ? { orgUnitId } : {},
       take: 100,
       orderBy: { createdAt: 'desc' }
     });

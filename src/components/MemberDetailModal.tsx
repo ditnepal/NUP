@@ -165,7 +165,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, us
               showNoteInput === 'ESCALATE' ? 'text-purple-600' : 'text-blue-600'
             }`}>
               {showNoteInput === 'REJECT' ? 'Rejection Reason (Required) *' : 
-               showNoteInput === 'ESCALATE' ? 'Escalation Note' : 'Decision Note (Optional)'}
+               showNoteInput === 'ESCALATE' ? 'Escalation Note (Required) *' : 'Decision Note (Optional)'}
             </label>
             <textarea
               value={note}
@@ -176,7 +176,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, us
                 showNoteInput === 'ESCALATE' ? 'border-purple-200 focus:ring-purple-500' : 'border-blue-200 focus:ring-blue-500'
               }`}
               placeholder={showNoteInput === 'REJECT' ? "Explain why this application is being rejected (Required)..." : 
-                           showNoteInput === 'ESCALATE' ? "Explain why this is being escalated to parent scope..." : "Add a decision note for this action..."}
+                           showNoteInput === 'ESCALATE' ? "Explain why this is being escalated to parent scope (Required)..." : "Add a decision note for this action..."}
               rows={3}
             />
             <div className={`text-[10px] text-right mt-1 ${
@@ -213,8 +213,11 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, us
           {!member.isEscalated && onEscalate && (member.status === 'PENDING' || member.status === 'VERIFIED' || member.status === 'REJECTED') && can('MEMBERSHIP', 'APPROVE') && (
             <button 
               onClick={() => handleAction('ESCALATE')} 
+              disabled={showNoteInput === 'ESCALATE' && !note.trim()}
               className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                showNoteInput === 'ESCALATE' ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-white border border-purple-200 text-purple-600 hover:bg-purple-50'
+                showNoteInput === 'ESCALATE' 
+                  ? (note.trim() ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-slate-300 text-white cursor-not-allowed') 
+                  : 'bg-white border border-purple-200 text-purple-600 hover:bg-purple-50'
               }`}
             >
               {showNoteInput === 'ESCALATE' ? 'Confirm Escalation' : 'Escalate to Parent'}

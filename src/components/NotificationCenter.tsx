@@ -133,8 +133,10 @@ export const NotificationCenter: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="py-12 text-center text-gray-400 italic text-sm">
-                  No notifications yet.
+                <div className="py-12 text-center flex flex-col items-center justify-center">
+                  <Bell size={32} className="text-gray-200 mb-3" />
+                  <p className="text-sm font-medium text-gray-900">All caught up!</p>
+                  <p className="text-xs text-gray-500 mt-1">You have no new notifications.</p>
                 </div>
               )}
             </div>

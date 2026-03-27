@@ -109,7 +109,7 @@ export class PgisService {
   async getStrategicOverview(orgUnitId?: string) {
     const reports = await prisma.groundIntelligenceReport.findMany({
       where: orgUnitId ? { orgUnitId } : {},
-      select: { sentimentScore: true, type: true },
+      select: { sentimentScore: true, type: true, priority: true, content: true, createdAt: true, orgUnit: { select: { name: true } } },
     });
 
     const avgSentiment = reports.length > 0
@@ -124,11 +124,88 @@ export class PgisService {
     const priorities = await this.getCommunityPriorities(orgUnitId);
     const strengths = await this.getAreaStrengths();
 
+    // Hotspots: Org units with most issues
+    const hotspotGrievances = await prisma.grievance.groupBy({
+      by: ['orgUnitId'],
+      where: { status: 'OPEN', orgUnitId: orgUnitId ? { equals: orgUnitId } : { not: null } },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 5
+    });
+
+    const hotspotIncidents = await prisma.electionIncident.groupBy({
+      by: ['orgUnitId'],
+      where: { status: 'REPORTED', orgUnitId: orgUnitId ? { equals: orgUnitId } : { not: null } },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 5
+    });
+
+    // Fetch org unit names for hotspots
+    const hotspotUnitIds = Array.from(new Set([
+      ...hotspotGrievances.map(h => h.orgUnitId),
+      ...hotspotIncidents.map(h => h.orgUnitId)
+    ])).filter(Boolean) as string[];
+
+    const hotspotUnits = await prisma.organizationUnit.findMany({
+      where: { id: { in: hotspotUnitIds } },
+      select: { id: true, name: true }
+    });
+
+    const hotspots = hotspotUnits.map(unit => {
+      const gCount = hotspotGrievances.find(h => h.orgUnitId === unit.id)?._count.id || 0;
+      const iCount = hotspotIncidents.find(h => h.orgUnitId === unit.id)?._count.id || 0;
+      return {
+        id: unit.id,
+        name: unit.name,
+        grievanceCount: gCount,
+        incidentCount: iCount,
+        totalIssues: gCount + iCount
+      };
+    }).sort((a, b) => b.totalIssues - a.totalIssues);
+
+    // Attention Needed: Critical/High priority items
+    const [criticalGrievances, criticalIncidents] = await Promise.all([
+      prisma.grievance.findMany({
+        where: { status: 'OPEN', priority: { in: ['CRITICAL', 'HIGH'] }, orgUnitId },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: { orgUnit: { select: { name: true } } }
+      }),
+      prisma.electionIncident.findMany({
+        where: { status: 'REPORTED', severity: { in: ['CRITICAL', 'HIGH'] }, orgUnitId },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: { booth: { include: { orgUnit: { select: { name: true } } } } }
+      })
+    ]);
+
+    const attentionNeeded = [
+      ...criticalGrievances.map(g => ({
+        id: g.id,
+        type: 'GRIEVANCE',
+        title: g.title,
+        priority: g.priority,
+        location: g.orgUnit?.name,
+        createdAt: g.createdAt
+      })),
+      ...criticalIncidents.map(i => ({
+        id: i.id,
+        type: 'INCIDENT',
+        title: i.type + ': ' + i.description.substring(0, 50),
+        priority: i.severity,
+        location: i.booth?.orgUnit?.name || i.booth?.name,
+        createdAt: i.createdAt
+      }))
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 10);
+
     return {
       avgSentiment,
       typeCounts,
       topPriorities: priorities.slice(0, 5),
       areaStrengths: strengths,
+      hotspots,
+      attentionNeeded,
       signalCounts: {
         grievances: await prisma.grievance.count({ where: { status: 'OPEN', orgUnitId } }),
         incidents: await prisma.electionIncident.count({ where: { status: 'REPORTED', booth: orgUnitId ? { orgUnitId } : undefined } }),

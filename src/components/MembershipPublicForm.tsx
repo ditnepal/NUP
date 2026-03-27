@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { api } from '../lib/api';
 import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
+import { toast } from 'sonner';
 
 const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (trackingCode: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
   const { register, handleSubmit, getValues } = useForm();
@@ -21,7 +22,7 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
 
   const onSubmit = async (data: any) => {
     if (!selectedMethod) {
-      alert('Please select a payment method.');
+      toast.error('Please select a payment method.');
       return;
     }
     setLoading(true);
@@ -34,11 +35,12 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
       if (photo) formData.append('profilePhoto', photo);
 
       const result = await api.postFormData('/members/apply', formData);
+      toast.success('Application submitted successfully');
       setSuccess(result.trackingCode);
       setIsPendingPayment(selectedMethod.instructions ? true : false);
     } catch (err: any) {
       console.error('Submission error:', err);
-      alert(err.message || 'An error occurred during submission');
+      toast.error(err.message || 'An error occurred during submission');
     } finally {
       setLoading(false);
     }

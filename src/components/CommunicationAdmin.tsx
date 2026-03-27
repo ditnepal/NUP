@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { usePermissions } from '../hooks/usePermissions';
 import { UserProfile } from '../types';
-import { Plus, Search, Filter, CheckCircle, Clock, AlertCircle, Mail, MessageSquare, Bell, Users, Send, FileText, Layout, Target, Megaphone } from 'lucide-react';
+import { Plus, Search, Filter, CheckCircle, Clock, AlertCircle, Mail, MessageSquare, Bell, Users, Send, FileText, Layout, Target, Megaphone, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 type Tab = 'templates' | 'segments' | 'campaigns';
 
@@ -29,6 +30,8 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const [segments, setSegments] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [broadcastTarget, setBroadcastTarget] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -74,14 +77,21 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(`Are you sure you want to delete this ${activeTab.slice(0, -1)}?`)) return;
+  const handleDelete = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/communication/${activeTab}/${id}`);
+      await api.delete(`/communication/${activeTab}/${deleteTarget}`);
+      toast.success(`${activeTab.slice(0, -1)} deleted successfully`);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error deleting ${activeTab}:`, error);
-      alert('Failed to delete item');
+      toast.error(error.message || 'Failed to delete item');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -89,26 +99,34 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
     try {
       if (editingItem) {
         await api.put(`/communication/${activeTab}/${editingItem.id}`, formData);
+        toast.success(`${activeTab.slice(0, -1)} updated successfully`);
       } else {
         await api.post(`/communication/${activeTab}`, formData);
+        toast.success(`${activeTab.slice(0, -1)} created successfully`);
       }
       setIsModalOpen(false);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error saving ${activeTab}:`, error);
-      alert('Failed to save item');
+      toast.error(error.message || 'Failed to save item');
     }
   };
 
-  const handleBroadcast = async (campaignId: string) => {
-    if (!window.confirm('Are you sure you want to broadcast this campaign? This will send messages to all users in the segment.')) return;
+  const handleBroadcast = (campaignId: string) => {
+    setBroadcastTarget(campaignId);
+  };
+
+  const confirmBroadcast = async () => {
+    if (!broadcastTarget) return;
     try {
-      await api.post(`/communication/campaigns/${campaignId}/broadcast`, {});
-      alert('Campaign broadcast started!');
+      await api.post(`/communication/campaigns/${broadcastTarget}/broadcast`, {});
+      toast.success('Campaign broadcast started!');
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error broadcasting campaign:', error);
-      alert('Failed to broadcast campaign');
+      toast.error(error.message || 'Failed to broadcast campaign');
+    } finally {
+      setBroadcastTarget(null);
     }
   };
 
@@ -240,7 +258,32 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
 
   const renderTable = () => {
     if (loading) return <div className="p-10 text-center">Loading...</div>;
-    if (data.length === 0) return <div className="p-10 text-center text-gray-500 italic">No {activeTab} found.</div>;
+    if (data.length === 0) {
+      return (
+        <div className="p-12 text-center">
+          <div className="flex flex-col items-center justify-center">
+            {activeTab === 'templates' && <Layout className="w-12 h-12 text-slate-300 mb-4" />}
+            {activeTab === 'segments' && <Target className="w-12 h-12 text-slate-300 mb-4" />}
+            {activeTab === 'campaigns' && <Megaphone className="w-12 h-12 text-slate-300 mb-4" />}
+            <p className="text-lg font-medium text-slate-900">No {activeTab} found</p>
+            <p className="text-sm text-slate-500 max-w-sm mt-1">
+              There are currently no {activeTab} to display. Create one to get started.
+            </p>
+            {(can('COMMUNICATION', 'CREATE') || can('COMMUNICATION', 'UPDATE')) && (
+              <button 
+                onClick={() => {
+                  setEditingItem(null);
+                  setIsModalOpen(true);
+                }}
+                className="mt-4 text-emerald-600 font-medium hover:text-emerald-700"
+              >
+                Create {activeTab.slice(0, -1).charAt(0).toUpperCase() + activeTab.slice(0, -1).slice(1)}
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="overflow-x-auto">
@@ -402,6 +445,68 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {renderTable()}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Delete {activeTab.slice(0, -1)}</h3>
+              <p className="text-slate-500 mb-6">
+                Are you sure you want to delete this {activeTab.slice(0, -1)}? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Broadcast Confirmation Modal */}
+      {broadcastTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
+                <Send size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Broadcast Campaign</h3>
+              <p className="text-slate-500 mb-6">
+                Are you sure you want to broadcast this campaign? This will send messages to all users in the segment.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setBroadcastTarget(null)}
+                  className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmBroadcast}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors"
+                >
+                  Broadcast
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

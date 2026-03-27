@@ -1,13 +1,30 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Globe } from 'lucide-react';
+import { ShieldCheck, Globe, KeyRound, AlertCircle, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { api } from '../lib/api';
 
-export const Login = ({ onLoginSuccess, onGoToPublic, t }: { onLoginSuccess: (user: any) => void, onGoToPublic: () => void, t: any }) => {
+export const Login = ({ 
+  onLoginSuccess, 
+  onGoToPublic, 
+  t,
+  initialRequirePasswordChange = false,
+  initialTempUser = null
+}: { 
+  onLoginSuccess: (user: any) => void, 
+  onGoToPublic: () => void, 
+  t: any,
+  initialRequirePasswordChange?: boolean,
+  initialTempUser?: any
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const [requirePasswordChange, setRequirePasswordChange] = useState(initialRequirePasswordChange);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [tempUser, setTempUser] = useState<any>(initialTempUser);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,13 +34,110 @@ export const Login = ({ onLoginSuccess, onGoToPublic, t }: { onLoginSuccess: (us
     try {
       const response = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', response.token);
-      onLoginSuccess(response.user);
+      
+      if (response.user.requirePasswordChange) {
+        setRequirePasswordChange(true);
+        setTempUser(response.user);
+      } else {
+        onLoginSuccess(response.user);
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post('/auth/change-password', { 
+        currentPassword: password, 
+        newPassword 
+      });
+      
+      // Update user object to remove requirePasswordChange flag
+      const updatedUser = { ...tempUser, requirePasswordChange: false };
+      onLoginSuccess(updatedUser);
+    } catch (err: any) {
+      setError(err.message || 'Failed to change password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (requirePasswordChange) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center space-y-6">
+          <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mx-auto">
+            <KeyRound size={40} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-800">Change Password</h1>
+            <p className="text-slate-500 mt-2 text-sm">
+              You are logging in with a temporary password. Please set a new permanent password to continue.
+            </p>
+          </div>
+
+          {error && (
+            <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm font-medium flex items-center gap-2 text-left">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleChangePassword} className="space-y-4 text-left">
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-slate-700">New Password</label>
+              <input 
+                type="password" 
+                required 
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" 
+                placeholder="••••••••"
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-slate-700">Confirm New Password</label>
+              <input 
+                type="password" 
+                required 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" 
+                placeholder="••••••••"
+                minLength={8}
+              />
+            </div>
+            
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full py-4 text-lg bg-amber-600 text-white hover:bg-amber-700 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md active:scale-95"
+            >
+              {loading ? <Loader2 className="animate-spin" size={20} /> : 'Update Password & Continue'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -71,7 +185,7 @@ export const Login = ({ onLoginSuccess, onGoToPublic, t }: { onLoginSuccess: (us
             disabled={loading}
             className="w-full py-4 text-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md active:scale-95"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign In'}
           </button>
         </form>
         

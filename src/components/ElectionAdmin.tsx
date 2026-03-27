@@ -35,7 +35,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
   const [booths, setBooths] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'candidates' | 'incidents' | 'results' | 'readiness' | 'constituencies' | 'cycles' | 'pollingStations'>(
-    defaultTab ? (defaultTab as any) : (can('ELECTION', 'UPDATE') ? 'overview' : 'results')
+    defaultTab ? (defaultTab as any) : 'overview'
   );
 
   const availableTabs = [
@@ -954,8 +954,22 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                 ))}
                 {candidates.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500 italic">
-                      No candidates found for this cycle.
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <Users className="w-12 h-12 text-slate-300 mb-4" />
+                        <p className="text-lg font-medium text-slate-900">No candidates found</p>
+                        <p className="text-sm text-slate-500 max-w-sm mt-1">
+                          There are no candidates registered for this election cycle yet.
+                        </p>
+                        {can('ELECTION', 'CREATE') && (
+                          <button 
+                            onClick={() => setIsCandidateModalOpen(true)}
+                            className="mt-4 text-emerald-600 font-medium hover:text-emerald-700"
+                          >
+                            Add Candidate
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )}

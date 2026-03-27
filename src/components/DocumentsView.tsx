@@ -6,6 +6,7 @@ import { DocumentCard } from './ui/DocumentCard';
 import { DocumentTable } from './ui/DocumentTable';
 import { ConfirmationModal } from './ConfirmationModal';
 import { usePermissions } from '../hooks/usePermissions';
+import { toast } from 'sonner';
 
 interface DocumentsViewProps {
   user: UserProfile;
@@ -245,7 +246,7 @@ const DocumentUploadForm: React.FC<{ onSuccess: () => void, onCancel: () => void
       console.error('Error uploading document:', error);
       clearInterval(progressInterval);
       setUploadProgress(0);
-      alert('Failed to upload document. Please try again.');
+      toast.error('Failed to upload document. Please try again.');
       setIsUploading(false);
     }
   };

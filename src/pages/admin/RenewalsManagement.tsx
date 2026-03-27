@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Loader2, CheckCircle, XCircle, Clock, AlertCircle, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 import { usePermissions } from '../../hooks/usePermissions';
 import { UserProfile } from '../../types';
@@ -39,11 +40,12 @@ export default function RenewalsManagement({ user }: RenewalsManagementProps) {
     setProcessing(true);
     try {
       await api.post(`/renewals/${selectedRenewal.id}/process`, { action, adminNote });
+      toast.success(`Renewal ${action.toLowerCase()}d successfully`);
       setSelectedRenewal(null);
       setAdminNote('');
       await fetchRenewals();
     } catch (err: any) {
-      alert(err.message || 'Failed to process renewal');
+      toast.error(err.message || 'Failed to process renewal');
     } finally {
       setProcessing(false);
     }

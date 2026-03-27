@@ -115,6 +115,9 @@ export class MembershipService extends BaseService {
    * Local Unit Verification
    */
   async verify(memberId: string, verifierId: string, note?: string) {
+    if (note && note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const member = await this.db.member.update({
       where: { id: memberId },
       data: {
@@ -152,6 +155,9 @@ export class MembershipService extends BaseService {
    * Final Approval & ID Generation
    */
   async approve(memberId: string, approverId: string, note?: string) {
+    if (note && note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const year = new Date().getFullYear();
     
     // Safer ID generation: Find the highest current ID for this year and increment
@@ -412,6 +418,12 @@ export class MembershipService extends BaseService {
    * Escalate Membership Application to Parent Unit
    */
   async escalate(memberId: string, note?: string) {
+    if (!note || note.trim().length === 0) {
+      throw new Error('Decision note is required for escalation.');
+    }
+    if (note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const member = await this.db.member.findUnique({
       where: { id: memberId },
       include: { orgUnit: true }

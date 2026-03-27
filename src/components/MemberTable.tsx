@@ -1,6 +1,6 @@
 import React from 'react';
 import { Member, UserProfile } from '../types';
-import { ShieldCheck, UserCheck, CreditCard, RefreshCw, ArrowRightLeft, AlertTriangle, XCircle } from 'lucide-react';
+import { ShieldCheck, UserCheck, CreditCard, RefreshCw, ArrowRightLeft, AlertTriangle, XCircle, Users } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
 
 interface MemberTableProps {
@@ -39,7 +39,19 @@ export const MemberTable: React.FC<MemberTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {members.map((member) => (
+            {members.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <Users size={48} className="text-slate-200 mb-4" />
+                    <p className="text-lg font-medium text-slate-900">No members found</p>
+                    <p className="text-sm text-slate-500 max-w-sm mt-1">
+                      No members match the current filters. Try adjusting your search criteria.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            ) : members.map((member) => (
               <tr key={member.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center">

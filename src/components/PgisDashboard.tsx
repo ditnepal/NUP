@@ -36,6 +36,8 @@ interface StrategicOverview {
   typeCounts: Record<string, number>;
   topPriorities: any[];
   areaStrengths: any[];
+  hotspots: any[];
+  attentionNeeded: any[];
   signalCounts: {
     grievances: number;
     incidents: number;
@@ -195,6 +197,98 @@ export const PgisDashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Critical Priorities / Attention Needed */}
+            <div className="bg-white rounded-3xl border border-red-100 shadow-sm p-8 space-y-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-red-50 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-bold">Critical Priorities</h3>
+                </div>
+                <span className="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase tracking-widest">
+                  Immediate Action
+                </span>
+              </div>
+              <div className="space-y-4">
+                {overview.attentionNeeded && overview.attentionNeeded.length > 0 ? (
+                  overview.attentionNeeded.map((item: any) => (
+                    <div key={item.id} className="flex items-start gap-4 p-4 rounded-2xl bg-red-50/30 border border-red-50 hover:bg-red-50 transition-all">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                            item.type === 'INCIDENT' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {item.type}
+                          </span>
+                          <span className="text-[10px] font-bold text-red-700 uppercase tracking-tighter">
+                            {item.priority}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-gray-900 line-clamp-1">{item.title}</h4>
+                        <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {item.location || 'Unknown'}
+                          </span>
+                          <span>{new Date(item.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                      </div>
+                      <ArrowUpRight size={18} className="text-red-300" />
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500 italic text-sm">
+                    No critical priorities identified.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Unit-Level Hotspots */}
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 space-y-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-orange-50 rounded-lg">
+                    <Activity className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <h3 className="text-xl font-bold">Unit-Level Hotspots</h3>
+                </div>
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-widest">Top 5 by Volume</span>
+              </div>
+              <div className="space-y-4">
+                {overview.hotspots && overview.hotspots.length > 0 ? (
+                  overview.hotspots.map((spot: any, idx: number) => (
+                    <div key={spot.id} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-all">
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-bold text-gray-400 w-4">{idx + 1}</span>
+                        <div>
+                          <h4 className="font-bold text-gray-900">{spot.name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-gray-500 uppercase font-semibold">
+                              {spot.grievanceCount} Grievances
+                            </span>
+                            <span className="text-[10px] text-gray-300">•</span>
+                            <span className="text-[10px] text-gray-500 uppercase font-semibold">
+                              {spot.incidentCount} Incidents
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-orange-600 leading-none">{spot.totalIssues}</div>
+                        <div className="text-[10px] text-gray-400 uppercase font-bold">Total</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500 italic text-sm">
+                    No hotspots detected.
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold">Community Priorities</h3>

@@ -588,8 +588,10 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                   <p className="text-xs text-slate-500 mt-1">{format(new Date(item.publishedAt || item.createdAt), 'MMM d, yyyy')}</p>
                 </div>
               )) : (
-                <div className="col-span-2 text-center py-8 text-slate-500">
-                  No news updates available.
+                <div className="col-span-2 text-center py-12 flex flex-col items-center justify-center">
+                  <Megaphone size={32} className="text-slate-200 mb-3" />
+                  <p className="text-sm font-medium text-slate-900">No news updates</p>
+                  <p className="text-xs text-slate-500 mt-1">Check back later for the latest announcements.</p>
                 </div>
               )}
             </div>
@@ -638,8 +640,10 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                   </button>
                 </div>
               )) : (
-                <div className="p-8 text-center text-slate-500">
-                  No upcoming events.
+                <div className="p-12 text-center flex flex-col items-center justify-center">
+                  <Calendar size={32} className="text-slate-200 mb-3" />
+                  <p className="text-sm font-medium text-slate-900">No upcoming events</p>
+                  <p className="text-xs text-slate-500 mt-1">There are no events scheduled at this time.</p>
                 </div>
               )}
             </div>

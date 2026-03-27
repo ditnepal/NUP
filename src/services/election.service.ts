@@ -385,7 +385,7 @@ export class ElectionService {
       action: 'ELECTION_INCIDENT_REPORTED',
       entityType: 'ElectionIncident',
       entityId: incident.id,
-      details: `Incident of type ${data.type} reported with severity ${data.severity}`,
+      details: { message: `Incident of type ${data.type} reported with severity ${data.severity}` },
     });
 
     return incident;
@@ -428,6 +428,9 @@ export class ElectionService {
     userId?: string;
     note?: string;
   }) {
+    if (data.note && data.note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const { userId, note, ...updateData } = data;
     const incident = await prisma.electionIncident.update({
       where: { id },
@@ -525,7 +528,7 @@ export class ElectionService {
         action: 'ELECTION_RESULT_VERIFIED',
         entityType: 'ElectionResult',
         entityId: result.id,
-        details: `Verified result for candidate ${resultData.candidateId} in cycle ${resultData.cycleId}`,
+        details: { message: `Verified result for candidate ${resultData.candidateId} in cycle ${resultData.cycleId}` },
       });
     }
 
@@ -570,6 +573,9 @@ export class ElectionService {
     userId?: string;
     note?: string;
   }) {
+    if (data.note && data.note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const { userId, note, ...updateData } = data;
     const result = await prisma.electionResult.update({
       where: { id },
@@ -643,6 +649,9 @@ export class ElectionService {
     userId?: string;
     note?: string;
   }) {
+    if (data.note && data.note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const { userId, note, ...updateData } = data;
     const booth = await prisma.booth.update({
       where: { id },

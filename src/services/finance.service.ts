@@ -302,7 +302,7 @@ export class FinanceService {
       userId: recordedById,
       entityType: 'Donation',
       entityId: donationId,
-      details: { amount: donation.amount, reason },
+      details: { amount: donation.amount, reason, decisionNote: reason },
     });
 
     return { success: true };
@@ -715,6 +715,9 @@ export class FinanceService {
   }
 
   async verifyTransaction(id: string, reviewerId: string, note?: string) {
+    if (note && note.length > 300) {
+      throw new Error('Decision note must not exceed 300 characters.');
+    }
     const transaction = await prisma.transaction.findUnique({
       where: { id },
       include: {

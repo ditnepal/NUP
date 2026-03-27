@@ -40,6 +40,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
         isActive: true,
         roleId: true,
         orgUnitId: true,
+        passwordHash: true,
         orgUnit: {
           select: {
             level: true,
@@ -51,6 +52,14 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'Unauthorized: User account is inactive or deleted' });
+    }
+
+    // Check if user requires password change
+    if (user.passwordHash.startsWith('TEMP_')) {
+      const allowedPaths = ['/api/v1/auth/me', '/api/v1/auth/change-password'];
+      if (!allowedPaths.includes(req.originalUrl)) {
+        return res.status(403).json({ error: 'Forbidden: Password change required', requirePasswordChange: true });
+      }
     }
 
     req.user = { 
