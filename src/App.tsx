@@ -172,6 +172,14 @@ export default function App() {
           onDocumentsClick={() => setCurrentView('public-documents')} 
           onTrainingClick={() => setCurrentView('training')}
           onJoinClick={() => setCurrentView('membership-public')}
+          onDonateClick={() => setCurrentView('donations')}
+          onGrievanceClick={() => {
+            if (!user) {
+              setCurrentView('dashboard'); // Trigger login
+            } else {
+              setCurrentView('grievances');
+            }
+          }}
           onStatusClick={() => {
             setInitialTrackingCode('');
             setInitialMobile('');

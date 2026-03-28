@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Plus, Search, Edit2, Trash2, Eye, FileText, Globe, CheckCircle, Clock, AlertCircle, X, Save, Filter, User, Calendar } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, FileText, Globe, CheckCircle, Clock, AlertCircle, X, Save, Filter, User, Calendar, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -53,6 +53,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
     excerpt: '',
     categoryId: '',
     featuredImage: '',
+    decisionNote: '',
   });
 
   useEffect(() => {
@@ -111,6 +112,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
         // Section specific
         isEnabled: item.isEnabled ?? true,
         order: item.order ?? 0,
+        decisionNote: '',
       });
     } else {
       setEditingItem(null);
@@ -131,17 +133,21 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
         featuredImage: '',
         isEnabled: true,
         order: 0,
+        decisionNote: '',
       });
     }
     setError(null);
     setIsModalOpen(true);
   };
 
+  const [deleteNote, setDeleteNote] = useState('');
+
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/cms/${activeTab}/${id}`);
+      await api.delete(`/cms/${activeTab}/${id}`, { data: { decisionNote: deleteNote } });
       toast.success(`${activeTab === 'pages' ? 'Page' : activeTab === 'posts' ? 'Post' : 'Section'} deleted successfully`);
       setDeleteConfirm(null);
+      setDeleteNote('');
       fetchCmsData();
     } catch (error) {
       console.error('Error deleting item:', error);
@@ -680,6 +686,23 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                         : 'Markdown supported: # H1, **bold**, *italic*, [link](url)'}
                     </span>
                     <span>Character count: {formData.content.length}</span>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-slate-100">
+                  <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-emerald-600" />
+                    Audit Trail
+                  </h4>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Decision Note (Required for Audit)</label>
+                    <textarea
+                      required
+                      value={formData.decisionNote}
+                      onChange={(e) => setFormData({ ...formData, decisionNote: e.target.value })}
+                      className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none h-20 transition-all text-sm"
+                      placeholder="Explain why this content is being created or updated..."
+                    />
                   </div>
                 </div>
               </div>

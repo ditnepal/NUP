@@ -19,8 +19,9 @@ export class CmsAdminService extends BaseService {
     isSystem?: boolean;
     isPinned?: boolean;
     publishedAt?: Date;
+    decisionNote?: string;
   }) {
-    const { id, ...rest } = data;
+    const { id, decisionNote, ...rest } = data;
     const page = id 
       ? await this.db.cmsPage.update({ where: { id }, data: rest })
       : await this.db.cmsPage.create({ data: rest });
@@ -30,7 +31,7 @@ export class CmsAdminService extends BaseService {
       userId: data.authorId,
       entityType: 'CmsPage',
       entityId: page.id,
-      details: { slug: data.slug }
+      details: { slug: data.slug, decisionNote }
     });
 
     return page;
@@ -39,14 +40,14 @@ export class CmsAdminService extends BaseService {
   /**
    * Delete a page
    */
-  async deletePage(id: string, userId: string) {
+  async deletePage(id: string, userId: string, decisionNote?: string) {
     const page = await this.db.cmsPage.delete({ where: { id } });
     await auditService.log({
       action: 'CMS_PAGE_DELETED',
       userId,
       entityType: 'CmsPage',
       entityId: id,
-      details: { slug: page.slug }
+      details: { slug: page.slug, decisionNote }
     });
     return page;
   }
@@ -71,8 +72,9 @@ export class CmsAdminService extends BaseService {
     language?: string;
     isPinned?: boolean;
     publishedAt?: Date;
+    decisionNote?: string;
   }) {
-    const { id, ...rest } = data;
+    const { id, decisionNote, ...rest } = data;
     const post = id 
       ? await this.db.cmsPost.update({ where: { id }, data: rest })
       : await this.db.cmsPost.create({ data: rest });
@@ -82,7 +84,7 @@ export class CmsAdminService extends BaseService {
       userId: data.authorId,
       entityType: 'CmsPost',
       entityId: post.id,
-      details: { slug: data.slug, type: data.type }
+      details: { slug: data.slug, type: data.type, decisionNote }
     });
 
     return post;
@@ -91,14 +93,14 @@ export class CmsAdminService extends BaseService {
   /**
    * Delete a post
    */
-  async deletePost(id: string, userId: string) {
+  async deletePost(id: string, userId: string, decisionNote?: string) {
     const post = await this.db.cmsPost.delete({ where: { id } });
     await auditService.log({
       action: 'CMS_POST_DELETED',
       userId,
       entityType: 'CmsPost',
       entityId: id,
-      details: { slug: post.slug, type: post.type }
+      details: { slug: post.slug, type: post.type, decisionNote }
     });
     return post;
   }
@@ -151,8 +153,9 @@ export class CmsAdminService extends BaseService {
     isEnabled?: boolean;
     content: string;
     authorId: string;
+    decisionNote?: string;
   }) {
-    const { id, ...rest } = data;
+    const { id, decisionNote, ...rest } = data;
     const section = id 
       ? await this.db.cmsSection.update({ where: { id }, data: rest })
       : await this.db.cmsSection.create({ data: rest });
@@ -162,7 +165,7 @@ export class CmsAdminService extends BaseService {
       userId: data.authorId,
       entityType: 'CmsSection',
       entityId: section.id,
-      details: { title: data.title, type: data.type }
+      details: { title: data.title, type: data.type, decisionNote }
     });
 
     return section;
@@ -171,14 +174,14 @@ export class CmsAdminService extends BaseService {
   /**
    * Delete a section
    */
-  async deleteSection(id: string, userId: string) {
+  async deleteSection(id: string, userId: string, decisionNote?: string) {
     const section = await this.db.cmsSection.delete({ where: { id } });
     await auditService.log({
       action: 'CMS_SECTION_DELETED',
       userId,
       entityType: 'CmsSection',
       entityId: id,
-      details: { title: section.title, type: section.type }
+      details: { title: section.title, type: section.type, decisionNote }
     });
     return section;
   }

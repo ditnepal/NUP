@@ -13,9 +13,11 @@ interface PublicPortalProps {
   onTrainingClick?: () => void;
   onJoinClick?: () => void;
   onStatusClick?: () => void;
+  onDonateClick?: () => void;
+  onGrievanceClick?: () => void;
 }
 
-export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick }) => {
+export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick, onDonateClick, onGrievanceClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -186,11 +188,11 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             </div>
             
             <div className="hidden md:flex items-center gap-8">
-              <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Manifesto</a>
+              <button onClick={onDocumentsClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Manifesto</button>
               <a href="#news" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">News</a>
               <button onClick={onTrainingClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Training</button>
               <button onClick={onStatusClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Check Status</button>
-              <a href="#" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Contact</a>
+              <a href="#contact" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Contact</a>
               {user ? (
                 <button 
                   onClick={onPortalClick}
@@ -200,7 +202,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   Member Portal
                 </button>
               ) : (
-                <button className="bg-emerald-600 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
+                <button onClick={onJoinClick} className="bg-emerald-600 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
                   Join Us
                 </button>
               )}
@@ -217,11 +219,11 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
       {isMenuOpen && (
         <div className="fixed inset-0 z-40 bg-white pt-20 px-6 md:hidden">
           <div className="flex flex-col gap-6">
-            <a href="#" className="text-2xl font-bold text-slate-800">Manifesto</a>
+            <button onClick={onDocumentsClick} className="text-2xl font-bold text-slate-800 text-left">Manifesto</button>
             <a href="#news" className="text-2xl font-bold text-slate-800">News</a>
             <button onClick={onTrainingClick} className="text-2xl font-bold text-slate-800 text-left">Training</button>
             <button onClick={onStatusClick} className="text-2xl font-bold text-slate-800 text-left">Check Status</button>
-            <a href="#" className="text-2xl font-bold text-slate-800">Contact</a>
+            <a href="#contact" className="text-2xl font-bold text-slate-800">Contact</a>
             {user ? (
               <button 
                 onClick={onPortalClick}
@@ -231,7 +233,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 Member Portal
               </button>
             ) : (
-              <button className="bg-emerald-600 text-white w-full py-4 rounded-2xl text-lg font-bold">
+              <button onClick={onJoinClick} className="bg-emerald-600 text-white w-full py-4 rounded-2xl text-lg font-bold">
                 Join Us
               </button>
             )}
@@ -443,7 +445,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 </div>
                 <h3 className="text-xl font-bold mb-3">Donate</h3>
                 <p className="text-slate-500 mb-6">Support our mission with a financial contribution. Every rupee counts.</p>
-                <a href="#" className="text-amber-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Contribute <ChevronRight size={16} /></a>
+                <button onClick={onDonateClick} className="text-amber-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Contribute <ChevronRight size={16} /></button>
               </div>
 
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
@@ -452,7 +454,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 </div>
                 <h3 className="text-xl font-bold mb-3">Complaints</h3>
                 <p className="text-slate-500 mb-6">Report issues in your local area or provide feedback to the party.</p>
-                <a href="#" className="text-purple-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Submit Issue <ChevronRight size={16} /></a>
+                <button onClick={onGrievanceClick} className="text-purple-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Submit Issue <ChevronRight size={16} /></button>
               </div>
 
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
@@ -839,7 +841,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
       )}
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-20">
+      <footer id="contact" className="bg-slate-900 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-1 md:col-span-2">
@@ -858,7 +860,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Leadership</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Committees</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Manifesto</a></li>
+                <li><button onClick={onDocumentsClick} className="hover:text-white transition-colors text-left">Manifesto</button></li>
               </ul>
             </div>
 

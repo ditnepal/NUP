@@ -19,6 +19,7 @@ const pageSchema = z.object({
   isSystem: z.boolean().optional(),
   isPinned: z.boolean().optional(),
   publishedAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
+  decisionNote: z.string().optional(),
 });
 
 const postSchema = z.object({
@@ -37,6 +38,7 @@ const postSchema = z.object({
   language: z.enum(['en', 'ne']).optional(),
   isPinned: z.boolean().optional(),
   publishedAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
+  decisionNote: z.string().optional(),
 });
 
 // @route   GET /api/v1/cms/pages
@@ -76,7 +78,8 @@ router.post('/pages', authenticate, authorize(['ADMIN', 'STAFF']), async (req: A
 // @access  Private (Admin/Staff)
 router.delete('/pages/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
   try {
-    await cmsAdminService.deletePage(req.params.id, req.user?.id!);
+    const { decisionNote } = req.body;
+    await cmsAdminService.deletePage(req.params.id, req.user?.id!, decisionNote);
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -123,7 +126,8 @@ router.post('/posts', authenticate, authorize(['ADMIN', 'STAFF']), async (req: A
 // @access  Private (Admin/Staff)
 router.delete('/posts/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
   try {
-    await cmsAdminService.deletePost(req.params.id, req.user?.id!);
+    const { decisionNote } = req.body;
+    await cmsAdminService.deletePost(req.params.id, req.user?.id!, decisionNote);
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -161,6 +165,7 @@ const sectionSchema = z.object({
   order: z.number().optional(),
   isEnabled: z.boolean().optional(),
   content: z.string().min(2), // JSON string
+  decisionNote: z.string().optional(),
 });
 
 // --- Sections ---
@@ -208,7 +213,8 @@ router.post('/sections', authenticate, authorize(['ADMIN', 'STAFF']), async (req
 // @access  Private (Admin/Staff)
 router.delete('/sections/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
   try {
-    await cmsAdminService.deleteSection(req.params.id, req.user?.id!);
+    const { decisionNote } = req.body;
+    await cmsAdminService.deleteSection(req.params.id, req.user?.id!, decisionNote);
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

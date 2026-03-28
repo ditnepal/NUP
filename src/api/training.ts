@@ -3,6 +3,7 @@ import { authenticate, authorize, AuthRequest } from './middleware/auth';
 import { checkPermission } from './middleware/permissions';
 import { permissionService } from '../services/permission.service';
 import { trainingService } from '../services/training.service';
+import { auditService } from '../services/audit.service';
 import prisma from '../lib/prisma';
 import { z } from 'zod';
 
@@ -18,6 +19,7 @@ const programSchema = z.object({
   externalUrl: z.string().optional(),
   attachmentUrl: z.string().optional(),
   orgUnitId: z.string().uuid().optional(),
+  decisionNote: z.string().optional(),
 });
 
 const courseSchema = z.object({
@@ -27,6 +29,7 @@ const courseSchema = z.object({
   thumbnail: z.string().optional(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
   orgUnitId: z.string().uuid().optional(),
+  decisionNote: z.string().optional(),
 });
 
 const lessonSchema = z.object({
@@ -36,6 +39,7 @@ const lessonSchema = z.object({
   videoUrl: z.string().optional(),
   order: z.number().int(),
   orgUnitId: z.string().uuid().optional(),
+  decisionNote: z.string().optional(),
 });
 
 const quizSchema = z.object({
@@ -182,7 +186,17 @@ router.post('/programs', authenticate, checkPermission('TRAINING', 'CREATE'), as
       }
     }
 
-    const program = await prisma.trainingProgram.create({ data });
+    const { decisionNote, ...programData } = data;
+    const program = await prisma.trainingProgram.create({ data: programData });
+    
+    await auditService.log({
+      action: 'TRAINING_PROGRAM_CREATED',
+      userId: req.user!.id,
+      entityType: 'TrainingProgram',
+      entityId: program.id,
+      details: { name: program.name, decisionNote }
+    });
+    
     res.status(201).json(program);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -195,13 +209,23 @@ router.post('/programs', authenticate, checkPermission('TRAINING', 'CREATE'), as
 router.put('/programs/:id', authenticate, checkPermission('TRAINING', 'UPDATE', async (req) => {
   const program = await prisma.trainingProgram.findUnique({ where: { id: req.params.id } });
   return program?.orgUnitId || null;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const data = programSchema.parse(req.body);
+    const { decisionNote, ...programData } = data;
     const program = await prisma.trainingProgram.update({
       where: { id: req.params.id },
-      data,
+      data: programData,
     });
+
+    await auditService.log({
+      action: 'TRAINING_PROGRAM_UPDATED',
+      userId: req.user!.id,
+      entityType: 'TrainingProgram',
+      entityId: program.id,
+      details: { name: program.name, decisionNote }
+    });
+
     res.json(program);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -214,9 +238,19 @@ router.put('/programs/:id', authenticate, checkPermission('TRAINING', 'UPDATE', 
 router.delete('/programs/:id', authenticate, checkPermission('TRAINING', 'DELETE', async (req) => {
   const program = await prisma.trainingProgram.findUnique({ where: { id: req.params.id } });
   return program?.orgUnitId || null;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
-    await prisma.trainingProgram.delete({ where: { id: req.params.id } });
+    const { decisionNote } = req.body;
+    const program = await prisma.trainingProgram.delete({ where: { id: req.params.id } });
+    
+    await auditService.log({
+      action: 'TRAINING_PROGRAM_DELETED',
+      userId: req.user!.id,
+      entityType: 'TrainingProgram',
+      entityId: program.id,
+      details: { name: program.name, decisionNote }
+    });
+
     res.json({ message: 'Program deleted' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -264,7 +298,17 @@ router.post('/courses', authenticate, checkPermission('TRAINING', 'CREATE'), asy
       }
     }
 
-    const course = await prisma.course.create({ data });
+    const { decisionNote, ...courseData } = data;
+    const course = await prisma.course.create({ data: courseData });
+    
+    await auditService.log({
+      action: 'TRAINING_COURSE_CREATED',
+      userId: req.user!.id,
+      entityType: 'Course',
+      entityId: course.id,
+      details: { title: course.title, decisionNote }
+    });
+    
     res.status(201).json(course);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -277,13 +321,23 @@ router.post('/courses', authenticate, checkPermission('TRAINING', 'CREATE'), asy
 router.put('/courses/:id', authenticate, checkPermission('TRAINING', 'UPDATE', async (req) => {
   const course = await prisma.course.findUnique({ where: { id: req.params.id } });
   return course?.orgUnitId || null;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const data = courseSchema.parse(req.body);
+    const { decisionNote, ...courseData } = data;
     const course = await prisma.course.update({
       where: { id: req.params.id },
-      data,
+      data: courseData,
     });
+
+    await auditService.log({
+      action: 'TRAINING_COURSE_UPDATED',
+      userId: req.user!.id,
+      entityType: 'Course',
+      entityId: course.id,
+      details: { title: course.title, decisionNote }
+    });
+
     res.json(course);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -296,9 +350,19 @@ router.put('/courses/:id', authenticate, checkPermission('TRAINING', 'UPDATE', a
 router.delete('/courses/:id', authenticate, checkPermission('TRAINING', 'DELETE', async (req) => {
   const course = await prisma.course.findUnique({ where: { id: req.params.id } });
   return course?.orgUnitId || null;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
-    await prisma.course.delete({ where: { id: req.params.id } });
+    const { decisionNote } = req.body;
+    const course = await prisma.course.delete({ where: { id: req.params.id } });
+    
+    await auditService.log({
+      action: 'TRAINING_COURSE_DELETED',
+      userId: req.user!.id,
+      entityType: 'Course',
+      entityId: course.id,
+      details: { title: course.title, decisionNote }
+    });
+
     res.json({ message: 'Course deleted' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -336,7 +400,17 @@ router.post('/lessons', authenticate, checkPermission('TRAINING', 'CREATE'), asy
       }
     }
 
-    const lesson = await prisma.lesson.create({ data });
+    const { decisionNote, ...lessonData } = data;
+    const lesson = await prisma.lesson.create({ data: lessonData });
+    
+    await auditService.log({
+      action: 'TRAINING_LESSON_CREATED',
+      userId: req.user!.id,
+      entityType: 'Lesson',
+      entityId: lesson.id,
+      details: { title: lesson.title, decisionNote }
+    });
+    
     res.status(201).json(lesson);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -349,13 +423,23 @@ router.post('/lessons', authenticate, checkPermission('TRAINING', 'CREATE'), asy
 router.put('/lessons/:id', authenticate, checkPermission('TRAINING', 'UPDATE', async (req) => {
   const lesson = await prisma.lesson.findUnique({ where: { id: req.params.id } });
   return lesson?.orgUnitId || null;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
     const data = lessonSchema.parse(req.body);
+    const { decisionNote, ...lessonData } = data;
     const lesson = await prisma.lesson.update({
       where: { id: req.params.id },
-      data,
+      data: lessonData,
     });
+
+    await auditService.log({
+      action: 'TRAINING_LESSON_UPDATED',
+      userId: req.user!.id,
+      entityType: 'Lesson',
+      entityId: lesson.id,
+      details: { title: lesson.title, decisionNote }
+    });
+
     res.json(lesson);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -368,9 +452,19 @@ router.put('/lessons/:id', authenticate, checkPermission('TRAINING', 'UPDATE', a
 router.delete('/lessons/:id', authenticate, checkPermission('TRAINING', 'DELETE', async (req) => {
   const lesson = await prisma.lesson.findUnique({ where: { id: req.params.id } });
   return lesson?.orgUnitId || null;
-}), async (req, res) => {
+}), async (req: AuthRequest, res) => {
   try {
-    await prisma.lesson.delete({ where: { id: req.params.id } });
+    const { decisionNote } = req.body;
+    const lesson = await prisma.lesson.delete({ where: { id: req.params.id } });
+    
+    await auditService.log({
+      action: 'TRAINING_LESSON_DELETED',
+      userId: req.user!.id,
+      entityType: 'Lesson',
+      entityId: lesson.id,
+      details: { title: lesson.title, decisionNote }
+    });
+
     res.json({ message: 'Lesson deleted' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -380,7 +474,7 @@ router.delete('/lessons/:id', authenticate, checkPermission('TRAINING', 'DELETE'
 // @route   POST /api/v1/training/quizzes
 // @desc    Create a quiz
 // @access  Private (Admin/Staff)
-router.post('/quizzes', authenticate, checkPermission('TRAINING', 'CREATE'), async (req, res) => {
+router.post('/quizzes', authenticate, checkPermission('TRAINING', 'CREATE'), async (req: AuthRequest, res) => {
   try {
     const data = quizSchema.parse(req.body);
     const quiz = await prisma.quiz.create({ data });

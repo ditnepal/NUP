@@ -24,11 +24,12 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
   const [modalType, setModalType] = useState<'PROGRAM' | 'COURSE' | 'LESSON'>('PROGRAM');
   
   // Form state
-  const [editingProgram, setEditingProgram] = useState<Partial<TrainingProgram> | null>(null);
-  const [editingCourse, setEditingCourse] = useState<Partial<Course> | null>(null);
-  const [editingLesson, setEditingLesson] = useState<Partial<Lesson> | null>(null);
+  const [editingProgram, setEditingProgram] = useState<(Partial<TrainingProgram> & { decisionNote?: string }) | null>(null);
+  const [editingCourse, setEditingCourse] = useState<(Partial<Course> & { decisionNote?: string }) | null>(null);
+  const [editingLesson, setEditingLesson] = useState<(Partial<Lesson> & { decisionNote?: string }) | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: 'PROGRAM' | 'COURSE' | 'LESSON' } | null>(null);
+  const [deleteNote, setDeleteNote] = useState('');
 
   useEffect(() => {
     fetchPrograms();
@@ -66,7 +67,7 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
     setError(null);
     setModalType('PROGRAM');
     setEditingProgram(program || {
-      name: '', description: '', category: 'General', status: 'DRAFT', audience: 'PUBLIC', isPinned: false, externalUrl: '', attachmentUrl: ''
+      name: '', description: '', category: 'General', status: 'DRAFT', audience: 'PUBLIC', isPinned: false, externalUrl: '', attachmentUrl: '', decisionNote: ''
     });
     setIsModalOpen(true);
   };
@@ -75,7 +76,7 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
     setError(null);
     setModalType('COURSE');
     setEditingCourse(course || {
-      programId: selectedProgram!.id, title: '', description: '', level: 'BEGINNER'
+      programId: selectedProgram!.id, title: '', description: '', level: 'BEGINNER', decisionNote: ''
     });
     setIsModalOpen(true);
   };
@@ -84,7 +85,7 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
     setError(null);
     setModalType('LESSON');
     setEditingLesson(lesson || {
-      courseId: selectedCourse!.id, title: '', content: '', order: (selectedCourse?.lessons?.length || 0) + 1
+      courseId: selectedCourse!.id, title: '', content: '', order: (selectedCourse?.lessons?.length || 0) + 1, decisionNote: ''
     });
     setIsModalOpen(true);
   };
@@ -164,13 +165,13 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
     if (!deleteTarget) return;
     try {
       if (deleteTarget.type === 'PROGRAM') {
-        await api.delete(`/training/programs/${deleteTarget.id}`);
+        await api.delete(`/training/programs/${deleteTarget.id}`, { data: { decisionNote: deleteNote } });
         toast.success('Program deleted successfully');
       } else if (deleteTarget.type === 'COURSE') {
-        await api.delete(`/training/courses/${deleteTarget.id}`);
+        await api.delete(`/training/courses/${deleteTarget.id}`, { data: { decisionNote: deleteNote } });
         toast.success('Course deleted successfully');
       } else if (deleteTarget.type === 'LESSON') {
-        await api.delete(`/training/lessons/${deleteTarget.id}`);
+        await api.delete(`/training/lessons/${deleteTarget.id}`, { data: { decisionNote: deleteNote } });
         toast.success('Lesson deleted successfully');
       }
       fetchPrograms();
@@ -178,6 +179,7 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
       toast.error(error.message || `Failed to delete ${deleteTarget.type.toLowerCase()}`);
     } finally {
       setDeleteTarget(null);
+      setDeleteNote('');
     }
   };
 
@@ -509,6 +511,10 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
                     <label className="block text-sm font-bold text-slate-700 mb-2">Attachment URL (Optional)</label>
                     <input type="url" value={editingProgram?.attachmentUrl || ''} onChange={(e) => setEditingProgram({ ...editingProgram, attachmentUrl: e.target.value })} className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none" />
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Decision Note (Required for Audit)</label>
+                    <textarea required value={editingProgram?.decisionNote || ''} onChange={(e) => setEditingProgram({ ...editingProgram, decisionNote: e.target.value })} className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none h-20" placeholder="Explain why this program is being created or updated..." />
+                  </div>
                 </div>
                 <div className="pt-6 flex gap-4">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-6 py-3 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
@@ -539,6 +545,10 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
                       <option value="INTERMEDIATE">Intermediate</option>
                       <option value="ADVANCED">Advanced</option>
                     </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Decision Note (Required for Audit)</label>
+                    <textarea required value={editingCourse?.decisionNote || ''} onChange={(e) => setEditingCourse({ ...editingCourse, decisionNote: e.target.value })} className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none h-20" placeholder="Explain why this course is being created or updated..." />
                   </div>
                 </div>
                 <div className="pt-6 flex gap-4">
@@ -573,6 +583,10 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
                     <label className="block text-sm font-bold text-slate-700 mb-2">Video URL (Optional)</label>
                     <input type="url" value={editingLesson?.videoUrl || ''} onChange={(e) => setEditingLesson({ ...editingLesson, videoUrl: e.target.value })} className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="https://youtube.com/..." />
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Decision Note (Required for Audit)</label>
+                    <textarea required value={editingLesson?.decisionNote || ''} onChange={(e) => setEditingLesson({ ...editingLesson, decisionNote: e.target.value })} className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none h-20" placeholder="Explain why this lesson is being created or updated..." />
+                  </div>
                 </div>
                 <div className="pt-6 flex gap-4">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-6 py-3 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
@@ -599,16 +613,27 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
               <p className="text-slate-500 mb-6">
                 Are you sure you want to delete this {deleteTarget.type.toLowerCase()}? This action cannot be undone.
               </p>
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Reason for Deletion (Required for Audit)</label>
+                <textarea
+                  required
+                  value={deleteNote}
+                  onChange={(e) => setDeleteNote(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none h-24"
+                  placeholder={`Explain why this ${deleteTarget.type.toLowerCase()} is being deleted...`}
+                />
+              </div>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setDeleteTarget(null)}
+                  onClick={() => { setDeleteTarget(null); setDeleteNote(''); }}
                   className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors"
+                  disabled={!deleteNote.trim()}
+                  className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors disabled:opacity-50"
                 >
                   Delete
                 </button>
