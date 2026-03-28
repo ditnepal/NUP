@@ -40,10 +40,12 @@ router.post('/', async (req, res) => {
     await auditService.log({
       userId,
       action: 'UPDATE_SYSTEM_CONFIG',
-      resourceType: 'SYSTEM_CONFIG',
-      resourceId: 'GLOBAL',
-      details: `Updated ${configs.length} system settings.`,
-      decisionNote: decisionNote || 'System settings update'
+      entityType: 'SYSTEM_CONFIG',
+      entityId: 'GLOBAL',
+      details: {
+        message: `Updated ${configs.length} system settings.`,
+        decisionNote: decisionNote || 'System settings update'
+      }
     });
 
     res.json({ success: true, message: 'System configurations updated successfully' });

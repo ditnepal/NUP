@@ -3,38 +3,57 @@ import { SystemConfig } from '@prisma/client';
 
 export class SystemConfigService {
   async getAll(): Promise<SystemConfig[]> {
-    return prisma.systemConfig.findMany({
-      orderBy: { key: 'asc' }
-    });
+    try {
+      return await prisma.systemConfig.findMany({
+        orderBy: { key: 'asc' }
+      });
+    } catch (error) {
+      console.error('[SYSTEM] Error fetching all configs:', error);
+      return [];
+    }
   }
 
   async getByKey(key: string): Promise<SystemConfig | null> {
-    return prisma.systemConfig.findUnique({
-      where: { key }
-    });
+    try {
+      return await prisma.systemConfig.findUnique({
+        where: { key }
+      });
+    } catch (error) {
+      console.error(`[SYSTEM] Error fetching config by key ${key}:`, error);
+      return null;
+    }
   }
 
   async getValue(key: string, defaultValue: string = ''): Promise<string> {
-    const config = await this.getByKey(key);
-    return config ? config.value : defaultValue;
+    try {
+      const config = await this.getByKey(key);
+      return config ? config.value : defaultValue;
+    } catch (error) {
+      return defaultValue;
+    }
   }
 
   async setConfig(key: string, value: string, description?: string, updatedBy?: string): Promise<SystemConfig> {
-    return prisma.systemConfig.upsert({
-      where: { key },
-      update: { 
-        value, 
-        description: description || undefined,
-        updatedBy,
-        updatedAt: new Date()
-      },
-      create: { 
-        key, 
-        value, 
-        description,
-        updatedBy
-      }
-    });
+    try {
+      return await prisma.systemConfig.upsert({
+        where: { key },
+        update: { 
+          value, 
+          description: description || undefined,
+          updatedBy,
+          updatedAt: new Date()
+        },
+        create: { 
+          key, 
+          value, 
+          description,
+          updatedBy
+        }
+      });
+    } catch (error) {
+      console.error(`[SYSTEM] Error setting config ${key}:`, error);
+      throw error;
+    }
   }
 
   async setMany(configs: { key: string; value: string; description?: string }[], updatedBy?: string): Promise<void> {

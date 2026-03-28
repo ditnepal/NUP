@@ -400,8 +400,16 @@ router.get('/sections', async (req, res) => {
 // @desc    Get public system configurations
 // @access  Public
 router.get('/config', async (req, res) => {
+  const keys = ['PARTY_NAME', 'PARTY_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'DEFAULT_LANGUAGE'];
+  const defaultValues: Record<string, string> = {
+    PARTY_NAME: 'Progressive People\'s Organization',
+    PARTY_TAGLINE: 'Empowering Citizens, Building the Future',
+    CONTACT_EMAIL: 'info@ppos.org',
+    CONTACT_PHONE: '+977-1-0000000',
+    DEFAULT_LANGUAGE: 'en'
+  };
+
   try {
-    const keys = ['PARTY_NAME', 'PARTY_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'DEFAULT_LANGUAGE'];
     const configs = await prisma.systemConfig.findMany({
       where: { key: { in: keys } }
     });
@@ -409,12 +417,13 @@ router.get('/config', async (req, res) => {
     const configMap = configs.reduce((acc, curr) => {
       acc[curr.key] = curr.value;
       return acc;
-    }, {} as Record<string, string>);
+    }, { ...defaultValues } as Record<string, string>);
 
     res.json(configMap);
   } catch (error: any) {
     console.error('[Public API] Error fetching config:', error);
-    res.status(500).json({ error: 'Server error' });
+    // Return safe defaults on error instead of failing hard
+    res.json(defaultValues);
   }
 });
 
