@@ -763,3 +763,25 @@ export interface GroundSignal {
   createdAt: string;
   metadata?: any;
 }
+
+export type CommunicationChannel = 'SMS' | 'EMAIL' | 'WHATSAPP' | 'PUSH';
+
+export interface CommunicationProvider {
+  id: string;
+  name: string;
+  channel: CommunicationChannel;
+  isActive: boolean;
+  isDefault: boolean;
+  isBackup: boolean;
+  senderId?: string;
+  fromAddress?: string;
+  fromName?: string;
+  endpoint?: string;
+  apiKey?: string;
+  apiSecret?: string;
+  authToken?: string;
+  additionalConfig?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { usePermissions } from '../hooks/usePermissions';
 import { UserProfile } from '../types';
-import { Plus, Search, Filter, CheckCircle, Clock, AlertCircle, Mail, MessageSquare, Bell, Users, Send, FileText, Layout, Target, Megaphone, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Filter, CheckCircle, Clock, AlertCircle, Mail, MessageSquare, Bell, Users, Send, FileText, Layout, Target, Megaphone, AlertTriangle, Shield, Key, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import { CommunicationProvider, CommunicationChannel } from '../types';
 
-type Tab = 'templates' | 'segments' | 'campaigns';
+type Tab = 'templates' | 'segments' | 'campaigns' | 'providers';
 
 interface Props {
   user: UserProfile;
@@ -14,9 +15,12 @@ interface Props {
 export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const { can } = usePermissions(user);
   
-  const availableTabs = (['templates', 'segments', 'campaigns'] as const).filter(tab => {
+  const availableTabs = (['templates', 'segments', 'campaigns', 'providers'] as const).filter(tab => {
     if (tab === 'templates' || tab === 'segments') {
       return can('COMMUNICATION', 'CREATE') || can('COMMUNICATION', 'UPDATE');
+    }
+    if (tab === 'providers') {
+      return user.role === 'ADMIN';
     }
     return true;
   });
@@ -28,6 +32,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const [data, setData] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [segments, setSegments] = useState<any[]>([]);
+  const [providers, setProviders] = useState<CommunicationProvider[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -56,9 +61,22 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const endpoint = `/communication/${activeTab}`;
-      const result = await api.get(endpoint);
-      setData(Array.isArray(result) ? result : []);
+      if (activeTab === 'providers') {
+        const configs = await api.get('/system-config');
+        const providersConfig = configs.find((c: any) => c.key === 'COMMUNICATION_PROVIDERS');
+        if (providersConfig && providersConfig.value) {
+          const parsed = JSON.parse(providersConfig.value);
+          setProviders(parsed);
+          setData(parsed);
+        } else {
+          setProviders([]);
+          setData([]);
+        }
+      } else {
+        const endpoint = `/communication/${activeTab}`;
+        const result = await api.get(endpoint);
+        setData(Array.isArray(result) ? result : []);
+      }
     } catch (error) {
       console.error(`Error fetching ${activeTab}:`, error);
       setData([]);
@@ -84,9 +102,25 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await api.delete(`/communication/${activeTab}/${deleteTarget}`);
-      toast.success(`${activeTab.slice(0, -1)} deleted successfully`);
-      fetchData();
+      if (activeTab === 'providers') {
+        const updatedProviders = providers.filter(p => p.id !== deleteTarget);
+        await api.post('/system-config', {
+          configs: [
+            { 
+              key: 'COMMUNICATION_PROVIDERS', 
+              value: JSON.stringify(updatedProviders),
+              description: 'Configured communication providers (SMS, Email, WhatsApp)'
+            }
+          ],
+          decisionNote: `Deleted communication provider`
+        });
+        toast.success('Provider deleted successfully');
+        fetchData();
+      } else {
+        await api.delete(`/communication/${activeTab}/${deleteTarget}`);
+        toast.success(`${activeTab.slice(0, -1)} deleted successfully`);
+        fetchData();
+      }
     } catch (error: any) {
       console.error(`Error deleting ${activeTab}:`, error);
       toast.error(error.message || 'Failed to delete item');
@@ -96,6 +130,9 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   };
 
   const handleSave = async (formData: any) => {
+    if (activeTab === 'providers') {
+      return handleSaveProvider(formData);
+    }
     try {
       if (editingItem) {
         await api.put(`/communication/${activeTab}/${editingItem.id}`, formData);
@@ -256,6 +293,149 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
     );
   };
 
+  const handleSaveProvider = async (formData: any) => {
+    try {
+      let updatedProviders: CommunicationProvider[];
+      const now = new Date().toISOString();
+      
+      if (editingItem) {
+        updatedProviders = providers.map(p => p.id === editingItem.id ? { ...p, ...formData, updatedAt: now } : p);
+      } else {
+        const newProvider: CommunicationProvider = {
+          ...formData,
+          id: Math.random().toString(36).substring(2, 11),
+          createdAt: now,
+          updatedAt: now
+        };
+        updatedProviders = [...providers, newProvider];
+      }
+
+      // Ensure only one default per channel
+      if (formData.isDefault) {
+        updatedProviders = updatedProviders.map(p => 
+          (p.channel === formData.channel && p.id !== (editingItem?.id || updatedProviders[updatedProviders.length-1].id))
+          ? { ...p, isDefault: false } 
+          : p
+        );
+      }
+
+      await api.post('/system-config', {
+        configs: [
+          { 
+            key: 'COMMUNICATION_PROVIDERS', 
+            value: JSON.stringify(updatedProviders),
+            description: 'Configured communication providers (SMS, Email, WhatsApp)'
+          }
+        ],
+        decisionNote: `${editingItem ? 'Updated' : 'Added'} communication provider: ${formData.name}`
+      });
+
+      toast.success(`Provider ${editingItem ? 'updated' : 'added'} successfully`);
+      setIsModalOpen(false);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error saving provider:', error);
+      toast.error(error.message || 'Failed to save provider');
+    }
+  };
+
+  const renderProviderForm = () => (
+    <form onSubmit={(e) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      const channel = formData.get('channel') as string;
+      const fromNameValue = formData.get('fromName') as string;
+      
+      handleSave({
+        name: formData.get('name'),
+        channel: channel,
+        isActive: formData.get('isActive') === 'on',
+        isDefault: formData.get('isDefault') === 'on',
+        isBackup: formData.get('isBackup') === 'on',
+        senderId: channel !== 'EMAIL' ? fromNameValue : undefined,
+        fromAddress: formData.get('fromAddress'),
+        fromName: channel === 'EMAIL' ? fromNameValue : undefined,
+        endpoint: formData.get('endpoint'),
+        apiKey: formData.get('apiKey'),
+        apiSecret: formData.get('apiSecret'),
+        authToken: formData.get('authToken'),
+        notes: formData.get('notes'),
+      });
+    }} className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs font-bold text-slate-500 uppercase">Provider Name</label>
+          <input name="name" defaultValue={editingItem?.name} placeholder="e.g. Twilio, SendGrid" className="w-full p-2 border rounded mt-1" required />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-slate-500 uppercase">Channel</label>
+          <select name="channel" defaultValue={editingItem?.channel || 'SMS'} className="w-full p-2 border rounded mt-1">
+            <option value="SMS">SMS</option>
+            <option value="EMAIL">EMAIL</option>
+            <option value="WHATSAPP">WHATSAPP</option>
+            <option value="PUSH">PUSH</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="isActive" defaultChecked={editingItem ? editingItem.isActive : true} className="rounded text-emerald-600" />
+          <span className="text-sm font-medium">Active</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="isDefault" defaultChecked={editingItem?.isDefault} className="rounded text-emerald-600" />
+          <span className="text-sm font-medium">Set as Default</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="isBackup" defaultChecked={editingItem?.isBackup} className="rounded text-emerald-600" />
+          <span className="text-sm font-medium">Set as Backup</span>
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs font-bold text-slate-500 uppercase">Sender ID / From Name</label>
+          <input name="fromName" defaultValue={editingItem?.fromName || editingItem?.senderId} placeholder="e.g. MyOrg" className="w-full p-2 border rounded mt-1" />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-slate-500 uppercase">From Address / Number</label>
+          <input name="fromAddress" defaultValue={editingItem?.fromAddress} placeholder="e.g. no-reply@org.com" className="w-full p-2 border rounded mt-1" />
+        </div>
+      </div>
+
+      <div className="space-y-3 pt-2 border-t border-slate-100">
+        <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+          <Shield size={16} /> API Credentials
+        </h3>
+        <div>
+          <label className="text-xs font-bold text-slate-500 uppercase">API Endpoint</label>
+          <input name="endpoint" defaultValue={editingItem?.endpoint} placeholder="https://api.provider.com/v1" className="w-full p-2 border rounded mt-1" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase">API Key / SID</label>
+            <input type="password" name="apiKey" defaultValue={editingItem?.apiKey} placeholder="••••••••" className="w-full p-2 border rounded mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase">API Secret / Token</label>
+            <input type="password" name="apiSecret" defaultValue={editingItem?.apiSecret} placeholder="••••••••" className="w-full p-2 border rounded mt-1" />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs font-bold text-slate-500 uppercase">Internal Notes</label>
+        <textarea name="notes" defaultValue={editingItem?.notes} placeholder="Configuration notes..." className="w-full p-2 border rounded mt-1" rows={2} />
+      </div>
+
+      <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
+        <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+        <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700">Save Provider</button>
+      </div>
+    </form>
+  );
+
   const renderTable = () => {
     if (loading) return <div className="p-10 text-center">Loading...</div>;
     if (data.length === 0) {
@@ -304,7 +484,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
                 </>
               )}
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {activeTab === 'templates' ? 'Type & Category' : activeTab === 'segments' ? 'Criteria' : 'Status'}
+                {activeTab === 'templates' ? 'Type & Category' : activeTab === 'segments' ? 'Criteria' : activeTab === 'providers' ? 'Channel & Status' : 'Status'}
               </th>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Created
@@ -351,6 +531,19 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
                         }
                       })()}
                     </div>
+                  ) : activeTab === 'providers' ? (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-700">{item.channel}</span>
+                        {item.isDefault && <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase">Default</span>}
+                        {item.isBackup && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded uppercase">Backup</span>}
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold w-fit ${
+                        item.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
+                      }`}>
+                        {item.isActive ? 'ACTIVE' : 'INACTIVE'}
+                      </span>
+                    </div>
                   ) : (
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       item.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
@@ -395,6 +588,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
             {activeTab === 'templates' && renderTemplateForm()}
             {activeTab === 'segments' && renderSegmentForm()}
             {activeTab === 'campaigns' && renderCampaignForm()}
+            {activeTab === 'providers' && renderProviderForm()}
           </div>
         </div>
       )}
@@ -402,7 +596,11 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Communication Center</h1>
-          <p className="text-gray-500">Manage templates, segments, and campaigns.</p>
+          <p className="text-gray-500">
+            {activeTab === 'providers' 
+              ? 'Configure communication channels (SMS, Email, WhatsApp) and their API credentials.'
+              : 'Manage templates, segments, and campaigns.'}
+          </p>
         </div>
         {can('COMMUNICATION', 'CREATE') && (
           <button 
@@ -438,6 +636,14 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
             className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'campaigns' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
           >
             <Megaphone size={18} /> Campaigns
+          </button>
+        )}
+        {availableTabs.includes('providers') && (
+          <button 
+            onClick={() => setActiveTab('providers')}
+            className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'providers' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            <Shield size={18} /> Providers
           </button>
         )}
       </div>
