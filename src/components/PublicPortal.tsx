@@ -603,7 +603,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 {events.map((event) => (
                   <div key={event.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
                     <h3 className="text-xl font-bold mb-2">{event.title}</h3>
-                    <p className="text-slate-600 text-sm mb-4">{event.summary}</p>
+                    <p className="text-slate-600 text-sm mb-4 line-clamp-2">{event.summary || event.description}</p>
                     <div className="text-xs font-medium text-slate-400 uppercase tracking-widest">
                       {new Date(event.eventDate).toLocaleDateString()} at {event.startAt}
                     </div>

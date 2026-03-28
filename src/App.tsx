@@ -16,6 +16,7 @@ import { TrainingPortal } from './components/TrainingPortal';
 import { TrainingAdmin } from './components/TrainingAdmin';
 import { NotificationCenter } from './components/NotificationCenter';
 import { AppEventsAdmin } from './components/AppEventsAdmin';
+import { EventsAdmin } from './components/EventsAdmin';
 import { FinanceAdmin } from './components/FinanceAdmin';
 import { FundraiserAdmin } from './components/FundraiserAdmin';
 import { DonationPortal } from './components/DonationPortal';
@@ -40,7 +41,7 @@ import { api } from './lib/api';
 import { usePermissions } from './hooks/usePermissions';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -259,7 +260,8 @@ export default function App() {
     { id: 'communication', label: 'Communication', icon: MessageSquare, show: can('COMMUNICATION', 'VIEW') && user.role !== 'MEMBER' },
     { id: 'notices', label: 'Notice & Popup', icon: Bell, show: can('NOTICE_POPUP', 'VIEW') },
     { id: 'training', label: 'Training', icon: GraduationCap, show: can('TRAINING', 'VIEW') },
-    { id: 'events', label: 'Events', icon: Calendar, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'events', label: 'App Announcements', icon: Bell, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'field-events', label: 'Field Events', icon: Calendar, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
     { id: 'finance', label: 'Finance', icon: DollarSign, show: can('FINANCE', 'VIEW') },
     { id: 'election', label: 'Election', icon: Vote, show: can('ELECTION', 'VIEW') },
     { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' },
@@ -741,6 +743,7 @@ export default function App() {
           (can('TRAINING', 'CREATE') || can('TRAINING', 'UPDATE')) ? <TrainingAdmin user={user} /> : <TrainingPortal user={user} />
         )}
         {currentView === 'events' && <AppEventsAdmin user={user} />}
+        {currentView === 'field-events' && <EventsAdmin user={user} />}
         {currentView === 'finance' && <FinanceAdmin user={user} />}
         {currentView === 'fundraiser' && <FundraiserAdmin user={user} />}
         {currentView === 'election' && <ElectionAdmin user={user} key="election-admin" />}
@@ -759,10 +762,6 @@ export default function App() {
         {currentView === 'member-dashboard' && (
           <MemberDashboard 
             user={user} 
-            onViewEvent={(id) => {
-              setSelectedEventId(id);
-              setCurrentView('event-detail');
-            }}
           />
         )}
         {currentView === 'event-detail' && selectedEventId && (

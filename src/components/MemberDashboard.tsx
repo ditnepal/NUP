@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, Event } from '../types';
+import { UserProfile, AppEvent } from '../types';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { 
@@ -33,7 +33,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 
 interface MemberDashboardProps {
   user: UserProfile;
-  onViewEvent: (id: string) => void;
 }
 
 interface MemberProfile {
@@ -67,10 +66,10 @@ interface MemberProfile {
 
 import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 
-export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEvent }) => {
+export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [news, setNews] = useState<any[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<AppEvent[]>([]);
   const [renewals, setRenewals] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -443,12 +442,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
       {/* Bento Grid Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
-          { label: 'Total Donated', value: `NPR ${profile.stats.totalDonated.toLocaleString()}`, icon: Heart, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Events Attended', value: profile.stats.eventsAttended, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Volunteer Hours', value: `${profile.stats.volunteerHours} hrs`, icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
-          { label: 'Active Grievances', value: profile.stats.activeGrievances, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
-          { label: 'Pending Tasks', value: profile.stats.pendingTasks, icon: ListTodo, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Upcoming Events', value: profile.stats.upcomingEvents, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Total Donated', value: `NPR ${(profile.stats?.totalDonated || 0).toLocaleString()}`, icon: Heart, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Events Attended', value: profile.stats?.eventsAttended || 0, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Volunteer Hours', value: `${profile.stats?.volunteerHours || 0} hrs`, icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Active Grievances', value: profile.stats?.activeGrievances || 0, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
+          { label: 'Pending Tasks', value: profile.stats?.pendingTasks || 0, icon: ListTodo, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Upcoming Events', value: profile.stats?.upcomingEvents || 0, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
         ].map((stat, i) => (
           <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
             <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
@@ -649,34 +648,15 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                 <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center text-center">
-                      <span className="text-[10px] font-bold uppercase leading-none">{format(new Date(event.startDate), 'MMM')}</span>
-                      <span className="text-lg font-black leading-none">{format(new Date(event.startDate), 'd')}</span>
+                      <span className="text-[10px] font-bold uppercase leading-none">{format(new Date(event.eventDate), 'MMM')}</span>
+                      <span className="text-lg font-black leading-none">{format(new Date(event.eventDate), 'd')}</span>
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-800">{event.title}</h4>
-                      <p className="text-xs text-slate-500">{event.location} • {event.type}</p>
-                      <div className="text-xs text-slate-600 mt-2 flex flex-wrap items-center gap-2">
-                        <span className="font-semibold">Organizer: {event.organizer.name}</span>
-                        <a href={`mailto:${event.organizer.email}`} className="flex items-center gap-1 text-blue-600 hover:underline">
-                          <Mail size={12} /> Email
-                        </a>
-                        <a href={`tel:${event.organizer.phone}`} className="flex items-center gap-1 text-blue-600 hover:underline">
-                          <Phone size={12} /> Call
-                        </a>
-                        {event.organizer.socialMedia.facebook && (
-                          <a href={event.organizer.socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline">
-                            <Globe size={12} /> FB
-                          </a>
-                        )}
-                      </div>
+                      <p className="text-xs text-slate-500">{event.location} • {event.startAt}</p>
+                      <p className="text-xs text-slate-600 mt-1 line-clamp-1">{event.summary || event.description}</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => onViewEvent(event.id)}
-                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
                 </div>
               )) : (
                 <div className="p-16 text-center bg-slate-50/50">

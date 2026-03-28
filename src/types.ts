@@ -384,6 +384,7 @@ export interface ElectionCycle {
   endDate?: string;
   createdAt: string;
   updatedAt: string;
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface Constituency {
@@ -399,6 +400,7 @@ export interface Constituency {
   parentConstituencyId?: string;
   createdAt: string;
   updatedAt: string;
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface Candidate {
@@ -420,6 +422,7 @@ export interface Candidate {
   constituency?: Constituency;
   electionCycle?: ElectionCycle;
   documents?: any[];
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface PartyDocument {
@@ -617,6 +620,7 @@ export interface PollingStation {
   _count?: {
     booths: number;
   };
+  auditTrail?: AuditLogEntry[];
 }
 
 export interface Booth {

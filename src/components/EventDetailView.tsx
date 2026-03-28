@@ -135,7 +135,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, user,
               <div key={speaker.id} className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-100 rounded-full overflow-hidden">
                   {speaker.photoUrl ? (
-                    <img src={speaker.photoUrl} alt={speaker.name} className="w-full h-full object-cover" />
+                    <img src={speaker.photoUrl} alt={speaker.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-400">
                       <Users size={20} />

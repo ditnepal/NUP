@@ -189,19 +189,12 @@ router.post('/membership-status', async (req, res) => {
   try {
     const input = membershipStatusSchema.parse(req.body);
 
-    console.log('[DEBUG] Membership Status Lookup:', {
-      trackingCode: input.trackingCode,
-      mobileNumber: input.mobileNumber
-    });
-
     const member = await prisma.member.findFirst({
       where: {
         trackingCode: input.trackingCode,
         mobile: input.mobileNumber,
       },
     });
-
-    console.log('[DEBUG] Query Result:', member ? `Found: ${member.id}` : 'Not found');
 
     if (!member) {
       return res.status(404).json({

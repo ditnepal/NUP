@@ -71,6 +71,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [candidateForm, setCandidateForm] = useState({
     name: '',
@@ -564,6 +565,41 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     );
   }
 
+  const filteredCandidates = candidates.filter(c => 
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.constituency?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredConstituencies = constituencies.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.district.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredPollingStations = pollingStations.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.location.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredCycles = cycles.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.year.toString().includes(searchQuery) ||
+    c.type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredIncidents = incidents.filter(i =>
+    i.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    i.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    i.pollingStation?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredResults = results.filter(r =>
+    r.candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.constituency?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -684,9 +720,63 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
 
       {/* Tab Content */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        {activeTab !== 'overview' && activeTab !== 'readiness' && (
+          <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text"
+                placeholder={`Search ${activeTab}...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+              />
+            </div>
+          </div>
+        )}
+
         {activeTab === 'overview' && (
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 space-y-8">
+            {selectedCycle && (
+              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-emerald-600 border border-emerald-100">
+                      <Vote size={32} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">{selectedCycle.name}</h3>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold uppercase tracking-wider">
+                          {selectedCycle.status}
+                        </span>
+                        <span className="text-xs text-slate-500 flex items-center gap-1">
+                          <BarChart3 size={12} />
+                          {selectedCycle.type} Election {selectedCycle.year}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Start Date</p>
+                      <p className="text-sm font-bold text-slate-700">
+                        {selectedCycle.startDate ? new Date(selectedCycle.startDate).toLocaleDateString() : 'TBD'}
+                      </p>
+                    </div>
+                    <div className="w-px h-8 bg-emerald-200 hidden md:block"></div>
+                    <div className="text-center">
+                      <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">End Date</p>
+                      <p className="text-sm font-bold text-slate-700">
+                        {selectedCycle.endDate ? new Date(selectedCycle.endDate).toLocaleDateString() : 'TBD'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="font-bold text-slate-900 flex items-center gap-2">
                   <ShieldAlert className="text-amber-500" size={20} />
@@ -756,7 +846,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {constituencies.map(con => (
+                  {filteredConstituencies.map(con => (
                     <tr key={con.id} className="hover:bg-slate-50 transition-all">
                       <td className="py-4 font-medium text-slate-900">{con.name}</td>
                       <td className="py-4 text-slate-500">{con.code}</td>
@@ -801,7 +891,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {pollingStations.map(station => (
+                  {filteredPollingStations.map(station => (
                     <tr key={station.id} className="hover:bg-slate-50 transition-all">
                       <td className="py-4 font-medium text-slate-900">{station.name}</td>
                       <td className="py-4 text-slate-500">{station.code || 'N/A'}</td>
@@ -851,7 +941,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {cycles.map(cyc => (
+                  {filteredCycles.map(cyc => (
                     <tr key={cyc.id} className="hover:bg-slate-50 transition-all">
                       <td className="py-4 font-medium text-slate-900">{cyc.name}</td>
                       <td className="py-4 text-slate-500">{cyc.year}</td>
@@ -902,7 +992,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {candidates.map(cand => (
+                {filteredCandidates.map(cand => (
                   <tr key={cand.id} className="hover:bg-slate-50/50 transition-all">
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-slate-900">{cand.name}</p>
@@ -984,7 +1074,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
               <h3 className="font-bold text-slate-900">Incident Log</h3>
             </div>
             <div className="space-y-3">
-              {incidents.map(inc => (
+              {filteredIncidents.map(inc => (
                 <div key={inc.id} className="p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
@@ -1042,7 +1132,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
               <h3 className="font-bold text-slate-900">Election Results</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {results.map(res => (
+              {filteredResults.map(res => (
                 <div key={res.id} className="p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all relative overflow-hidden">
                   {res.isWinner && (
                     <div className="absolute top-0 right-0 bg-emerald-500 text-white px-3 py-1 text-[10px] font-bold rounded-bl-lg">
@@ -1334,6 +1424,9 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   </div>
                 </div>
                 
+                {/* Audit Trail */}
+                <AuditTrail logs={editingPollingStation?.auditTrail} className="pt-4 border-t border-slate-100" />
+
                 <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                   <button 
                     type="button"
@@ -1443,6 +1536,9 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     placeholder="Reason for this update..."
                   />
                 </div>
+
+                {/* Audit Trail */}
+                <AuditTrail logs={editingCandidate?.auditTrail} className="pt-4 border-t border-slate-100" />
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
@@ -1554,6 +1650,9 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     placeholder="Reason for this update..."
                   />
                 </div>
+
+                {/* Audit Trail */}
+                <AuditTrail logs={editingCycle?.auditTrail} className="pt-4 border-t border-slate-100" />
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
@@ -1661,6 +1760,9 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     placeholder="Reason for this update..."
                   />
                 </div>
+
+                {/* Audit Trail */}
+                <AuditTrail logs={editingConstituency?.auditTrail} className="pt-4 border-t border-slate-100" />
               </form>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">

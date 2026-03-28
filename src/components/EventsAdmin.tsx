@@ -1,15 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Calendar, MapPin, Users, Plus, Clock } from 'lucide-react';
-import { Event } from '../types';
+import { Calendar, MapPin, Users, Plus, Clock, X, Loader2 } from 'lucide-react';
+import { Event, UserProfile } from '../types';
 import { EventCard } from './ui/EventCard';
 import { RegistrationTable } from './ui/RegistrationTable';
+import { usePermissions } from '../hooks/usePermissions';
+import { motion, AnimatePresence } from 'motion/react';
 
-export const EventsAdmin: React.FC = () => {
+interface EventsAdminProps {
+  user?: UserProfile | null;
+}
+
+export const EventsAdmin: React.FC<EventsAdminProps> = ({ user }) => {
+  const { can } = usePermissions(user);
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'list' | 'details'>('list');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    type: 'RALLY',
+    startDate: '',
+    location: '',
+    capacity: ''
+  });
 
   useEffect(() => {
     fetchEvents();
@@ -44,6 +61,24 @@ export const EventsAdmin: React.FC = () => {
       fetchEventDetails(selectedEvent.id);
     } catch (error) {
       console.error('Error marking attendance:', error);
+    }
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await api.post('/events', {
+        ...formData,
+        capacity: formData.capacity ? parseInt(formData.capacity) : undefined
+      });
+      setIsModalOpen(false);
+      fetchEvents();
+      setFormData({ title: '', description: '', type: 'RALLY', startDate: '', location: '', capacity: '' });
+    } catch (error) {
+      console.error('Error creating event:', error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -118,7 +153,7 @@ export const EventsAdmin: React.FC = () => {
                   <div key={speaker.id} className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-slate-100 rounded-full overflow-hidden">
                       {speaker.photoUrl ? (
-                        <img src={speaker.photoUrl} alt={speaker.name} className="w-full h-full object-cover" />
+                        <img src={speaker.photoUrl} alt={speaker.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-400">
                           <Users size={20} />
@@ -171,10 +206,12 @@ export const EventsAdmin: React.FC = () => {
           <h1 className="text-2xl font-bold text-slate-900">Events & Field Operations</h1>
           <p className="text-slate-500">Manage rallies, town halls, and internal party meetings.</p>
         </div>
-        <button className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm">
-          <Plus size={20} />
-          Create Event
-        </button>
+        {can('COMMUNICATION', 'CREATE') && (
+          <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl hover:bg-emerald-700 transition-colors shadow-sm">
+            <Plus size={20} />
+            Create Event
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -182,6 +219,67 @@ export const EventsAdmin: React.FC = () => {
           <EventCard key={event.id} event={event} onClick={() => fetchEventDetails(event.id)} />
         ))}
       </div>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl my-auto overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                <h3 className="text-xl font-bold text-slate-800">Create Event</h3>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleCreateEvent} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-700">Event Title</label>
+                  <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-700">Description</label>
+                  <textarea required rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Event Type</label>
+                    <select required value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                      <option value="RALLY">Rally</option>
+                      <option value="TOWN_HALL">Town Hall</option>
+                      <option value="MEETING">Internal Meeting</option>
+                      <option value="TRAINING">Training</option>
+                      <option value="PRESS_CONFERENCE">Press Conference</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Start Date & Time</label>
+                    <input type="datetime-local" required value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Location</label>
+                    <input required value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Capacity (Optional)</label>
+                    <input type="number" value={formData.capacity} onChange={e => setFormData({...formData, capacity: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500" />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                  <button type="submit" disabled={submitting} className="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2">
+                    {submitting && <Loader2 size={16} className="animate-spin" />}
+                    Create Event
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
