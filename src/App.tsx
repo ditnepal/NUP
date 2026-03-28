@@ -249,7 +249,7 @@ export default function App() {
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone, show: can('COMMUNICATION', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
     { id: 'supporters', label: 'Supporters', icon: Users, show: can('SUPPORTERS', 'VIEW') },
     { id: 'booths', label: 'Booths', icon: MapPin, show: can('BOOTHS', 'VIEW') },
-    { id: 'hierarchy', label: 'Hierarchy', icon: GitGraph, show: can('HIERARCHY', 'VIEW') },
+    { id: 'hierarchy', label: 'Organization', icon: GitGraph, show: can('HIERARCHY', 'VIEW') },
     { id: 'membership', label: 'Membership', icon: UserPlus, show: can('MEMBERSHIP', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
     { id: 'renewals', label: 'Renewals', icon: Clock, show: can('MEMBERSHIP', 'RENEW') },
     { id: 'fundraiser', label: 'Fundraiser', icon: Heart, show: can('FUNDRAISING', 'VIEW') },
