@@ -130,10 +130,10 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
       });
       
       if (result.success) {
-        toast.success(`Test message sent via ${result.providerName}`);
+        toast.success(`Simulation successful via ${result.providerName}`);
         setIsTestModalOpen(false);
       } else {
-        toast.error(`Test failed: ${result.error}`);
+        toast.error(`Simulation failed: ${result.error}`);
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to send test message');
@@ -682,10 +682,10 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <Send size={20} className="text-blue-600" />
-                Test Email Provider
+                Test Email Provider (Simulation)
               </h3>
               <p className="text-sm text-gray-500 mt-1">
-                Send a test message to verify the configuration for <strong>{testingProvider?.name}</strong>.
+                Run a simulation to verify the configuration for <strong>{testingProvider?.name}</strong>.
               </p>
             </div>
             <div className="p-6 space-y-4">
@@ -718,7 +718,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
                 disabled={isTesting || !testRecipient}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                {isTesting ? 'Sending...' : 'Send Test Message'}
+                {isTesting ? 'Running Simulation...' : 'Run Simulation'}
               </button>
             </div>
           </div>

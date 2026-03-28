@@ -83,10 +83,14 @@ export class MessagingEngine {
       throw new Error(`No provider (dynamic or fallback) found for channel: ${type}`);
     }
 
-    const providerName = dynamicProviderConfig?.name || (type === 'SMS' ? 'Twilio (Fallback)' : type === 'EMAIL' ? 'SendGrid (Fallback)' : 'Firebase (Fallback)');
+    const providerRole = dynamicProviderConfig?.isDefault ? 'Default' : dynamicProviderConfig?.isBackup ? 'Backup' : dynamicProviderConfig ? 'Dynamic' : 'Fallback';
+    const providerName = `${dynamicProviderConfig?.name || (type === 'SMS' ? 'Twilio' : type === 'EMAIL' ? 'SendGrid' : 'Firebase')} (${providerRole})`;
 
     try {
       const provider = fallbackProvider; 
+      if (!provider) {
+        return { success: false, error: `No implementation found for channel: ${type}`, providerName };
+      }
       const result = await provider.send(to, subject, body, dynamicProviderConfig || undefined);
       return { ...result, providerName };
     } catch (error: any) {
