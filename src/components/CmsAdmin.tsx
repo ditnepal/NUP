@@ -178,6 +178,18 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
     try {
       const endpoint = activeTab === 'pages' ? '/cms/pages' : 
                        activeTab === 'posts' ? '/cms/posts' : '/cms/sections';
+      
+      // Validate JSON for sections
+      if (activeTab === 'sections') {
+        try {
+          JSON.parse(formData.content);
+        } catch (e) {
+          setError('Invalid JSON format in Section Content. Please check your syntax.');
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const payload = { ...formData };
       if (editingItem) payload.id = editingItem.id;
 

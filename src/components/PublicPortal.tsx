@@ -15,9 +15,11 @@ interface PublicPortalProps {
   onStatusClick?: () => void;
   onDonateClick?: () => void;
   onGrievanceClick?: () => void;
+  onCandidatesClick?: () => void;
+  onCampaignsClick?: () => void;
 }
 
-export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick, onDonateClick, onGrievanceClick }) => {
+export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick, onDonateClick, onGrievanceClick, onCandidatesClick, onCampaignsClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -246,9 +248,14 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
         sections.map((section) => {
           let content: any = {};
           try {
-            content = JSON.parse(section.content);
+            if (section.content) {
+              content = JSON.parse(section.content);
+            }
           } catch (e) {
-            console.error('Failed to parse section content:', e);
+            // If JSON parsing fails, try to provide a minimal fallback to prevent crash
+            // and log a more helpful message for developers
+            console.warn(`[PublicPortal] Invalid JSON in section "${section.title}" (ID: ${section.id}). Content:`, section.content);
+            content = { headline: section.title, subheadline: 'Content configuration error' };
           }
 
           switch (section.type) {
@@ -547,13 +554,13 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   </div>
                 ))}
                 {news.length === 0 && !loading && (
-                  <div className="py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
-                      <FileText size={32} />
+                  <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
+                    <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <FileText size={48} />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-1">No News Available</h3>
-                    <p className="text-slate-500 text-sm max-w-xs mx-auto italic">
-                      Check back soon for the latest updates and announcements from {systemConfig['PARTY_NAME']}.
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3">No News Available</h3>
+                    <p className="text-slate-500 text-lg max-w-md mx-auto">
+                      We are currently updating our news feed. Check back soon for the latest updates and announcements from {systemConfig['PARTY_NAME']}.
                     </p>
                   </div>
                 )}
@@ -583,13 +590,13 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   </div>
                 ))}
                 {notices.filter(n => !n.isPopup).length === 0 && !loading && (
-                  <div className="py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
-                      <Megaphone size={32} />
+                  <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
+                    <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Megaphone size={48} />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-1">No Active Notices</h3>
-                    <p className="text-slate-500 text-sm max-w-xs mx-auto italic">
-                      There are no public notices published at this time.
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3">No Active Notices</h3>
+                    <p className="text-slate-500 text-lg max-w-md mx-auto">
+                      There are currently no public notices or official announcements published at this time.
                     </p>
                   </div>
                 )}
@@ -612,13 +619,13 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   </div>
                 ))}
                 {events.length === 0 && !loading && (
-                  <div className="py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200 col-span-full">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
-                      <Calendar size={32} />
+                  <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm col-span-full">
+                    <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Calendar size={48} />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-1">No Upcoming Events</h3>
-                    <p className="text-slate-500 text-sm max-w-xs mx-auto italic">
-                      Stay tuned for upcoming community meetings, rallies, and events.
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3">No Upcoming Events</h3>
+                    <p className="text-slate-500 text-lg max-w-md mx-auto">
+                      We are currently planning our next community meetings, rallies, and events. Please stay tuned for updates.
                     </p>
                   </div>
                 )}
@@ -858,6 +865,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               <h4 className="font-bold text-lg mb-6 uppercase tracking-widest text-emerald-400">Organization</h4>
               <ul className="space-y-4 text-slate-400">
                 <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+                <li><button onClick={onCandidatesClick} className="hover:text-white transition-colors text-left">Candidates</button></li>
+                <li><button onClick={onCampaignsClick} className="hover:text-white transition-colors text-left">Campaigns</button></li>
                 <li><a href="#" className="hover:text-white transition-colors">Leadership</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Committees</a></li>
                 <li><button onClick={onDocumentsClick} className="hover:text-white transition-colors text-left">Manifesto</button></li>

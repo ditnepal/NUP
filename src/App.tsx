@@ -26,8 +26,11 @@ import { GrievancePortal } from './components/GrievancePortal';
 import { SurveyPolls } from './components/SurveyPolls';
 import { PgisDashboard } from './components/PgisDashboard';
 import { PublicPortal } from './components/PublicPortal';
+import { PublicLayout } from './components/PublicLayout';
 import MembershipPublic from './components/MembershipPublic';
 import { PublicDocumentsView } from './components/PublicDocumentsView';
+import { PublicCandidatesView } from './components/PublicCandidates';
+import { PublicCampaignsView } from './components/PublicCampaigns';
 import { WarRoomDashboard } from './components/WarRoomDashboard';
 import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { MemberDashboard } from './components/MemberDashboard';
@@ -39,9 +42,9 @@ import { Toaster } from 'sonner';
 import { UserProfile, Campaign, Supporter, Booth } from './types';
 import { api } from './lib/api';
 import { usePermissions } from './hooks/usePermissions';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings, User } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -165,6 +168,8 @@ export default function App() {
           onPortalClick={() => {
             if (!user) {
               setCurrentView('dashboard'); // This will trigger Login if user is null
+            } else if (user.role === 'PUBLIC') {
+              setCurrentView('grievances');
             } else {
               setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard');
             }
@@ -180,6 +185,8 @@ export default function App() {
               setCurrentView('grievances');
             }
           }}
+          onCandidatesClick={() => setCurrentView('public-candidates')}
+          onCampaignsClick={() => setCurrentView('public-campaigns')}
           onStatusClick={() => {
             setInitialTrackingCode('');
             setInitialMobile('');
@@ -188,7 +195,13 @@ export default function App() {
         />
         {user && (
           <button 
-            onClick={() => setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard')}
+            onClick={() => {
+              if (user.role === 'PUBLIC') {
+                setCurrentView('grievances');
+              } else {
+                setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard');
+              }
+            }}
             className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl z-50 flex items-center gap-2 hover:scale-105 transition-all"
           >
             <LayoutDashboard size={20} />
@@ -199,8 +212,41 @@ export default function App() {
     );
   }
 
+  const renderPublicLayout = (children: React.ReactNode, onBack?: () => void) => (
+    <PublicLayout
+      user={user}
+      onBack={onBack || (() => setCurrentView('public'))}
+      onPortalClick={() => {
+        if (!user) {
+          setCurrentView('dashboard');
+        } else if (user.role === 'PUBLIC') {
+          setCurrentView('public');
+        } else {
+          setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard');
+        }
+      }}
+      onDocumentsClick={() => setCurrentView('public-documents')}
+      onTrainingClick={() => setCurrentView('training')}
+      onJoinClick={() => setCurrentView('membership-public')}
+      onStatusClick={() => {
+        setInitialTrackingCode('');
+        setInitialMobile('');
+        setCurrentView('applicant-status');
+      }}
+      onCandidatesClick={() => setCurrentView('public-candidates')}
+      onCampaignsClick={() => setCurrentView('public-campaigns')}
+      onHomeClick={() => setCurrentView('public')}
+      onLoginClick={() => setCurrentView('dashboard')}
+      onLogout={handleLogout}
+    >
+      <div className="max-w-7xl mx-auto p-6">
+        {children}
+      </div>
+    </PublicLayout>
+  );
+
   if (currentView === 'applicant-status') {
-    return (
+    return renderPublicLayout(
       <ApplicantStatusPortal 
         onBack={() => setCurrentView('public')} 
         onLoginClick={() => {
@@ -213,42 +259,81 @@ export default function App() {
   }
 
   if (currentView === 'membership-public') {
-    return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
-        <MembershipPublic onStatusClick={(code, mobile) => {
-          setInitialTrackingCode(code || '');
-          setInitialMobile(mobile || '');
-          setCurrentView('applicant-status');
-        }} />
-      </div>
+    return renderPublicLayout(
+      <MembershipPublic onStatusClick={(code, mobile) => {
+        setInitialTrackingCode(code || '');
+        setInitialMobile(mobile || '');
+        setCurrentView('applicant-status');
+      }} />
     );
+  }
+
+  if (currentView === 'donations') {
+    return renderPublicLayout(<DonationPortal />);
   }
 
   if (currentView === 'public-documents') {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto p-6">
-          <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
-          <PublicDocumentsView />
-        </div>
-      </div>
-    );
+    return renderPublicLayout(<PublicDocumentsView />);
   }
 
-  if (currentView === 'training' && !user) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto p-6">
-          <button onClick={() => setCurrentView('public')} className="mb-6 text-slate-600 hover:text-slate-900 font-bold">← Back to Public Portal</button>
-          <TrainingPortal user={null} />
-        </div>
-      </div>
-    );
+  if (currentView === 'public-candidates') {
+    return renderPublicLayout(<PublicCandidatesView />);
+  }
+
+  if (currentView === 'public-campaigns') {
+    return renderPublicLayout(<PublicCampaignsView />);
+  }
+
+  if (currentView === 'training' && (!user || user.role === 'PUBLIC')) {
+    return renderPublicLayout(<TrainingPortal user={user} />);
   }
 
   if (!user) {
     return <Login onLoginSuccess={handleLoginSuccess} onGoToPublic={() => setCurrentView('public')} t={t} />;
+  }
+
+  if (user.role === 'PUBLIC') {
+    const publicView = (currentView === 'grievances' || currentView === 'profile') ? currentView : 'home';
+    
+    return renderPublicLayout(
+      <div className="space-y-8">
+        {publicView === 'home' && (
+          <div className="max-w-4xl mx-auto py-12 px-4">
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-black text-slate-900 mb-4">Welcome, {user.displayName}</h1>
+              <p className="text-xl text-slate-500">Access your public services and manage your profile.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <button 
+                onClick={() => setCurrentView('profile')}
+                className="bg-white p-8 rounded-3xl border-2 border-slate-100 hover:border-emerald-500 transition-all text-left shadow-sm hover:shadow-xl group"
+              >
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <User size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">My Profile</h3>
+                <p className="text-slate-500 text-lg">Manage your personal information, contact details, and membership status.</p>
+              </button>
+              
+              <button 
+                onClick={() => setCurrentView('grievances')}
+                className="bg-white p-8 rounded-3xl border-2 border-slate-100 hover:border-purple-500 transition-all text-left shadow-sm hover:shadow-xl group"
+              >
+                <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <ShieldAlert size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">My Grievances</h3>
+                <p className="text-slate-500 text-lg">Submit new complaints or suggestions and track the status of your existing issues.</p>
+              </button>
+            </div>
+          </div>
+        )}
+        {publicView === 'grievances' && <GrievancePortal user={user} />}
+        {publicView === 'profile' && <UserProfileDashboard user={user} onLogout={handleLogout} />}
+      </div>,
+      publicView !== 'home' ? () => setCurrentView('public') : undefined
+    );
   }
 
   const navItems = [
@@ -765,7 +850,6 @@ export default function App() {
         {currentView === 'pgis' && <PgisDashboard />}
         {currentView === 'warroom' && <WarRoomDashboard />}
         {currentView === 'settings' && <SystemSettings />}
-        {currentView === 'donations' && <DonationPortal />}
         {currentView === 'profile' && <UserProfileDashboard user={user} onLogout={handleLogout} />}
         {currentView === 'member-dashboard' && (
           <MemberDashboard 

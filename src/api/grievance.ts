@@ -76,8 +76,10 @@ router.get('/', authenticate, checkPermission('GRIEVANCES', 'VIEW'), async (req:
     if (req.query.reporterId) filters.reporterId = req.query.reporterId as string;
 
     // Hierarchy Scope Enforcement
-    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
-    filters.orgUnitIds = accessibleUnitIds;
+    if (req.user?.role !== 'PUBLIC') {
+      const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+      filters.orgUnitIds = accessibleUnitIds;
+    }
 
     // Confidentiality: Non-admin/staff can only see their own grievances
     if (req.user?.role !== 'ADMIN' && req.user?.role !== 'STAFF') {

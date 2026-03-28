@@ -39,6 +39,9 @@ export const Login = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [tempUser, setTempUser] = useState<any>(initialTempUser);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +60,27 @@ export const Login = ({
       }
     } catch (err: any) {
       setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await api.post('/auth/public-register', { 
+        email, 
+        password,
+        displayName,
+        phoneNumber
+      });
+      localStorage.setItem('token', response.token);
+      onLoginSuccess(response.user);
+    } catch (err: any) {
+      setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -160,8 +184,8 @@ export const Login = ({
           <ShieldCheck size={40} />
         </div>
         <div>
-          <h1 className="text-3xl font-black text-slate-800">{t('login_title')}</h1>
-          <p className="text-slate-500 mt-2">{t('login_subtitle')}</p>
+          <h1 className="text-3xl font-black text-slate-800">{isRegistering ? 'Public Registration' : t('login_title')}</h1>
+          <p className="text-slate-500 mt-2">{isRegistering ? 'Create an account to submit and track grievances.' : t('login_subtitle')}</p>
         </div>
 
         {error && (
@@ -170,7 +194,32 @@ export const Login = ({
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4 text-left">
+        <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-4 text-left">
+          {isRegistering && (
+            <>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Full Name</label>
+                <input 
+                  type="text" 
+                  required 
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" 
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Phone Number (Optional)</label>
+                <input 
+                  type="tel" 
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" 
+                  placeholder="+977..."
+                />
+              </div>
+            </>
+          )}
           <div className="space-y-1">
             <label className="text-sm font-semibold text-slate-700">Email</label>
             <input 
@@ -179,7 +228,7 @@ export const Login = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" 
-              placeholder={`admin@${systemConfig['PARTY_NAME']?.toLowerCase().replace(/\s+/g, '') || 'nup'}.org`}
+              placeholder={isRegistering ? "you@example.com" : `admin@${systemConfig['PARTY_NAME']?.toLowerCase().replace(/\s+/g, '') || 'nup'}.org`}
             />
           </div>
           <div className="space-y-1">
@@ -191,6 +240,7 @@ export const Login = ({
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" 
               placeholder="••••••••"
+              minLength={isRegistering ? 6 : undefined}
             />
           </div>
           
@@ -199,9 +249,17 @@ export const Login = ({
             disabled={loading}
             className="w-full py-4 text-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md active:scale-95"
           >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign In'}
+            {loading ? <Loader2 className="animate-spin" size={20} /> : (isRegistering ? 'Register' : 'Sign In')}
           </button>
         </form>
+
+        <div className="text-sm text-slate-500">
+          {isRegistering ? (
+            <p>Already have an account? <button onClick={() => setIsRegistering(false)} className="text-emerald-600 font-bold hover:underline">Sign In</button></p>
+          ) : (
+            <p>Need to submit a grievance? <button onClick={() => setIsRegistering(true)} className="text-emerald-600 font-bold hover:underline">Register here</button></p>
+          )}
+        </div>
         
         <div className="pt-4 border-t border-slate-100">
           <button 

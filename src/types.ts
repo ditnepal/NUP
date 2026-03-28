@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'STAFF' | 'MEMBER' | 'FIELD_COORDINATOR' | 'BOOTH_COORDINATOR' | 'FINANCE_OFFICER';
+export type UserRole = 'ADMIN' | 'STAFF' | 'MEMBER' | 'FIELD_COORDINATOR' | 'BOOTH_COORDINATOR' | 'FINANCE_OFFICER' | 'PUBLIC';
 export type AppAction = 'VIEW' | 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'VERIFY' | 'ESCALATE' | 'REJECT' | 'EXPORT' | 'RENEW' | 'TRANSFER' | 'SUSPEND' | 'TERMINATE' | 'GENERATE_CARD';
 export type AppModule = 'DASHBOARD' | 'MEMBERSHIP' | 'SUPPORTERS' | 'BOOTHS' | 'FINANCE' | 'FUNDRAISING' | 'ELECTION' | 'PGIS' | 'WAR_ROOM' | 'COMMUNICATION' | 'CMS' | 'HIERARCHY' | 'NOTICE_POPUP' | 'TRAINING' | 'GRIEVANCES' | 'SURVEYS';
 export type CommitteeLevel = 'central' | 'province' | 'district' | 'municipality' | 'ward' | 'wing';
@@ -223,6 +223,7 @@ export interface Grievance {
     content: string;
     isInternal: boolean;
     createdAt: string;
+    userId: string;
     user: {
       displayName: string;
     };

@@ -152,12 +152,14 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
           </div>
         ))}
         {filteredPrograms.length === 0 && (
-          <div className="col-span-full py-20 text-center">
-            <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-              <BookOpen size={40} />
+          <div className="col-span-full py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
+            <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+              <BookOpen size={48} />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No programs found</h3>
-            <p className="text-slate-500">Try adjusting your search or filters.</p>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">No Training Programs Available</h3>
+            <p className="text-slate-500 max-w-md mx-auto text-lg">
+              We are currently developing new training materials and certification programs. Please check back soon for updates.
+            </p>
           </div>
         )}
       </div>

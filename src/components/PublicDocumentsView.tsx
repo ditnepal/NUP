@@ -91,7 +91,15 @@ export const PublicDocumentsView: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="p-12 text-center text-slate-500 italic">No published documents found.</div>
+          <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
+            <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FileText size={48} />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">No Documents Available</h3>
+            <p className="text-slate-500 max-w-md mx-auto text-lg">
+              We are currently organizing our public documents and manifestos. Please check back soon for updates.
+            </p>
+          </div>
         )}
       </div>
     </div>

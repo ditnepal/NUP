@@ -140,6 +140,66 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+// @route   POST /api/v1/auth/public-register
+// @desc    Register a new public user
+// @access  Public
+router.post('/public-register', async (req, res) => {
+  try {
+    const { email, password, displayName, phoneNumber } = registerSchema.parse(req.body);
+
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        displayName,
+        phoneNumber,
+        role: 'PUBLIC', // Assign PUBLIC role
+        isActive: true,
+      },
+    });
+
+    const payload = {
+      user: {
+        id: user.id,
+        role: user.role,
+      },
+    };
+
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '24h' },
+      (err, token) => {
+        if (err) throw err;
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            displayName: user.displayName,
+            role: user.role,
+            requirePasswordChange: false,
+          },
+        });
+      }
+    );
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.issues });
+    }
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   POST /api/v1/auth/register
 // @desc    Register a new user (admin only)
 // @access  Private (Admin)

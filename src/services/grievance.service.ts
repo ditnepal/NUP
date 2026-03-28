@@ -46,10 +46,18 @@ export class GrievanceService {
     reporterId?: string;
     orgUnitIds?: string[] | null;
   }) {
-    const { orgUnitIds, ...rest } = filters;
+    const { orgUnitIds, reporterId, ...rest } = filters;
     const where: any = { ...rest };
-    if (orgUnitIds) {
-      where.orgUnitId = { in: orgUnitIds };
+    
+    // If reporterId is provided, they can see their own grievances regardless of orgUnitId
+    if (reporterId) {
+      where.reporterId = reporterId;
+    } else if (orgUnitIds) {
+      // Otherwise, restrict by orgUnitIds (for admins/staff viewing others' grievances)
+      where.OR = [
+        { orgUnitId: { in: orgUnitIds } },
+        { orgUnitId: null } // Also include global grievances
+      ];
     }
 
     const grievances = await prisma.grievance.findMany({

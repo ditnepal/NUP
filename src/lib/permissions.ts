@@ -56,5 +56,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Partial<Record<AppModule, AppAct
     TRAINING: ['VIEW'],
     GRIEVANCES: ['VIEW', 'CREATE'],
     SURVEYS: ['VIEW']
+  },
+  PUBLIC: {
+    GRIEVANCES: ['VIEW', 'CREATE']
   }
 };

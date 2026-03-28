@@ -389,7 +389,16 @@ export const DonationPortal: React.FC = () => {
                 <TrendingUp size={32} />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">{campaign.title}</h3>
-              <p className="text-sm text-blue-600 font-bold uppercase tracking-widest mb-6">Active Fundraiser</p>
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="text-xs font-bold px-3 py-1 bg-blue-50 text-blue-600 rounded-full uppercase tracking-widest">
+                  {campaign.fundraiserType?.replace('_', ' ') || 'ACTIVE FUNDRAISER'}
+                </span>
+                {campaign.beneficiaryType && (
+                  <span className="text-xs font-bold px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full uppercase tracking-widest">
+                    {campaign.beneficiaryType} BENEFICIARY
+                  </span>
+                )}
+              </div>
               <p className="text-gray-500 mb-8 leading-relaxed line-clamp-3">
                 {campaign.description}
               </p>

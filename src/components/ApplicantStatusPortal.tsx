@@ -138,17 +138,8 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        <button 
-          onClick={onBack}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold mb-8 transition-colors"
-        >
-          <ChevronLeft size={20} />
-          Back to Portal
-        </button>
-
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
           <div className="p-8 md:p-12">
             <div className="text-center mb-10">
               <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4">Application Status</h1>
@@ -358,7 +349,6 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
               </div>
             )}
           </div>
-        </div>
       </div>
     </div>
   );
