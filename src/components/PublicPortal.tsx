@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap, Calendar, Tag, Loader2 } from 'lucide-react';
+import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap, Calendar, Tag, Loader2, Search, MapPin, Phone, Mail, ArrowRight, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { motion } from 'motion/react';
 import { UserProfile } from '../types';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
@@ -25,7 +26,12 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   const [surveys, setSurveys] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
-  const [systemConfig, setSystemConfig] = useState<Record<string, string>>({});
+  const [systemConfig, setSystemConfig] = useState<Record<string, string>>({
+    PARTY_NAME: 'Progressive People\'s Organization',
+    PARTY_TAGLINE: 'Empowering Citizens, Building the Future',
+    CONTACT_EMAIL: 'info@ppos.org',
+    CONTACT_PHONE: '+977-1-0000000'
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -368,26 +374,45 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
       ) : (
         <>
           {/* Hero Section */}
-          <section className="relative py-20 overflow-hidden bg-slate-50">
+          <section className="relative py-24 md:py-32 overflow-hidden bg-slate-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="max-w-3xl">
-                <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
-                  Building the Future of Nepal
-                </span>
-                <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[0.9] mb-8 tracking-tighter">
-                  A NEW VISION FOR A <span className="text-emerald-600">PROSPEROUS</span> NATION.
-                </h1>
-                <p className="text-xl text-slate-600 mb-10 leading-relaxed">
-                  Join the movement for transparency, accountability, and sustainable development. Together, we can build a stronger Nepal for everyone.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button onClick={onJoinClick} className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2">
-                    Become a Member <ChevronRight size={20} />
+                <motion.span 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider mb-8"
+                >
+                  {systemConfig['PARTY_NAME']}
+                </motion.span>
+                <motion.h1 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-5xl md:text-8xl font-black text-slate-900 leading-[0.85] mb-10 tracking-tighter"
+                >
+                  {systemConfig['PARTY_TAGLINE'].toUpperCase()}
+                </motion.h1>
+                <motion.p 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-xl md:text-2xl text-slate-600 mb-12 leading-relaxed max-w-2xl"
+                >
+                  Join the movement for transparency, accountability, and sustainable development. Together, we can build a stronger nation for everyone.
+                </motion.p>
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex flex-col sm:flex-row gap-5"
+                >
+                  <button onClick={onJoinClick} className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-2xl shadow-emerald-200 flex items-center justify-center gap-2 group">
+                    Become a Member <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </button>
-                  <button onClick={onStatusClick} className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                  <button onClick={onStatusClick} className="bg-white text-slate-800 border-2 border-slate-200 px-10 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
                     Check Application Status
                   </button>
-                </div>
+                </motion.div>
               </div>
             </div>
             
@@ -520,8 +545,14 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   </div>
                 ))}
                 {news.length === 0 && !loading && (
-                  <div className="py-10 text-center text-slate-400 italic">
-                    No news found in this category.
+                  <div className="py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
+                      <FileText size={32} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">No News Available</h3>
+                    <p className="text-slate-500 text-sm max-w-xs mx-auto italic">
+                      Check back soon for the latest updates and announcements from {systemConfig['PARTY_NAME']}.
+                    </p>
                   </div>
                 )}
               </div>
@@ -549,9 +580,15 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                     )}
                   </div>
                 ))}
-                {notices.length === 0 && !loading && (
-                  <div className="py-10 text-center text-slate-400 italic">
-                    No notices published at this time.
+                {notices.filter(n => !n.isPopup).length === 0 && !loading && (
+                  <div className="py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
+                      <Megaphone size={32} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">No Active Notices</h3>
+                    <p className="text-slate-500 text-sm max-w-xs mx-auto italic">
+                      There are no public notices published at this time.
+                    </p>
                   </div>
                 )}
               </div>
@@ -573,8 +610,14 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   </div>
                 ))}
                 {events.length === 0 && !loading && (
-                  <div className="py-10 text-center text-slate-400 italic">
-                    No upcoming events at this time.
+                  <div className="py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200 col-span-full">
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
+                      <Calendar size={32} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">No Upcoming Events</h3>
+                    <p className="text-slate-500 text-sm max-w-xs mx-auto italic">
+                      Stay tuned for upcoming community meetings, rallies, and events.
+                    </p>
                   </div>
                 )}
               </div>
@@ -805,7 +848,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 <span className="font-black text-3xl tracking-tight">{systemConfig['PARTY_NAME'] || 'NUP'}</span>
               </div>
               <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-                {systemConfig['PARTY_TAGLINE'] || 'The Nepal United Party is dedicated to building a prosperous, transparent, and inclusive nation for all citizens.'}
+                {systemConfig['PARTY_TAGLINE']}
               </p>
             </div>
             
@@ -823,15 +866,15 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               <h4 className="font-bold text-lg mb-6 uppercase tracking-widest text-emerald-400">Contact</h4>
               <ul className="space-y-4 text-slate-400">
                 <li>{systemConfig['CONTACT_ADDRESS'] || 'Kathmandu, Nepal'}</li>
-                <li>{systemConfig['CONTACT_EMAIL'] || 'info@nup.org.np'}</li>
-                <li>{systemConfig['CONTACT_PHONE'] || '+977 1 4XXXXXX'}</li>
+                <li>{systemConfig['CONTACT_EMAIL']}</li>
+                <li>{systemConfig['CONTACT_PHONE']}</li>
               </ul>
             </div>
           </div>
           
           <div className="pt-12 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-slate-500 text-sm">
-              © 2026 {systemConfig['PARTY_NAME'] || 'Nepal United Party'}. All rights reserved.
+              © 2026 {systemConfig['PARTY_NAME']}. All rights reserved.
             </p>
             <div className="flex gap-8 text-sm text-slate-500">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>

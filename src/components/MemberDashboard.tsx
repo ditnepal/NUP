@@ -80,6 +80,21 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
   const [renewalError, setRenewalError] = useState('');
   const [renewalSuccess, setRenewalSuccess] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<any | null>(null);
+  const [systemConfig, setSystemConfig] = useState<Record<string, string>>({
+    PARTY_NAME: 'Progressive People\'s Organization',
+    PARTY_TAGLINE: 'Empowering Citizens, Building the Future',
+    CONTACT_EMAIL: 'info@ppos.org',
+    CONTACT_PHONE: '+977-1-0000000'
+  });
+
+  const fetchSystemConfig = async () => {
+    try {
+      const config = await api.get('/public/config');
+      setSystemConfig(config);
+    } catch (error) {
+      console.error('Error fetching system config:', error);
+    }
+  };
 
   const fetchRenewals = async () => {
     try {
@@ -93,6 +108,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
   useEffect(() => {
     const fetchData = async () => {
       try {
+        fetchSystemConfig();
         const [profileData, newsData, eventsData, noticesData] = await Promise.all([
           api.get('/members/me'),
           api.get('/public/posts?type=NEWS&limit=2'),
@@ -253,10 +269,24 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
 
             <button 
               onClick={() => window.location.reload()}
-              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 mb-8"
             >
               Refresh Status
             </button>
+
+            <div className="w-full pt-8 border-t border-slate-100">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Contact Support</p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Mail size={16} className="text-emerald-500" />
+                  <span className="text-sm font-bold">{systemConfig['CONTACT_EMAIL']}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Phone size={16} className="text-emerald-500" />
+                  <span className="text-sm font-bold">{systemConfig['CONTACT_PHONE']}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -290,9 +320,16 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-800">Member Portal</h1>
-          <p className="text-slate-500">Welcome back, {user.displayName}. Here's your activity overview.</p>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+            <Globe size={32} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">
+              {systemConfig['PARTY_NAME']} <span className="text-emerald-600">Portal</span>
+            </h1>
+            <p className="text-slate-500 font-medium">Welcome back, {user.displayName}. {systemConfig['PARTY_TAGLINE']}</p>
+          </div>
         </div>
         <div className="flex gap-3">
           <button 
@@ -404,7 +441,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
       )}
 
       {/* Bento Grid Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
           { label: 'Total Donated', value: `NPR ${profile.stats.totalDonated.toLocaleString()}`, icon: Heart, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Events Attended', value: profile.stats.eventsAttended, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -413,12 +450,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
           { label: 'Pending Tasks', value: profile.stats.pendingTasks, icon: ListTodo, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Upcoming Events', value: profile.stats.upcomingEvents, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-            <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center shrink-0`}>
+          <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
+            <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
               <stat.icon size={24} />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.label}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
               <p className="text-xl font-black text-slate-800">{stat.value}</p>
             </div>
           </div>
@@ -584,14 +621,16 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                   <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded">
                     {item.type}
                   </span>
-                  <h4 className="font-bold text-slate-800 mt-2 group-hover:text-emerald-600 transition-colors">{item.title}</h4>
+                  <h4 className="font-bold text-slate-800 mt-2 group-hover:text-emerald-600 transition-colors line-clamp-2">{item.title}</h4>
                   <p className="text-xs text-slate-500 mt-1">{format(new Date(item.publishedAt || item.createdAt), 'MMM d, yyyy')}</p>
                 </div>
               )) : (
-                <div className="col-span-2 text-center py-12 flex flex-col items-center justify-center">
-                  <Megaphone size={32} className="text-slate-200 mb-3" />
-                  <p className="text-sm font-medium text-slate-900">No news updates</p>
-                  <p className="text-xs text-slate-500 mt-1">Check back later for the latest announcements.</p>
+                <div className="col-span-2 text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-300 shadow-sm">
+                    <Megaphone size={24} />
+                  </div>
+                  <h4 className="font-bold text-slate-900 mb-1">No Updates Yet</h4>
+                  <p className="text-xs text-slate-500 max-w-[200px] mx-auto italic">Stay tuned for the latest news and announcements.</p>
                 </div>
               )}
             </div>
@@ -640,10 +679,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, onViewEv
                   </button>
                 </div>
               )) : (
-                <div className="p-12 text-center flex flex-col items-center justify-center">
-                  <Calendar size={32} className="text-slate-200 mb-3" />
-                  <p className="text-sm font-medium text-slate-900">No upcoming events</p>
-                  <p className="text-xs text-slate-500 mt-1">There are no events scheduled at this time.</p>
+                <div className="p-16 text-center bg-slate-50/50">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-300 shadow-sm">
+                    <Calendar size={24} />
+                  </div>
+                  <h4 className="font-bold text-slate-900 mb-1">No Events Scheduled</h4>
+                  <p className="text-xs text-slate-500 max-w-[200px] mx-auto italic">Check back later for upcoming community events.</p>
                 </div>
               )}
             </div>

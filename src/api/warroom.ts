@@ -91,7 +91,7 @@ router.get('/analytics', authenticate, authorize(['ADMIN', 'STAFF']), async (req
       grievances: grievanceStats.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.id }), {}),
       surveys: surveyStats,
       booths: boothStats.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.id }), {}),
-      incidents: electionIncidents.reduce((acc, curr) => ({ ...acc, [curr.status]: curr._count.id }), {}),
+      incidents: electionIncidents,
       recentSignals: intelReports,
       areaScores: areaScores,
       pgisOverview,
