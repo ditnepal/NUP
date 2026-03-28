@@ -478,4 +478,21 @@ router.delete('/notices/:id', authenticate, checkPermission('NOTICE_POPUP', 'DEL
   }
 });
 
+// @route   POST /api/v1/communication/providers/test
+// @desc    Test a provider configuration
+// @access  Private (Admin)
+router.post('/providers/test', authenticate, authorize(['ADMIN']), async (req, res) => {
+  try {
+    const { provider, testRecipient } = req.body;
+    if (!provider || !testRecipient) {
+      return res.status(400).json({ error: 'Provider and test recipient are required' });
+    }
+    const result = await communicationService.testEmailProvider(provider, testRecipient);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Provider Test Error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

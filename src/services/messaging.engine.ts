@@ -18,7 +18,11 @@ class TwilioSMSProvider implements MessageProvider {
 class SendGridEmailProvider implements MessageProvider {
   async send(to: string, subject: string, body: string, config?: CommunicationProvider) {
     const providerName = config?.name || 'SendGrid (Hardcoded Fallback)';
-    console.log(`[${providerName}] Sending Email to ${to}: ${subject} - ${body}`);
+    const from = config?.fromAddress || 'system@ppos.org';
+    const fromName = config?.fromName || 'PPOS System';
+    
+    console.log(`[${providerName}] Sending Email from "${fromName}" <${from}> to ${to}: ${subject}`);
+    // In a real app, this would use config.apiKey to call SendGrid API
     return { success: true };
   }
 }
@@ -67,12 +71,12 @@ export class MessagingEngine {
     }
   }
 
-  async send(type: 'SMS' | 'EMAIL' | 'PUSH' | 'IN_APP', to: string, subject: string, body: string): Promise<{ success: boolean; error?: string; providerName?: string }> {
+  async send(type: 'SMS' | 'EMAIL' | 'PUSH' | 'IN_APP', to: string, subject: string, body: string, overrideConfig?: CommunicationProvider): Promise<{ success: boolean; error?: string; providerName?: string }> {
     if (type === 'IN_APP') {
       return { success: true, providerName: 'IN_APP' };
     }
 
-    const dynamicProviderConfig = await this.getDynamicProvider(type);
+    const dynamicProviderConfig = overrideConfig || await this.getDynamicProvider(type);
     const fallbackProvider = this.staticFallbacks[type];
 
     if (!dynamicProviderConfig && !fallbackProvider) {

@@ -35,6 +35,10 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const [providers, setProviders] = useState<CommunicationProvider[]>([]);
   const [routingSummary, setRoutingSummary] = useState<Record<string, { default?: string; backup?: string }>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+  const [testRecipient, setTestRecipient] = useState('');
+  const [testingProvider, setTestingProvider] = useState<CommunicationProvider | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [broadcastTarget, setBroadcastTarget] = useState<string | null>(null);
@@ -107,6 +111,35 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const handleEdit = (item: any) => {
     setEditingItem(item);
     setIsModalOpen(true);
+  };
+
+  const handleTestProvider = (provider: CommunicationProvider) => {
+    setTestingProvider(provider);
+    setTestRecipient(user.email || '');
+    setIsTestModalOpen(true);
+  };
+
+  const runProviderTest = async () => {
+    if (!testingProvider || !testRecipient) return;
+    
+    setIsTesting(true);
+    try {
+      const result = await api.post('/communication/providers/test', {
+        provider: testingProvider,
+        testRecipient
+      });
+      
+      if (result.success) {
+        toast.success(`Test message sent via ${result.providerName}`);
+        setIsTestModalOpen(false);
+      } else {
+        toast.error(`Test failed: ${result.error}`);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send test message');
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -609,6 +642,9 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
                   {can('COMMUNICATION', 'UPDATE') && (
                     <button onClick={() => handleEdit(item)} className="hover:underline">Edit</button>
                   )}
+                  {activeTab === 'providers' && item.channel === 'EMAIL' && (
+                    <button onClick={() => handleTestProvider(item)} className="text-blue-600 hover:underline">Test</button>
+                  )}
                   {activeTab === 'campaigns' && item.status === 'DRAFT' && can('COMMUNICATION', 'APPROVE') && (
                     <button onClick={() => handleBroadcast(item.id)} className="text-blue-600 hover:underline">Broadcast</button>
                   )}
@@ -636,6 +672,55 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
             {activeTab === 'segments' && renderSegmentForm()}
             {activeTab === 'campaigns' && renderCampaignForm()}
             {activeTab === 'providers' && renderProviderForm()}
+          </div>
+        </div>
+      )}
+
+      {isTestModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Send size={20} className="text-blue-600" />
+                Test Email Provider
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Send a test message to verify the configuration for <strong>{testingProvider?.name}</strong>.
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Email</label>
+                <input
+                  type="email"
+                  value={testRecipient}
+                  onChange={(e) => setTestRecipient(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="test@example.com"
+                />
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 flex gap-2">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>
+                  This will use the <strong>{testingProvider?.fromAddress || 'system default'}</strong> as the sender address.
+                </span>
+              </div>
+            </div>
+            <div className="p-6 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => setIsTestModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={runProviderTest}
+                disabled={isTesting || !testRecipient}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isTesting ? 'Sending...' : 'Send Test Message'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -188,6 +188,22 @@ export class CommunicationService {
       },
     });
   }
+  /**
+   * Test an email provider configuration
+   */
+  async testEmailProvider(provider: any, recipient: string) {
+    if (provider.channel !== 'EMAIL') {
+      throw new Error('Only EMAIL channel testing is supported in this phase');
+    }
+    
+    return await messagingEngine.send(
+      'EMAIL',
+      recipient,
+      'PPOS Provider Test',
+      `This is a test message from the ${provider.name} configuration. If you see this, the provider routing is working correctly.`,
+      provider
+    );
+  }
 }
 
 export const communicationService = new CommunicationService();
