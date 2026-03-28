@@ -120,6 +120,16 @@ export class CommunicationService {
             message: renderedBody,
             type: 'INFO',
           });
+
+          await prisma.deliveryLog.create({
+            data: {
+              campaignId: campaign.id,
+              userId: user.id,
+              recipient: user.id,
+              status: 'SENT',
+              provider: 'IN_APP',
+            },
+          });
         } else {
           const result = await messagingEngine.send(
             campaign.template.type as 'SMS' | 'EMAIL' | 'PUSH',
@@ -128,20 +138,21 @@ export class CommunicationService {
             renderedBody
           );
 
+          await prisma.deliveryLog.create({
+            data: {
+              campaignId: campaign.id,
+              userId: user.id,
+              recipient: user.email || user.phoneNumber,
+              status: result.success ? 'SENT' : 'FAILED',
+              error: result.error,
+              provider: result.providerName || campaign.template.type,
+            },
+          });
+
           if (!result.success) {
-            throw new Error(result.error);
+            await retryService.enqueue(campaign.id, campaign.template.type, user.id);
           }
         }
-
-        await prisma.deliveryLog.create({
-          data: {
-            campaignId: campaign.id,
-            userId: user.id,
-            recipient: user.email || user.phoneNumber,
-            status: 'SENT',
-            provider: campaign.template.type,
-          },
-        });
       } catch (error: any) {
         await prisma.deliveryLog.create({
           data: {

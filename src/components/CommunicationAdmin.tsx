@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { usePermissions } from '../hooks/usePermissions';
 import { UserProfile } from '../types';
-import { Plus, Search, Filter, CheckCircle, Clock, AlertCircle, Mail, MessageSquare, Bell, Users, Send, FileText, Layout, Target, Megaphone, AlertTriangle, Shield, Key, Settings } from 'lucide-react';
+import { Plus, Search, Filter, CheckCircle, Clock, AlertCircle, Mail, MessageSquare, Bell, Users, Send, FileText, Layout, Target, Megaphone, AlertTriangle, Shield, Key, Settings, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CommunicationProvider, CommunicationChannel } from '../types';
 
@@ -33,6 +33,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const [templates, setTemplates] = useState<any[]>([]);
   const [segments, setSegments] = useState<any[]>([]);
   const [providers, setProviders] = useState<CommunicationProvider[]>([]);
+  const [routingSummary, setRoutingSummary] = useState<Record<string, { default?: string; backup?: string }>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -61,17 +62,30 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const configs = await api.get('/system-config');
+      const providersConfig = configs.find((c: any) => c.key === 'COMMUNICATION_PROVIDERS');
+      let currentProviders: CommunicationProvider[] = [];
+      
+      if (providersConfig && providersConfig.value) {
+        currentProviders = JSON.parse(providersConfig.value);
+        setProviders(currentProviders);
+      } else {
+        setProviders([]);
+      }
+
       if (activeTab === 'providers') {
-        const configs = await api.get('/system-config');
-        const providersConfig = configs.find((c: any) => c.key === 'COMMUNICATION_PROVIDERS');
-        if (providersConfig && providersConfig.value) {
-          const parsed = JSON.parse(providersConfig.value);
-          setProviders(parsed);
-          setData(parsed);
-        } else {
-          setProviders([]);
-          setData([]);
-        }
+        setData(currentProviders);
+        
+        // Calculate routing summary
+        const summary: Record<string, { default?: string; backup?: string }> = {};
+        (['SMS', 'EMAIL', 'WHATSAPP', 'PUSH'] as const).forEach(channel => {
+          const channelProviders = currentProviders.filter(p => p.channel === channel && p.isActive);
+          summary[channel] = {
+            default: channelProviders.find(p => p.isDefault)?.name,
+            backup: channelProviders.find(p => p.isBackup)?.name
+          };
+        });
+        setRoutingSummary(summary);
       } else {
         const endpoint = `/communication/${activeTab}`;
         const result = await api.get(endpoint);
@@ -436,6 +450,14 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
     </form>
   );
 
+  const isConfigComplete = (p: CommunicationProvider) => {
+    if (!p.name || !p.channel) return false;
+    if (p.channel === 'EMAIL' && !p.fromAddress) return false;
+    if (p.channel === 'SMS' && !p.senderId && !p.fromAddress) return false;
+    if (!p.apiKey && !p.authToken && !p.apiSecret) return false;
+    return true;
+  };
+
   const renderTable = () => {
     if (loading) return <div className="p-10 text-center">Loading...</div>;
     if (data.length === 0) {
@@ -511,7 +533,14 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
                 <td className="px-6 py-4 text-sm text-gray-500">
                   {activeTab === 'templates' ? (
                     <div className="flex flex-col">
-                      <span className="font-medium text-gray-700">{item.type}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-700">{item.type}</span>
+                        {(() => {
+                          const provider = providers.find(p => p.channel === item.type && p.isActive && p.isDefault);
+                          if (!provider) return <span className="text-[10px] text-amber-600 flex items-center gap-1"><AlertTriangle size={10} /> No Default Provider</span>;
+                          return <span className="text-[10px] text-emerald-600 flex items-center gap-1"><CheckCircle size={10} /> via {provider.name}</span>;
+                        })()}
+                      </div>
                       <span className="text-xs text-gray-400">{item.category}</span>
                     </div>
                   ) : activeTab === 'segments' ? (
@@ -538,21 +567,39 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
                         {item.isDefault && <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase">Default</span>}
                         {item.isBackup && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded uppercase">Backup</span>}
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold w-fit ${
-                        item.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
-                      }`}>
-                        {item.isActive ? 'ACTIVE' : 'INACTIVE'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold w-fit ${
+                          item.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
+                        }`}>
+                          {item.isActive ? 'ACTIVE' : 'INACTIVE'}
+                        </span>
+                        {!isConfigComplete(item) && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                            <AlertCircle size={10} /> INCOMPLETE
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ) : (
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      item.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
-                      item.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                      item.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {item.status}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${
+                        item.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
+                        item.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                        item.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {item.status}
+                      </span>
+                      {item.template && (
+                        <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                          {(() => {
+                            const provider = providers.find(p => p.channel === item.template.type && p.isActive && p.isDefault);
+                            if (!provider) return <span className="text-amber-600 flex items-center gap-1"><AlertTriangle size={10} /> No Default</span>;
+                            return <span className="text-emerald-600 flex items-center gap-1"><CheckCircle size={10} /> via {provider.name}</span>;
+                          })()}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">
@@ -649,6 +696,32 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {activeTab === 'providers' && providers.length > 0 && (
+          <div className="p-4 bg-slate-50 border-b border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4">
+            {(['SMS', 'EMAIL', 'WHATSAPP', 'PUSH'] as const).map(channel => (
+              <div key={channel} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{channel} Routing</span>
+                  {routingSummary[channel]?.default ? (
+                    <CheckCircle2 size={14} className="text-emerald-500" />
+                  ) : (
+                    <AlertTriangle size={14} className="text-amber-500" />
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Default:</span>
+                    <span className="font-medium text-slate-900">{routingSummary[channel]?.default || 'None'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Backup:</span>
+                    <span className="font-medium text-slate-900">{routingSummary[channel]?.backup || 'None'}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {renderTable()}
       </div>
 
