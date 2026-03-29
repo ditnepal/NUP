@@ -74,19 +74,23 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user.isActive) {
-      return res.status(403).json({ error: 'Account is deactivated' });
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Account is deactivated',
+        code: 'ACCOUNT_DEACTIVATED'
+      });
     }
 
     const payload = { id: user.id, email: user.email, role: user.role };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
 
     res.json({ token, user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role, requirePasswordChange: isTemp } });
-  } catch (error) {
-    console.error('[AUTH LOGIN ERROR]', error);
+  } catch (error: any) {
+    console.error('[AUTH LOGIN ERROR]', error.code, error.meta, error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: (error as any).errors });
+      return res.status(400).json({ error: 'Validation Error', details: error.issues });
     }
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', details: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -131,7 +135,7 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res) => {
     });
 
     res.json({ message: 'Password changed successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AUTH CHANGE PASSWORD ERROR]', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: (error as any).errors });

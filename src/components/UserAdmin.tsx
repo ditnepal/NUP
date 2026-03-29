@@ -15,10 +15,13 @@ const AccessPreviewPanel = ({ role, orgUnitId, units }: { role: UserRole, orgUni
     warnings.push({ text: 'CRITICAL: This role requires a specific organizational scope. Global assignment is not permitted.', critical: true });
   }
   if (role === 'MEMBER' && !orgUnitId) {
-    warnings.push({ text: 'Members should typically be assigned to a specific unit.', critical: false });
+    warnings.push({ text: 'Members should typically be assigned to a specific unit for local representation.', critical: false });
   }
   if (role === 'ADMIN' && orgUnitId) {
     warnings.push({ text: 'Admins inherently have global access. The specific unit assignment will be ignored.', critical: false });
+  }
+  if (role === 'PUBLIC' && orgUnitId) {
+    warnings.push({ text: 'Public users do not typically have an organizational scope until they apply for membership.', critical: false });
   }
 
   return (
@@ -87,6 +90,9 @@ export const UserAdmin: React.FC = () => {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isTempPasswordModalOpen, setIsTempPasswordModalOpen] = useState(false);
   
+  const [viewMode, setViewMode] = useState<'TABLE' | 'CARDS'>('TABLE');
+  const [activeTab, setActiveTab] = useState<'SYSTEM' | 'PUBLIC'>('SYSTEM');
+  
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [tempPassword, setTempPassword] = useState<string>('');
   const [showTempPassword, setShowTempPassword] = useState(false);
@@ -97,7 +103,10 @@ export const UserAdmin: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  const roles: UserRole[] = ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER', 'MEMBER'];
+  const roles: UserRole[] = ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER', 'MEMBER', 'APPLICANT_MEMBER', 'PUBLIC'];
+  const filteredRoles = activeTab === 'PUBLIC' 
+    ? roles.filter(r => ['PUBLIC', 'MEMBER', 'APPLICANT_MEMBER'].includes(r))
+    : roles.filter(r => !['PUBLIC', 'MEMBER', 'APPLICANT_MEMBER'].includes(r));
 
   useEffect(() => {
     fetchData();
@@ -229,26 +238,94 @@ export const UserAdmin: React.FC = () => {
     const matchesStatus = filterStatus === 'ALL' || (filterStatus === 'ACTIVE' ? user.isActive : !user.isActive);
     const matchesUnit = filterUnit === 'ALL' || user.orgUnitId === filterUnit;
     
-    return matchesSearch && matchesRole && matchesStatus && matchesUnit;
+    const isPublicUser = ['PUBLIC', 'MEMBER', 'APPLICANT_MEMBER'].includes(user.role);
+    const matchesTab = activeTab === 'PUBLIC' ? isPublicUser : !isPublicUser;
+    
+    return matchesSearch && matchesRole && matchesStatus && matchesUnit && matchesTab;
   });
+
+  const stats = {
+    total: users.length,
+    active: users.filter(u => u.isActive).length,
+    admin: users.filter(u => ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(u.role)).length,
+    public: users.filter(u => ['PUBLIC', 'MEMBER', 'APPLICANT_MEMBER'].includes(u.role)).length,
+    tabTotal: filteredUsers.length,
+    tabActive: filteredUsers.filter(u => u.isActive).length
+  };
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div className="space-y-1">
-          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Administrative Access</h2>
-          <p className="text-sm text-slate-500 font-medium">Govern system access, role authority, and organizational scope.</p>
+          <h2 className="text-4xl font-black text-slate-800 tracking-tight uppercase">User Governance</h2>
+          <p className="text-slate-500 font-medium flex items-center gap-2">
+            <ShieldCheck size={16} className="text-emerald-500" />
+            Manage system access and public portal participants
+          </p>
         </div>
-        <button 
-          onClick={() => {
-            setPreviewRole('STAFF');
-            setPreviewOrgUnitId('');
-            setIsCreateModalOpen(true);
-          }}
-          className="flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95"
-        >
-          <Plus size={20} /> Register New User
-        </button>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-1 border border-slate-200 shadow-inner">
+            <button 
+              onClick={() => setActiveTab('SYSTEM')}
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'SYSTEM' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              System Staff
+            </button>
+            <button 
+              onClick={() => setActiveTab('PUBLIC')}
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'PUBLIC' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Public Portal
+            </button>
+          </div>
+
+          <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-1 border border-slate-200 shadow-inner">
+            <button 
+              onClick={() => setViewMode('TABLE')}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'TABLE' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Table
+            </button>
+            <button 
+              onClick={() => setViewMode('CARDS')}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'CARDS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Cards
+            </button>
+          </div>
+
+          <button 
+            onClick={() => {
+              setPreviewRole(activeTab === 'PUBLIC' ? 'PUBLIC' : 'STAFF');
+              setPreviewOrgUnitId('');
+              setIsCreateModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 group"
+          >
+            <UserPlus size={18} className="group-hover:scale-110 transition-transform" />
+            Register {activeTab === 'PUBLIC' ? 'Public' : 'Staff'}
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: `Total ${activeTab === 'PUBLIC' ? 'Portal' : 'Staff'}`, value: stats.tabTotal, icon: Users, color: 'indigo' },
+          { label: 'Active Access', value: stats.tabActive, icon: ShieldCheck, color: 'emerald' },
+          { label: 'Global Admins', value: stats.admin, icon: ShieldAlert, color: 'blue' },
+          { label: 'Public/Members', value: stats.public, icon: UserPlus, color: 'amber' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex items-center gap-5">
+            <div className={`p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600`}>
+              <stat.icon size={24} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+              <p className="text-2xl font-black text-slate-800 tracking-tight">{stat.value}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {message && (
@@ -319,131 +396,249 @@ export const UserAdmin: React.FC = () => {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-[40px] shadow-2xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-4">
-            <Loader2 className="animate-spin text-indigo-600" size={40} />
-            <p className="text-sm text-slate-500 font-black uppercase tracking-widest">Synchronizing Directory...</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100">
-              <thead className="bg-slate-900">
-                <tr>
-                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Administrative User</th>
-                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Role & Authority Scope</th>
-                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Status</th>
-                  <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Security State</th>
-                  <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Governance Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-50">
-                {filteredUsers.map(user => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6 whitespace-nowrap">
-                      <div className="flex items-center gap-5">
-                        <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xl border border-slate-200 shadow-sm group-hover:bg-white group-hover:text-indigo-600 group-hover:border-indigo-100 transition-all">
-                          {user.displayName.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="text-base font-black text-slate-800 tracking-tight">{user.displayName}</div>
-                          <div className="text-xs text-slate-500 font-medium">{user.email}</div>
-                          {user.phoneNumber && <div className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">{user.phoneNumber}</div>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 whitespace-nowrap">
-                      <div className="flex flex-col gap-2">
-                        <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-widest w-fit">
-                          {user.role}
-                        </span>
-                        <span className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5">
-                          <Building2 size={12} className="text-slate-400" />
-                          {user.orgUnit?.name || 'Global System Authority'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black border uppercase tracking-widest ${
-                        user.isActive 
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                          : 'bg-red-50 text-red-600 border-red-100'
-                      }`}>
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6 whitespace-nowrap">
-                      <div className="flex flex-col gap-1.5">
-                        {user.requirePasswordChange ? (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-100 uppercase tracking-widest w-fit" title="User must change password on next login">
-                            <AlertCircle size={14} /> Pending Reset
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-widest w-fit">
-                            <CheckCircle2 size={14} /> Verified
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <button 
-                          onClick={() => handleToggleStatus(user)}
-                          className={`p-3 rounded-2xl transition-all border shadow-sm active:scale-95 ${
-                            user.isActive 
-                              ? 'text-red-600 bg-red-50 border-red-100 hover:bg-red-100' 
-                              : 'text-emerald-600 bg-emerald-50 border-emerald-100 hover:bg-emerald-100'
-                          }`}
-                          title={user.isActive ? 'Deactivate User' : 'Activate User'}
-                        >
-                          {user.isActive ? <UserX size={20} /> : <UserCheck size={20} />}
-                        </button>
-                        <button 
-                          onClick={() => { setSelectedUser(user); setIsResetModalOpen(true); }}
-                          className="p-3 text-amber-600 bg-amber-50 border border-amber-100 rounded-2xl hover:bg-amber-100 transition-all shadow-sm active:scale-95"
-                          title="Reset Password"
-                        >
-                          <Key size={20} />
-                        </button>
-                        <button 
-                          onClick={() => { 
-                            setSelectedUser(user); 
-                            setPreviewRole(user.role);
-                            setPreviewOrgUnitId(user.orgUnitId || '');
-                            setIsEditModalOpen(true); 
-                          }}
-                          className="p-3 text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-2xl hover:bg-indigo-100 transition-all shadow-sm active:scale-95"
-                          title="Edit Role/Scope"
-                        >
-                          <Edit2 size={20} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredUsers.length === 0 && (
+      {/* Users View */}
+      {viewMode === 'TABLE' ? (
+        <div className="bg-white rounded-[40px] shadow-2xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-32 gap-4">
+              <Loader2 className="animate-spin text-indigo-600" size={40} />
+              <p className="text-sm text-slate-500 font-black uppercase tracking-widest">Synchronizing Directory...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-100">
+                <thead className="bg-slate-900">
                   <tr>
-                    <td colSpan={5} className="px-8 py-32 text-center">
-                      <div className="flex flex-col items-center justify-center space-y-4">
-                        <div className="w-24 h-24 bg-slate-50 rounded-[40px] flex items-center justify-center text-slate-200 border border-dashed border-slate-200">
-                          <Users size={48} />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-black text-slate-800 tracking-tight">No Administrative Users Found</h3>
-                          <p className="text-sm text-slate-500 max-w-sm mx-auto mt-2 font-medium">
-                            We couldn't find any users matching your current governance filters. Try adjusting your search or role criteria.
-                          </p>
-                        </div>
-                      </div>
-                    </td>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Administrative User</th>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Role & Authority Scope</th>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Status</th>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Security State</th>
+                    <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Governance Actions</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-50">
+                  {filteredUsers.map(user => {
+                    const isAdministrative = ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(user.role);
+                    return (
+                      <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <div className="flex items-center gap-5">
+                            <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-black text-xl border shadow-sm transition-all ${
+                              isAdministrative 
+                                ? 'bg-indigo-50 text-indigo-600 border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white' 
+                                : 'bg-slate-100 text-slate-400 border-slate-200 group-hover:bg-white group-hover:text-slate-600 group-hover:border-slate-300'
+                            }`}>
+                              {user.displayName.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="text-base font-black text-slate-800 tracking-tight">{user.displayName}</div>
+                              <div className="text-xs text-slate-500 font-medium">{user.email}</div>
+                              {user.phoneNumber && <div className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">{user.phoneNumber}</div>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <div className="flex flex-col gap-2">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black border uppercase tracking-widest w-fit ${
+                              isAdministrative ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-600 border-slate-200'
+                            }`}>
+                              {user.role}
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5">
+                              <Building2 size={12} className="text-slate-400" />
+                              {user.orgUnit?.name || (user.role === 'ADMIN' ? 'Global System Authority' : 'No Assigned Scope')}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black border uppercase tracking-widest ${
+                            isAdministrative 
+                              ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                              : 'bg-amber-50 text-amber-600 border-amber-100'
+                          }`}>
+                            {isAdministrative ? 'Administrative' : 'Public/Member'}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black border uppercase tracking-widest ${
+                          user.isActive 
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                            : 'bg-red-50 text-red-600 border-red-100'
+                        }`}>
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-8 py-6 whitespace-nowrap">
+                        <div className="flex flex-col gap-1.5">
+                          {user.requirePasswordChange ? (
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-100 uppercase tracking-widest w-fit" title="User must change password on next login">
+                              <AlertCircle size={14} /> Pending Reset
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-widest w-fit">
+                              <CheckCircle2 size={14} /> Verified
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          <button 
+                            onClick={() => handleToggleStatus(user)}
+                            className={`p-3 rounded-2xl transition-all border shadow-sm active:scale-95 ${
+                              user.isActive 
+                                ? 'text-red-600 bg-red-50 border-red-100 hover:bg-red-100' 
+                                : 'text-emerald-600 bg-emerald-50 border-emerald-100 hover:bg-emerald-100'
+                            }`}
+                            title={user.isActive ? 'Deactivate User' : 'Activate User'}
+                          >
+                            {user.isActive ? <UserX size={20} /> : <UserCheck size={20} />}
+                          </button>
+                          <button 
+                            onClick={() => { setSelectedUser(user); setIsResetModalOpen(true); }}
+                            className="p-3 text-amber-600 bg-amber-50 border border-amber-100 rounded-2xl hover:bg-amber-100 transition-all shadow-sm active:scale-95"
+                            title="Reset Password"
+                          >
+                            <Key size={20} />
+                          </button>
+                          <button 
+                            onClick={() => { 
+                              setSelectedUser(user); 
+                              setPreviewRole(user.role);
+                              setPreviewOrgUnitId(user.orgUnitId || '');
+                              setIsEditModalOpen(true); 
+                            }}
+                            className="p-3 text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-2xl hover:bg-indigo-100 transition-all shadow-sm active:scale-95"
+                            title="Edit Role/Scope"
+                          >
+                            <Edit2 size={20} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                  {filteredUsers.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-8 py-32 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                          <div className="w-24 h-24 bg-slate-50 rounded-[40px] flex items-center justify-center text-slate-200 border border-dashed border-slate-200">
+                            <Users size={48} />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-black text-slate-800 tracking-tight">No Users Found</h3>
+                            <p className="text-sm text-slate-500 max-w-sm mx-auto mt-2 font-medium">
+                              We couldn't find any users matching your current filters.
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {loading ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-32 gap-4">
+              <Loader2 className="animate-spin text-indigo-600" size={40} />
+              <p className="text-sm text-slate-500 font-black uppercase tracking-widest">Synchronizing Directory...</p>
+            </div>
+          ) : filteredUsers.length > 0 ? (
+            filteredUsers.map(user => {
+              const isAdministrative = ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(user.role);
+              return (
+                <motion.div 
+                  layout
+                  key={user.id}
+                  className="bg-white p-6 rounded-[40px] border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group"
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`h-16 w-16 rounded-2xl flex items-center justify-center font-black text-2xl border shadow-sm transition-all ${
+                        isAdministrative 
+                          ? 'bg-indigo-50 text-indigo-600 border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white' 
+                          : 'bg-slate-100 text-slate-400 border-slate-200 group-hover:bg-white group-hover:text-slate-600 group-hover:border-slate-300'
+                      }`}>
+                        {user.displayName.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-slate-800 tracking-tight">{user.displayName}</h3>
+                        <p className="text-xs text-slate-500 font-medium">{user.email}</p>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black border uppercase tracking-widest ${
+                      user.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'
+                    }`}>
+                      {user.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Role Authority</p>
+                        <p className="text-xs font-black text-slate-700 uppercase tracking-widest">{user.role}</p>
+                      </div>
+                      <div className="h-8 w-[1px] bg-slate-200" />
+                      <div className="space-y-1 text-right">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Type</p>
+                        <p className="text-xs font-black text-slate-700 uppercase tracking-widest">{isAdministrative ? 'Admin' : 'Public'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 px-2">
+                      <Building2 size={16} className="text-slate-400" />
+                      <p className="text-xs text-slate-600 font-bold">
+                        {user.orgUnit?.name || (user.role === 'ADMIN' ? 'Global System Authority' : 'No Assigned Scope')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => handleToggleStatus(user)}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border shadow-sm ${
+                        user.isActive 
+                          ? 'text-red-600 bg-red-50 border-red-100 hover:bg-red-100' 
+                          : 'text-emerald-600 bg-emerald-50 border-emerald-100 hover:bg-emerald-100'
+                      }`}
+                    >
+                      {user.isActive ? <UserX size={16} /> : <UserCheck size={16} />}
+                      {user.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button 
+                      onClick={() => { setSelectedUser(user); setIsResetModalOpen(true); }}
+                      className="p-3 text-amber-600 bg-amber-50 border border-amber-100 rounded-2xl hover:bg-amber-100 transition-all shadow-sm"
+                    >
+                      <Key size={18} />
+                    </button>
+                    <button 
+                      onClick={() => { 
+                        setSelectedUser(user); 
+                        setPreviewRole(user.role);
+                        setPreviewOrgUnitId(user.orgUnitId || '');
+                        setIsEditModalOpen(true); 
+                      }}
+                      className="p-3 text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-2xl hover:bg-indigo-100 transition-all shadow-sm"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })
+          ) : (
+            <div className="col-span-full py-32 text-center">
+              <Users size={48} className="mx-auto text-slate-200 mb-4" />
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">No Users Found</h3>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Create User Modal */}
       <AnimatePresence>
@@ -461,8 +656,8 @@ export const UserAdmin: React.FC = () => {
                     <UserPlus size={24} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Register New User</h3>
-                    <p className="text-sm text-slate-500 font-medium">Grant administrative access to the system.</p>
+                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Register {activeTab === 'PUBLIC' ? 'Public User' : 'System Staff'}</h3>
+                    <p className="text-sm text-slate-500 font-medium">Create a new {activeTab === 'PUBLIC' ? 'public portal' : 'administrative'} account.</p>
                   </div>
                 </div>
                 <button onClick={() => setIsCreateModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors">
@@ -512,7 +707,7 @@ export const UserAdmin: React.FC = () => {
                       onChange={(e) => setPreviewRole(e.target.value as UserRole)}
                       className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-xs uppercase tracking-widest text-slate-700 shadow-sm"
                     >
-                      {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                      {filteredRoles.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                 </div>

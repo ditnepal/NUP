@@ -33,6 +33,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 
 interface MemberDashboardProps {
   user: UserProfile;
+  setCurrentView: (view: any) => void;
 }
 
 interface MemberProfile {
@@ -66,7 +67,7 @@ interface MemberProfile {
 
 import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 
-export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
+export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, setCurrentView }) => {
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [news, setNews] = useState<any[]>([]);
   const [events, setEvents] = useState<AppEvent[]>([]);
@@ -107,6 +108,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         fetchSystemConfig();
         const [profileData, newsData, eventsData, noticesData] = await Promise.all([
           api.get('/members/me'),
@@ -120,8 +122,11 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
         setEvents(eventsData.slice(0, 2));
         setNotices(noticesData);
         await fetchRenewals();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching member data:', error);
+        if (error.status === 404) {
+          setProfile(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -169,18 +174,23 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
 
   if (!profile) {
     return (
-      <div className="bg-amber-50 border border-amber-200 p-8 rounded-3xl text-amber-800 text-center max-w-2xl mx-auto mt-12">
-        <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <AlertCircle size={32} className="text-amber-600" />
+      <div className="max-w-2xl mx-auto mt-12 p-8 bg-white rounded-3xl shadow-xl border border-slate-100 text-center">
+        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <User size={40} className="text-emerald-600" />
         </div>
-        <h2 className="text-2xl font-black uppercase tracking-tight mb-4">Profile Not Found</h2>
-        <p className="text-amber-700 mb-8">We couldn't find your membership profile. If you have already applied, please check your application status using your tracking code.</p>
-        <button 
-          onClick={() => window.location.reload()} // Or navigate to status portal if possible
-          className="px-8 py-3 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-all"
-        >
-          Refresh Profile
-        </button>
+        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Welcome to the Portal</h2>
+        <p className="text-slate-600 mb-8">
+          You are logged in, but we couldn't find an active membership profile associated with your account. 
+          If you are a new applicant, please wait for approval or check your application status.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all"
+          >
+            Refresh Data
+          </button>
+        </div>
       </div>
     );
   }
@@ -446,9 +456,9 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
           { label: 'Events Attended', value: profile.stats?.eventsAttended || 0, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Volunteer Hours', value: `${profile.stats?.volunteerHours || 0} hrs`, icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
           { label: 'Active Grievances', value: profile.stats?.activeGrievances || 0, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
-          { label: 'Pending Tasks', value: profile.stats?.pendingTasks || 0, icon: ListTodo, color: 'text-amber-600', bg: 'bg-amber-50' },
+          // { label: 'Pending Tasks', value: profile.stats?.pendingTasks || 0, icon: ListTodo, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Upcoming Events', value: profile.stats?.upcomingEvents || 0, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-        ].map((stat, i) => (
+        ].filter(Boolean).map((stat, i) => (
           <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
             <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
               <stat.icon size={24} />
@@ -609,7 +619,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
                 <Megaphone size={20} className="text-emerald-500" />
                 Latest Updates
               </h3>
-              <button className="text-sm font-bold text-emerald-600 hover:underline">View All</button>
+              <button 
+                onClick={() => setCurrentView('notices')}
+                className="text-sm font-bold text-emerald-600 hover:underline"
+              >
+                View All
+              </button>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               {news.length > 0 ? news.map((item, i) => (
@@ -637,28 +652,37 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
 
           {/* Upcoming Events */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <Calendar size={20} className="text-blue-500" />
                 Upcoming Events
               </h3>
+              <button 
+                onClick={() => setCurrentView('events')}
+                className="text-sm font-bold text-blue-600 hover:underline"
+              >
+                View All
+              </button>
             </div>
             <div className="divide-y divide-slate-100">
-              {events.length > 0 ? events.map((event, i) => (
-                <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center text-center">
-                      <span className="text-[10px] font-bold uppercase leading-none">{format(new Date(event.eventDate), 'MMM')}</span>
-                      <span className="text-lg font-black leading-none">{format(new Date(event.eventDate), 'd')}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800">{event.title}</h4>
-                      <p className="text-xs text-slate-500">{event.location} • {event.startAt}</p>
-                      <p className="text-xs text-slate-600 mt-1 line-clamp-1">{event.summary || event.description}</p>
+              {events.length > 0 ? events.map((event: any, i) => {
+                const date = event.eventDate || event.startDate;
+                return (
+                  <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <span className="text-[10px] font-bold uppercase leading-none">{format(new Date(date), 'MMM')}</span>
+                        <span className="text-lg font-black leading-none">{format(new Date(date), 'd')}</span>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800">{event.title}</h4>
+                        <p className="text-xs text-slate-500">{event.location} • {event.startAt}</p>
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-1">{event.summary || event.description}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )) : (
+                );
+              }) : (
                 <div className="p-16 text-center bg-slate-50/50">
                   <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-300 shadow-sm">
                     <Calendar size={24} />

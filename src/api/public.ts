@@ -1,12 +1,80 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { cmsService } from '../services/cms.service';
 import { membershipService } from '../services/membership.service';
 import { volunteerService } from '../services/volunteer.service';
+import { financeService } from '../services/finance.service';
 import prisma from '../lib/prisma';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
+import { authenticate, AuthRequest } from './middleware/auth';
 
 const router = express.Router();
+
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/webp', 
+      'video/mp4', 'video/quicktime', 'video/x-msvideo',
+      'application/pdf'
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images, videos, and PDFs are allowed.'));
+    }
+  }
+});
+
+const memberApplySchema = z.object({
+  fullName: z.string().min(2, "Full name is required"),
+  email: z.string().email().optional().or(z.literal('')),
+  mobile: z.string().optional().or(z.literal('')),
+  citizenshipNumber: z.string().min(5, "Citizenship number must be at least 5 characters").optional().or(z.literal('')),
+  dateOfBirth: z.preprocess((val) => val ? new Date(val as string) : undefined, z.date().optional()),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  fatherName: z.string().optional().or(z.literal('')),
+  motherName: z.string().optional().or(z.literal('')),
+  citizenshipDistrict: z.string().optional().or(z.literal('')),
+  citizenshipIssueDate: z.preprocess((val) => val ? new Date(val as string) : undefined, z.date().optional()),
+  province: z.string().optional().or(z.literal('')),
+  district: z.string().optional().or(z.literal('')),
+  localLevel: z.string().optional().or(z.literal('')),
+  ward: z.preprocess((val) => val ? parseInt(val as string) : undefined, z.number().optional()),
+  tole: z.string().optional().or(z.literal('')),
+  alternateContactName: z.string().optional().or(z.literal('')),
+  alternateContactMobile: z.string().optional().or(z.literal('')),
+  occupation: z.string().optional().or(z.literal('')),
+  applicationMode: z.enum(['FORM', 'VIDEO', 'ASSISTED']).default('FORM'),
+  orgUnitId: z.string().min(1, "Organization Unit is required"),
+  identityDocumentType: z.string().optional().or(z.literal('')),
+  helperName: z.string().optional().or(z.literal('')),
+  helperPhone: z.string().optional().or(z.literal('')),
+  helperRole: z.string().optional().or(z.literal('')),
+  declaration: z.preprocess((val) => val === 'true' || val === true, z.boolean().optional()),
+  paymentMethod: z.string().optional().or(z.literal('')),
+});
 
 // @route   GET /api/v1/public/pages/:slug
 // @desc    Get a page by slug
@@ -33,7 +101,7 @@ router.get('/pages/id/:id', async (req, res) => {
     const page = await cmsService.getPageById(id);
     if (!page) return res.status(404).json({ error: 'Page not found' });
     res.json(page);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -62,7 +130,7 @@ router.get('/posts/:slug', async (req, res) => {
     const post = await cmsService.getPostBySlug(slug, lang as string);
     if (!post) return res.status(404).json({ error: 'Post not found' });
     res.json(post);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -76,7 +144,7 @@ router.get('/posts/id/:id', async (req, res) => {
     const post = await cmsService.getPostById(id);
     if (!post) return res.status(404).json({ error: 'Post not found' });
     res.json(post);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -92,7 +160,7 @@ router.get('/categories', async (req, res) => {
       orderBy: { name: 'asc' }
     });
     res.json(categories);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -105,7 +173,7 @@ router.get('/downloads', async (req, res) => {
     const { category } = req.query;
     const downloads = await cmsService.getDownloads(category as string);
     res.json(downloads);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -119,22 +187,91 @@ router.get('/units', async (req, res) => {
       select: { id: true, name: true, level: true }
     });
     res.json(units);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// @route   POST /api/v1/public/join
-// @desc    Join membership (Public)
+// @route   POST /api/v1/public/membership/apply
+// @desc    Submit membership application (Public)
 // @access  Public
-router.post('/join', async (req, res) => {
+router.post('/membership/apply', upload.fields([
+  { name: 'identityDocument', maxCount: 1 },
+  { name: 'profilePhoto', maxCount: 1 },
+  { name: 'video', maxCount: 1 }
+]), async (req, res) => {
   try {
-    const member = await membershipService.apply(req.body);
+    // 1. Validate fields with Zod
+    const validatedData = memberApplySchema.parse(req.body);
+    
+    // 2. Extract files
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } || {};
+    const identityDocument = files['identityDocument']?.[0];
+    const profilePhoto = files['profilePhoto']?.[0];
+    const video = files['video']?.[0];
+    
+    // 3. Mode-specific file validation
+    if (validatedData.applicationMode === 'FORM') {
+      if (!identityDocument) return res.status(400).json({ error: 'Identity document is required for FORM applications' });
+      if (!profilePhoto) return res.status(400).json({ error: 'Profile photo is required for FORM applications' });
+    } else if (validatedData.applicationMode === 'VIDEO') {
+      if (!video) return res.status(400).json({ error: 'Video submission is required for VIDEO applications' });
+    } else if (validatedData.applicationMode === 'ASSISTED') {
+      if (!identityDocument) return res.status(400).json({ error: 'Identity document is required for ASSISTED applications' });
+    }
+
+    // 4. Check for logged in user (optional linking)
+    let userId: string | undefined;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-nup-os-2026';
+        const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+        userId = decoded.id;
+      } catch (e) {
+        // Ignore invalid token for public application
+      }
+    }
+
+    // 5. Merge data for service
+    const applicationData = {
+      ...validatedData,
+      identityDocumentUrl: identityDocument ? `/uploads/${identityDocument.filename}` : undefined,
+      profilePhotoUrl: profilePhoto ? `/uploads/${profilePhoto.filename}` : undefined,
+      videoUrl: video ? `/uploads/${video.filename}` : undefined,
+      userId,
+    };
+
+    const result = await membershipService.apply(applicationData as any);
+
+    // Initiate manual payment if applicable
+    if (validatedData.paymentMethod) {
+      const integrations = await financeService.listPublicPaymentIntegrations('MEMBERSHIP');
+      const selectedMethod = integrations.find(i => i.provider === validatedData.paymentMethod);
+      
+      if (selectedMethod && selectedMethod.isManual) {
+        await financeService.initiateManualPayment({
+          module: 'MEMBERSHIP',
+          amount: 0, // Placeholder
+          paymentMethod: validatedData.paymentMethod,
+          description: `Membership application fee for ${validatedData.fullName}`,
+          memberId: result.member.id,
+          orgUnitId: result.member.orgUnitId,
+          recordedById: userId,
+        });
+      }
+    }
+
     res.status(201).json({ 
-      message: 'Application submitted successfully', 
-      trackingCode: member.trackingCode 
+      trackingCode: result.member.trackingCode,
+      credentials: result.credentials
     });
   } catch (error: any) {
+    console.error('Public membership application error:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation failed', details: error.issues });
+    }
     res.status(400).json({ error: error.message });
   }
 });
@@ -194,6 +331,13 @@ router.post('/membership-status', async (req, res) => {
         trackingCode: input.trackingCode,
         mobile: input.mobileNumber,
       },
+      include: {
+        orgUnit: {
+          select: {
+            name: true
+          }
+        }
+      }
     });
 
     if (!member) {
@@ -222,11 +366,21 @@ router.post('/membership-status', async (req, res) => {
       trackingCode: member.trackingCode,
       applicationMode: member.applicationMode,
       rejectionReason: rejectionReason || null,
+      decisionNotes: member.reviewNote || null,
       email: member.email,
+      mobile: member.mobile,
+      citizenshipNumber: member.citizenshipNumber,
+      province: member.province,
+      district: member.district,
+      localLevel: member.localLevel,
+      ward: member.ward,
+      identityDocumentType: member.identityDocumentType,
       paymentMethod: member.paymentMethod,
+      createdAt: member.createdAt,
+      orgUnit: member.orgUnit,
       hasAccount: !!member.userId
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error checking membership status:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, message: error.issues[0].message });
@@ -286,7 +440,7 @@ router.post('/membership-claim', async (req, res) => {
           passwordHash,
           displayName: member.fullName,
           phoneNumber: member.mobile,
-          role: 'MEMBER',
+          role: 'APPLICANT_MEMBER',
           isActive: true
         }
       });
@@ -302,7 +456,7 @@ router.post('/membership-claim', async (req, res) => {
     });
 
     res.json({ message: 'Account claimed successfully. You can now log in.' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error claiming membership:', error);
     res.status(500).json({ error: 'Failed to claim account' });
   }
@@ -338,7 +492,7 @@ router.get('/surveys', async (req, res) => {
     }));
 
     res.json(formattedSurveys);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -363,7 +517,7 @@ router.get('/polls', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
     res.json(polls);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -414,9 +568,37 @@ router.get('/config', async (req, res) => {
 
     res.json(configMap);
   } catch (error: any) {
-    console.error('[Public API] Error fetching config:', error);
+    console.error('[Public API] Error fetching config:', error.code, error.meta, error);
     // Return safe defaults on error instead of failing hard
     res.json(defaultValues);
+  }
+});
+
+// @route   GET /api/v1/public/my-application
+// @desc    Get the application linked to the logged-in user
+// @access  Private (Applicant Member)
+router.get('/my-application', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const member = await prisma.member.findFirst({
+      where: { userId },
+      include: {
+        orgUnit: {
+          select: { name: true }
+        }
+      }
+    });
+
+    if (!member) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    res.json(member);
+  } catch (error: any) {
+    console.error('Error fetching my application:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

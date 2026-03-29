@@ -8,7 +8,7 @@ const router = express.Router();
 
 const updateScopeSchema = z.object({
   orgUnitId: z.string().nullable(),
-  role: z.enum(['ADMIN', 'STAFF', 'MEMBER', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER']).optional(),
+  role: z.enum(['ADMIN', 'STAFF', 'MEMBER', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER', 'PUBLIC', 'APPLICANT_MEMBER']).optional(),
   decisionNote: z.string().max(300).optional(),
 });
 
@@ -16,9 +16,10 @@ const createUserSchema = z.object({
   email: z.string().email(),
   displayName: z.string().min(2),
   phoneNumber: z.string().optional(),
-  role: z.enum(['ADMIN', 'STAFF', 'MEMBER', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER']).default('MEMBER'),
+  role: z.enum(['ADMIN', 'STAFF', 'MEMBER', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER', 'PUBLIC', 'APPLICANT_MEMBER']).default('MEMBER'),
   orgUnitId: z.string().nullable().optional(),
   isActive: z.boolean().default(true),
+  decisionNote: z.string().max(300).optional(),
 });
 
 const updateStatusSchema = z.object({
@@ -97,9 +98,9 @@ router.get('/', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res
 // @access  Private (Admin)
 router.post('/', authenticate, authorize(['ADMIN']), async (req: AuthRequest, res) => {
   try {
-    const data = createUserSchema.parse(req.body);
+    const { decisionNote, ...userData } = createUserSchema.parse(req.body);
 
-    const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+    const existingUser = await prisma.user.findUnique({ where: { email: userData.email } });
     if (existingUser) {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
@@ -111,7 +112,7 @@ router.post('/', authenticate, authorize(['ADMIN']), async (req: AuthRequest, re
 
     const user = await prisma.user.create({
       data: {
-        ...data,
+        ...userData,
         passwordHash,
       },
       select: {
@@ -124,7 +125,7 @@ router.post('/', authenticate, authorize(['ADMIN']), async (req: AuthRequest, re
       }
     });
 
-    await logAudit(req.user!.id, 'CREATE_USER', `Created user ${user.email} (${user.id}) with role ${user.role}`, req.ip || '0.0.0.0');
+    await logAudit(req.user!.id, 'CREATE_USER', `Created user ${user.email} (${user.id}) with role ${user.role}. Note: ${decisionNote || 'N/A'}`, req.ip || '0.0.0.0');
 
     res.status(201).json({ user, tempPassword });
   } catch (error) {

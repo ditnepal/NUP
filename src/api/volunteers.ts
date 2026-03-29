@@ -7,6 +7,18 @@ import { auditService } from '../services/audit.service';
 
 const router = express.Router();
 
+// @route   GET /api/v1/volunteers/me
+// @desc    Get current user's volunteer status
+// @access  Private
+router.get('/me', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const volunteer = await volunteerService.getByUserId(req.user!.id);
+    res.json(volunteer);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 const volunteerSchema = z.object({
   memberId: z.string().optional(),
   userId: z.string().optional(),

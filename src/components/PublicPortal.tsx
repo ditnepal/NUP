@@ -260,34 +260,65 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
 
           switch (section.type) {
             case 'HERO':
+              const headlineColor = content.headline_color || "#DC143C";
+              const subheadlineColor = content.subheadline_color || "#006400";
+              const ctaBgColor = content.cta_bg_color || "#FFD700";
+              const ctaTextColor = content.cta_text_color || "#000000";
+
               return (
-                <section key={section.id} className="relative py-20 overflow-hidden bg-slate-50">
+                <section 
+                  key={section.id} 
+                  className="relative py-24 md:py-32 overflow-hidden"
+                  style={{ backgroundColor: content.bg_color || "#F8FAFC" }}
+                >
                   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="max-w-3xl">
+                    <div className="max-w-4xl">
                       {content.badge && (
-                        <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                        <span 
+                          className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-8"
+                          style={{ 
+                            backgroundColor: `${headlineColor}15`,
+                            color: headlineColor 
+                          }}
+                        >
                           {content.badge}
                         </span>
                       )}
-                      <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[0.9] mb-8 tracking-tighter">
+                      
+                      <h1 
+                        className="text-6xl md:text-8xl font-black leading-[0.85] mb-8 tracking-tighter"
+                        style={{ color: headlineColor }}
+                      >
                         {content.headline || section.title}
                       </h1>
-                      <p className="text-xl text-slate-600 mb-10 leading-relaxed">
+                      
+                      <p 
+                        className="text-xl md:text-2xl mb-12 leading-relaxed max-w-2xl font-medium"
+                        style={{ color: subheadlineColor }}
+                      >
                         {content.subheadline}
                       </p>
-                      <div className="flex flex-col sm:flex-row gap-4">
+                      
+                      <div className="flex flex-col sm:flex-row gap-5">
                         {content.ctaText && (
                           <button 
                             onClick={() => content.ctaLink?.startsWith('http') ? window.open(content.ctaLink, '_blank') : onJoinClick?.()} 
-                            className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2"
+                            className="px-10 py-5 rounded-2xl text-xl font-black transition-all hover:scale-105 active:scale-95 shadow-2xl flex items-center justify-center gap-3 group"
+                            style={{ 
+                              backgroundColor: ctaBgColor, 
+                              color: ctaTextColor,
+                              boxShadow: `0 20px 40px -10px ${ctaBgColor}40`
+                            }}
                           >
-                            {content.ctaText} <ChevronRight size={20} />
+                            {content.ctaText} 
+                            <ChevronRight size={24} className="group-hover:translate-x-1 transition-transform" />
                           </button>
                         )}
+                        
                         {content.secondaryCtaText && (
                           <button 
                             onClick={onStatusClick}
-                            className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                            className="bg-white/80 backdrop-blur-sm text-slate-800 border-2 border-slate-200 px-10 py-5 rounded-2xl text-xl font-bold hover:bg-white transition-all flex items-center justify-center gap-2 shadow-lg"
                           >
                             {content.secondaryCtaText}
                           </button>
@@ -295,7 +326,12 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                       </div>
                     </div>
                   </div>
-                  <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-50 -skew-x-12 translate-x-1/4 z-0 hidden lg:block"></div>
+                  
+                  {/* Decorative background element */}
+                  <div 
+                    className="absolute top-0 right-0 w-1/2 h-full -skew-x-12 translate-x-1/4 z-0 hidden lg:block opacity-5"
+                    style={{ backgroundColor: headlineColor }}
+                  ></div>
                 </section>
               );
             case 'HIGHLIGHT':

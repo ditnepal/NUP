@@ -12,33 +12,105 @@ import { permissionService } from '../services/permission.service';
 const router = express.Router();
 console.log('Members router loaded');
 
+// @route   GET /api/v1/members/me
+// @desc    Get current user's member profile
+// @access  Private
+router.get('/me', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const member = await prisma.member.findUnique({
+      where: { userId: req.user?.id },
+      include: { 
+        orgUnit: true,
+        user: { select: { email: true, displayName: true, phoneNumber: true } }
+      }
+    });
+
+    if (!member) {
+      return res.status(404).json({ error: 'Member profile not found' });
+    }
+
+    // Fetch some stats for the dashboard
+    const [donorProfile, eventsAttended, volunteerStats, activeGrievances, upcomingEvents] = await Promise.all([
+      prisma.donorProfile.findUnique({
+        where: { userId: req.user?.id }
+      }),
+      prisma.eventRegistration.count({
+        where: { userId: req.user?.id, status: 'ATTENDED' }
+      }),
+      prisma.volunteerReport.aggregate({
+        where: {
+          assignment: {
+            volunteer: {
+              userId: req.user?.id
+            }
+          }
+        },
+        _sum: { hoursSpent: true }
+      }),
+      prisma.grievance.count({
+        where: { reporterId: req.user?.id, status: { not: 'RESOLVED' } }
+      }),
+      prisma.appEvent.findMany({
+        where: { 
+          eventDate: { gte: new Date() },
+          status: 'PUBLISHED'
+        },
+        take: 3,
+        orderBy: { eventDate: 'asc' }
+      })
+    ]);
+
+    res.json({
+      ...member,
+      stats: {
+        totalDonated: donorProfile?.totalDonated || 0,
+        eventsAttended,
+        volunteerHours: volunteerStats._sum.hoursSpent || 0,
+        activeGrievances,
+        pendingTasks: 0, // Task model missing in schema
+        upcomingEvents
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching member profile:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   GET /api/v1/members/dashboard/metrics
 // @desc    Get membership dashboard metrics
 // @access  Private (Admin/Staff)
 router.get('/dashboard/metrics', authenticate, checkPermission('MEMBERSHIP', 'VIEW'), async (req: AuthRequest, res) => {
   try {
+    // Hierarchy Scoping
+    const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
+    const isScoped = accessibleUnitIds !== null;
+    const scopeWhere = isScoped ? { orgUnitId: { in: accessibleUnitIds } } : {};
+
     // Basic member counts
-    const totalPending = await prisma.member.count({ where: { status: 'PENDING' } });
-    const totalActive = await prisma.member.count({ where: { status: 'ACTIVE' } });
+    const totalPending = await prisma.member.count({ where: { ...scopeWhere, status: 'PENDING' } });
+    const totalActive = await prisma.member.count({ where: { ...scopeWhere, status: 'ACTIVE' } });
     const totalInactive = await prisma.member.count({ 
-      where: { status: { in: ['REJECTED', 'SUSPENDED', 'TERMINATED'] } } 
+      where: { ...scopeWhere, status: { in: ['REJECTED', 'SUSPENDED', 'TERMINATED'] } } 
     });
 
     // Renewal counts
-    const pendingRenewals = await prisma.renewalRequest.count({ where: { status: 'PENDING' } });
+    const pendingRenewals = await prisma.renewalRequest.count({ 
+      where: { ...scopeWhere, status: 'PENDING' } 
+    });
     const processedRenewals = await prisma.renewalRequest.count({ 
-      where: { status: { in: ['APPROVED', 'REJECTED', 'COMPLETED'] } } 
+      where: { ...scopeWhere, status: { in: ['APPROVED', 'REJECTED', 'COMPLETED'] } } 
     });
 
     // Financial collections (from transactions)
     const membershipCollections = await prisma.transaction.aggregate({
       _sum: { amount: true },
-      where: { category: 'MEMBERSHIP_FEE', type: 'INCOME', status: 'COMPLETED' }
+      where: { ...scopeWhere, category: 'MEMBERSHIP_FEE', type: 'INCOME', status: 'COMPLETED' }
     });
 
     const renewalCollections = await prisma.transaction.aggregate({
       _sum: { amount: true },
-      where: { category: 'RENEWAL_FEE', type: 'INCOME', status: 'COMPLETED' }
+      where: { ...scopeWhere, category: 'RENEWAL_FEE', type: 'INCOME', status: 'COMPLETED' }
     });
 
     res.json({
@@ -89,7 +161,13 @@ router.get('/', authenticate, checkPermission('MEMBERSHIP', 'VIEW'), async (req:
     
     if (unitId) {
       const hasAccess = await hierarchyService.hasAccess(req.user?.id!, unitId as string);
-      if (!hasAccess) return res.status(403).json({ error: 'Access denied to this unit' });
+      if (!hasAccess) {
+        return res.status(403).json({ 
+          error: 'Forbidden', 
+          message: 'Access denied to this unit',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        });
+      }
       
       const subUnitIds = await hierarchyService.getSubUnitIds(unitId as string);
       filters.orgUnitIds = subUnitIds;
@@ -113,75 +191,6 @@ router.get('/', authenticate, checkPermission('MEMBERSHIP', 'VIEW'), async (req:
     });
   }
 });
-
-// @route   GET /api/v1/members/me
-// @desc    Get current user's member profile
-// @access  Private
-router.get('/me', authenticate, async (req: AuthRequest, res) => {
-  try {
-    const member = await prisma.member.findUnique({
-      where: { userId: req.user?.id },
-      include: { 
-        orgUnit: true,
-        user: { select: { email: true, displayName: true, phoneNumber: true } }
-      }
-    });
-
-    if (!member) {
-      return res.status(404).json({ error: 'Member profile not found' });
-    }
-
-    // Fetch some stats for the dashboard
-    const [donorProfile, eventsAttended, volunteerStats, activeGrievances, pendingTasks, upcomingEvents] = await Promise.all([
-      prisma.donorProfile.findUnique({
-        where: { userId: req.user?.id }
-      }),
-      prisma.eventRegistration.count({
-        where: { userId: req.user?.id, status: 'ATTENDED' }
-      }),
-      prisma.volunteerReport.aggregate({
-        where: {
-          assignment: {
-            volunteer: {
-              userId: req.user?.id
-            }
-          }
-        },
-        _sum: { hoursSpent: true }
-      }),
-      prisma.grievance.count({
-        where: { reporterId: req.user?.id, status: { not: 'RESOLVED' } }
-      }),
-      prisma.volunteerAssignment.count({
-        where: {
-          volunteer: { userId: req.user?.id },
-          status: 'PENDING'
-        }
-      }),
-      prisma.eventRegistration.count({
-        where: {
-          userId: req.user?.id,
-          event: { startDate: { gte: new Date() } }
-        }
-      })
-    ]);
-
-    res.json({
-      ...member,
-      stats: {
-        totalDonated: donorProfile?.totalDonated || 0,
-        eventsAttended,
-        volunteerHours: volunteerStats._sum.hoursSpent || 0,
-        activeGrievances,
-        pendingTasks,
-        upcomingEvents
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 
 // @route   POST /api/v1/members/apply
 // @desc    Submit membership application
@@ -266,7 +275,11 @@ router.post('/me/photo', authenticate, upload.single('photo'), async (req: AuthR
     }
 
     if (member.status !== 'ACTIVE') {
-      return res.status(403).json({ error: 'Only active members can update their profile photo' });
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Only active members can update their profile photo',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
 
     if (!req.file) {
@@ -301,7 +314,11 @@ router.put('/me', authenticate, async (req: AuthRequest, res) => {
     }
 
     if (member.status !== 'ACTIVE') {
-      return res.status(403).json({ error: 'Only active members can update their profile' });
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Only active members can update their profile',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
 
     const {
@@ -391,7 +408,11 @@ router.post('/me/renewals', authenticate, async (req: AuthRequest, res) => {
     }
 
     if (member.status !== 'ACTIVE') {
-      return res.status(403).json({ error: 'Only ACTIVE members can submit renewal requests' });
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Only ACTIVE members can submit renewal requests',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
 
     // Check for existing pending request
@@ -486,7 +507,7 @@ router.post('/apply', authenticate, checkPermission('MEMBERSHIP', 'CREATE'), upl
       videoUrl: video ? `/uploads/${video.filename}` : undefined,
     };
 
-    const member = await membershipService.apply(applicationData as any);
+    const { member, credentials } = await membershipService.apply(applicationData as any);
 
     // Initiate manual payment if applicable
     if (validatedData.paymentMethod) {
@@ -507,7 +528,7 @@ router.post('/apply', authenticate, checkPermission('MEMBERSHIP', 'CREATE'), upl
       }
     }
 
-    res.status(201).json({ trackingCode: member.trackingCode });
+    res.status(201).json({ trackingCode: member.trackingCode, credentials });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.issues });
@@ -604,7 +625,11 @@ router.get('/:id/card', authenticate, async (req: AuthRequest, res) => {
 
     // Security: Only owner or authorized staff can view card
     if (member.userId !== req.user?.id && req.user?.role === 'MEMBER') {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Access denied',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
 
     res.json({

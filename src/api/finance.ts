@@ -161,7 +161,11 @@ router.post('/donations', async (req: AuthRequest, res) => {
       // Check permission for the target orgUnitId
       const hasPermission = await permissionService.can(req.user, 'FUNDRAISING', 'CREATE', data.orgUnitId);
       if (!hasPermission) {
-        return res.status(403).json({ error: 'Insufficient permissions for this organizational unit' });
+        return res.status(403).json({ 
+          error: 'Forbidden', 
+          message: 'Insufficient permissions for this organizational unit',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        });
       }
     }
 
@@ -342,6 +346,21 @@ router.delete('/integrations/:id', authenticate, checkPermission('FINANCE', 'DEL
     res.status(204).end();
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/finance/donations/me
+// @desc    Get current user's donations and donor profile
+// @access  Private
+router.get('/donations/me', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const [donations, profile] = await Promise.all([
+      financeService.getDonationsByUserId(req.user!.id),
+      financeService.getDonorProfileByUserId(req.user!.id)
+    ]);
+    res.json({ donations, profile });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

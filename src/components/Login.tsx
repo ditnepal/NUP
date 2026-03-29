@@ -8,13 +8,15 @@ export const Login = ({
   onGoToPublic, 
   t,
   initialRequirePasswordChange = false,
-  initialTempUser = null
+  initialTempUser = null,
+  isPublicMode = false
 }: { 
   onLoginSuccess: (user: any) => void, 
   onGoToPublic: () => void, 
   t: any,
   initialRequirePasswordChange?: boolean,
-  initialTempUser?: any
+  initialTempUser?: any,
+  isPublicMode?: boolean
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +41,7 @@ export const Login = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [tempUser, setTempUser] = useState<any>(initialTempUser);
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(isPublicMode);
   const [displayName, setDisplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
@@ -184,8 +186,26 @@ export const Login = ({
           <ShieldCheck size={40} />
         </div>
         <div>
-          <h1 className="text-3xl font-black text-slate-800">{isRegistering ? 'Public Registration' : t('login_title')}</h1>
-          <p className="text-slate-500 mt-2">{isRegistering ? 'Create an account to submit and track grievances.' : t('login_subtitle')}</p>
+          <h1 className="text-3xl font-black text-slate-800">
+            {isPublicMode 
+              ? (isRegistering ? 'Public Registration' : 'Public Sign In')
+              : (isRegistering ? 'Public Registration' : t('login_title'))}
+          </h1>
+          <p className="text-slate-500 mt-2">
+            {isPublicMode
+              ? (isRegistering ? 'Create an account to submit and track grievances.' : 'Sign in to track your submitted grievances.')
+              : (isRegistering ? 'Create an account to submit and track grievances.' : t('login_subtitle'))}
+          </p>
+          
+          {isPublicMode && isRegistering && (
+            <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-left">
+              <p className="text-xs text-emerald-800 leading-relaxed">
+                <strong>Who can submit?</strong> Any citizen or party member can submit a grievance. 
+                <br />
+                <strong>Why register?</strong> Registration allows you to securely track the status of your submission and receive direct updates from our team.
+              </p>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -228,7 +248,7 @@ export const Login = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" 
-              placeholder={isRegistering ? "you@example.com" : `admin@${systemConfig['PARTY_NAME']?.toLowerCase().replace(/\s+/g, '') || 'nup'}.org`}
+              placeholder={isRegistering || isPublicMode ? "you@example.com" : `admin@${systemConfig['PARTY_NAME']?.toLowerCase().replace(/\s+/g, '') || 'nup'}.org`}
             />
           </div>
           <div className="space-y-1">
@@ -257,7 +277,7 @@ export const Login = ({
           {isRegistering ? (
             <p>Already have an account? <button onClick={() => setIsRegistering(false)} className="text-emerald-600 font-bold hover:underline">Sign In</button></p>
           ) : (
-            <p>Need to submit a grievance? <button onClick={() => setIsRegistering(true)} className="text-emerald-600 font-bold hover:underline">Register here</button></p>
+            <p>{isPublicMode ? 'Need to submit a grievance?' : 'Need to submit a grievance?'} <button onClick={() => setIsRegistering(true)} className="text-emerald-600 font-bold hover:underline">Register here</button></p>
           )}
         </div>
         
@@ -272,7 +292,7 @@ export const Login = ({
           </button>
         </div>
         
-        <p className="text-xs text-slate-400">Secure Internal Access Only</p>
+        {!isPublicMode && <p className="text-xs text-slate-400">Secure Internal Access Only</p>}
       </div>
     </div>
   );

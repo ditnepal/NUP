@@ -26,7 +26,8 @@ export const checkPermission = (
     if (!hasPermission) {
       return res.status(403).json({ 
         error: 'Forbidden', 
-        message: `You do not have permission to ${action.toLowerCase()} in ${module.toLowerCase()} module.`
+        message: `You do not have permission to ${action.toLowerCase()} in ${module.toLowerCase()} module.`,
+        code: 'INSUFFICIENT_PERMISSIONS'
       });
     }
 

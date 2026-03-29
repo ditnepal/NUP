@@ -85,7 +85,11 @@ export const authorize = (roles: string[]) => {
     }
 
     if (!roles.includes(req.user.role) && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Forbidden: Insufficient permissions',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
 
     next();

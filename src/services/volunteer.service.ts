@@ -223,6 +223,22 @@ export class VolunteerService extends BaseService {
 
     return true;
   }
+
+  /**
+   * Get volunteer by user ID
+   */
+  async getByUserId(userId: string) {
+    return await this.db.volunteer.findFirst({
+      where: { userId },
+      include: {
+        assignments: {
+          include: {
+            campaign: { select: { title: true } }
+          }
+        }
+      }
+    });
+  }
 }
 
 export const volunteerService = new VolunteerService();

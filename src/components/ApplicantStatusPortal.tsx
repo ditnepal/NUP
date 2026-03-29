@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../lib/api';
-import { Search, ChevronLeft, Clock, CheckCircle, XCircle, FileText, Phone, Hash, Calendar } from 'lucide-react';
+import { Search, ChevronLeft, Clock, CheckCircle, XCircle, FileText, Phone, Hash, Calendar, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ApplicantStatusPortalProps {
@@ -217,9 +217,12 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
 
                 {statusData.status === 'PENDING' && (
                   <div className="p-6 bg-amber-50 border border-amber-100 rounded-3xl text-center animate-in fade-in duration-500">
-                    <p className="text-amber-800 font-bold">
+                    <p className="text-amber-800 font-bold mb-2">
                       Your application is currently under review by our administrative team. 
-                      We will notify you once a decision has been made.
+                    </p>
+                    <p className="text-amber-700 text-sm">
+                      Please check back here periodically using your tracking code. 
+                      Email notifications are currently disabled for security; this portal is the official source for your status.
                     </p>
                   </div>
                 )}
@@ -239,6 +242,29 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                     </p>
                     <p className="font-bold text-slate-700">
                       {format(new Date(statusData.createdAt), 'MMMM d, yyyy')}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <FileText size={12} />
+                      Citizenship Number
+                    </p>
+                    <p className="font-bold text-slate-700">{statusData.citizenshipNumber || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <Phone size={12} />
+                      Mobile Number
+                    </p>
+                    <p className="font-bold text-slate-700">{statusData.mobile || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <MapPin size={12} />
+                      Address
+                    </p>
+                    <p className="font-bold text-slate-700">
+                      {statusData.province}, {statusData.district}, {statusData.localLevel}, Ward {statusData.ward}
                     </p>
                   </div>
                   <div className="space-y-1">
@@ -274,6 +300,13 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                     </div>
                   )}
                 </div>
+
+                {statusData.decisionNotes && (
+                  <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Decision Notes</p>
+                    <p className="text-slate-700 font-medium">{statusData.decisionNotes}</p>
+                  </div>
+                )}
 
                 {(statusData.status === 'REJECTED' || statusData.status === 'TERMINATED' || statusData.status === 'SUSPENDED') && statusData.rejectionReason && (
                   <div className="p-6 bg-rose-50 border border-rose-100 rounded-3xl">

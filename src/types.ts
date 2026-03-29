@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'STAFF' | 'MEMBER' | 'FIELD_COORDINATOR' | 'BOOTH_COORDINATOR' | 'FINANCE_OFFICER' | 'PUBLIC';
+export type UserRole = 'ADMIN' | 'STAFF' | 'MEMBER' | 'FIELD_COORDINATOR' | 'BOOTH_COORDINATOR' | 'FINANCE_OFFICER' | 'PUBLIC' | 'APPLICANT_MEMBER';
 export type AppAction = 'VIEW' | 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'VERIFY' | 'ESCALATE' | 'REJECT' | 'EXPORT' | 'RENEW' | 'TRANSFER' | 'SUSPEND' | 'TERMINATE' | 'GENERATE_CARD';
 export type AppModule = 'DASHBOARD' | 'MEMBERSHIP' | 'SUPPORTERS' | 'BOOTHS' | 'FINANCE' | 'FUNDRAISING' | 'ELECTION' | 'PGIS' | 'WAR_ROOM' | 'COMMUNICATION' | 'CMS' | 'HIERARCHY' | 'NOTICE_POPUP' | 'TRAINING' | 'GRIEVANCES' | 'SURVEYS';
 export type CommitteeLevel = 'central' | 'province' | 'district' | 'municipality' | 'ward' | 'wing';

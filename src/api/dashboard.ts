@@ -12,13 +12,24 @@ const router = express.Router();
 // @route   GET /api/v1/dashboard/summary
 // @desc    Get dashboard summary statistics based on role and orgUnit scope
 // @access  Private
-router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async (req: AuthRequest, res) => {
+router.get('/summary', authenticate, async (req: AuthRequest, res) => {
   try {
     const role = req.user?.role;
     const userId = req.user?.id;
 
     if (!role || !userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check permission manually to avoid standard 403 HTML if middleware fails
+    const hasPermission = await permissionService.can(req.user!, 'DASHBOARD', 'VIEW');
+    if (!hasPermission) {
+      console.warn(`[DASHBOARD] Permission denied for user ${userId} with role ${role}`);
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'You do not have permission to view the dashboard summary.',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
 
     // Get accessible unit IDs for scoping
@@ -47,7 +58,7 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
         surveyWhere.orgUnitId = { in: accessibleUnitIds };
       }
 
-      const [totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, totalOffices, recentGrievances, criticalBoothsList] = await Promise.all([
+      const [totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, totalOffices, recentGrievances, criticalBoothsList, totalUsers, pendingMemberships, roleGroups] = await Promise.all([
         prisma.member.count({ where: memberWhere }),
         prisma.supporter.count({ where: supporterWhere }),
         prisma.booth.count({ where: boothWhere }),
@@ -57,15 +68,24 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
         prisma.survey.count({ where: surveyWhere }),
         prisma.office.count({ where: isScoped ? { orgUnitId: { in: accessibleUnitIds } } : {} }),
         prisma.grievance.findMany({ where: grievanceWhere, orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, title: true, priority: true, status: true, createdAt: true } }),
-        prisma.booth.findMany({ where: { ...boothWhere, status: 'CRITICAL' }, orderBy: { updatedAt: 'desc' }, take: 5, select: { id: true, name: true, status: true, updatedAt: true } })
+        prisma.booth.findMany({ where: { ...boothWhere, status: 'CRITICAL' }, orderBy: { updatedAt: 'desc' }, take: 5, select: { id: true, name: true, status: true, updatedAt: true } }),
+        prisma.user.count({ where: isScoped ? { orgUnitId: { in: accessibleUnitIds } } : {} }),
+        prisma.member.findMany({ where: { status: 'PENDING' }, orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, fullName: true, status: true, createdAt: true } }),
+        prisma.user.groupBy({ by: ['role'], _count: { _all: true } })
       ]);
 
       const actionQueue = [
         ...recentGrievances.map(g => ({ id: g.id, type: 'GRIEVANCE', title: g.title, priority: g.priority, status: g.status, date: g.createdAt.toISOString() })),
-        ...criticalBoothsList.map(b => ({ id: b.id, type: 'BOOTH', title: b.name, status: b.status, date: b.updatedAt?.toISOString() }))
+        ...criticalBoothsList.map(b => ({ id: b.id, type: 'BOOTH', title: b.name, status: b.status, date: b.updatedAt?.toISOString() })),
+        ...pendingMemberships.map(m => ({ id: m.id, type: 'MEMBERSHIP', title: `New Application: ${m.fullName}`, status: m.status, date: m.createdAt.toISOString() }))
       ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
 
-      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, totalOffices, actionQueue };
+      const userRoleBreakdown = roleGroups.reduce((acc: any, curr: any) => {
+        acc[curr.role] = curr._count._all;
+        return acc;
+      }, {});
+
+      summary = { ...summary, totalMembers, totalSupporters, totalBooths, activeCampaigns, openIssues, openGrievances, activeSurveys, totalOffices, totalUsers, userRoleBreakdown, actionQueue };
     } else if (role === 'FINANCE_OFFICER') {
       const transactionWhere: any = {};
       const donationWhere: any = { status: 'COMPLETED' };
@@ -143,21 +163,35 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
       ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
 
       summary = { ...summary, totalBooths, readyBooths, criticalBooths, totalSupporters, actionQueue };
+    } else if (role === 'APPLICANT_MEMBER') {
+      const [myApplication, recentNews] = await Promise.all([
+        prisma.member.findFirst({ where: { userId }, orderBy: { createdAt: 'desc' } }),
+        prisma.cmsPost.findMany({ where: { type: 'NEWS', status: 'PUBLISHED' }, orderBy: { createdAt: 'desc' }, take: 3 })
+      ]);
+      summary = { ...summary, myApplication, recentNews, actionQueue: [] };
+    } else if (role === 'PUBLIC') {
+      const [recentNews, upcomingEvents] = await Promise.all([
+        prisma.cmsPost.findMany({ where: { type: 'NEWS', status: 'PUBLISHED' }, orderBy: { createdAt: 'desc' }, take: 3 }),
+        prisma.appEvent.findMany({ where: { status: 'PUBLISHED', eventDate: { gte: new Date() } }, orderBy: { eventDate: 'asc' }, take: 3 })
+      ]);
+      summary = { ...summary, recentNews, upcomingEvents, actionQueue: [] };
     } else {
-      // Regular Member
-      const [myIssues, upcomingEvents, recentIssues, upcomingEventsList] = await Promise.all([
+      // Regular Member or Public
+      const [myIssues, upcomingEvents, recentIssues, upcomingEventsList, volunteerProfile, donorProfile] = await Promise.all([
         prisma.issue.count({ where: { reporterId: userId } }),
-        prisma.event.count({ where: { startDate: { gte: new Date() } } }),
+        prisma.appEvent.count({ where: { eventDate: { gte: new Date() } } }),
         prisma.issue.findMany({ where: { reporterId: userId }, orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, title: true, status: true, createdAt: true } }),
-        prisma.event.findMany({ where: { startDate: { gte: new Date() } }, orderBy: { startDate: 'asc' }, take: 5, select: { id: true, title: true, startDate: true, location: true } })
+        prisma.appEvent.findMany({ where: { eventDate: { gte: new Date() } }, orderBy: { eventDate: 'asc' }, take: 5, select: { id: true, title: true, eventDate: true, location: true } }),
+        prisma.volunteer.findUnique({ where: { userId } }),
+        prisma.donorProfile.findUnique({ where: { userId } })
       ]);
 
       const actionQueue = [
         ...recentIssues.map(i => ({ id: i.id, type: 'ISSUE', title: i.title, status: i.status, date: i.createdAt.toISOString() })),
-        ...upcomingEventsList.map(e => ({ id: e.id, type: 'EVENT', title: e.title, subtitle: e.location, date: e.startDate.toISOString() }))
+        ...upcomingEventsList.map(e => ({ id: e.id, type: 'EVENT', title: e.title, subtitle: e.location, date: e.eventDate.toISOString() }))
       ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 5);
 
-      summary = { ...summary, myIssues, upcomingEvents, actionQueue };
+      summary = { ...summary, myIssues, upcomingEvents, actionQueue, isVolunteer: !!volunteerProfile, isDonor: !!donorProfile, volunteerStatus: volunteerProfile?.status };
     }
 
     // Phase 2B: Child-Unit Breakdown for all hierarchy-relevant roles
@@ -211,9 +245,13 @@ router.get('/summary', authenticate, checkPermission('DASHBOARD', 'VIEW'), async
     }
 
     res.json(summary);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Dashboard summary error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ 
+      error: 'Server error', 
+      message: error.message || 'An unexpected error occurred while fetching dashboard summary',
+      code: 'INTERNAL_SERVER_ERROR'
+    });
   }
 });
 
@@ -224,7 +262,11 @@ router.get('/diagnostics/db', authenticate, async (req: AuthRequest, res) => {
   try {
     // Extra guard: Only ADMIN or STAFF can see this
     if (req.user?.role !== 'ADMIN' && req.user?.role !== 'STAFF') {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Forbidden: Insufficient permissions',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
 
     const userCount = await prisma.user.count();

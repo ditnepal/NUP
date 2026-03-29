@@ -76,7 +76,11 @@ router.post('/templates', authenticate, checkPermission('COMMUNICATION', 'CREATE
       // Validate provided orgUnitId is within scope
       const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (accessibleUnitIds !== null && !accessibleUnitIds.includes(data.orgUnitId)) {
-        return res.status(403).json({ error: 'Cannot create template for an organization unit outside your scope' });
+        return res.status(403).json({ 
+          error: 'Forbidden', 
+          message: 'Cannot create template for an organization unit outside your scope',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        });
       }
     }
 
@@ -161,7 +165,11 @@ router.post('/segments', authenticate, checkPermission('COMMUNICATION', 'CREATE'
     } else {
       const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (accessibleUnitIds !== null && !accessibleUnitIds.includes(data.orgUnitId)) {
-        return res.status(403).json({ error: 'Cannot create segment for an organization unit outside your scope' });
+        return res.status(403).json({ 
+          error: 'Forbidden', 
+          message: 'Cannot create segment for an organization unit outside your scope',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        });
       }
     }
 
@@ -247,7 +255,11 @@ router.post('/campaigns', authenticate, checkPermission('COMMUNICATION', 'CREATE
     } else {
       const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (accessibleUnitIds !== null && !accessibleUnitIds.includes(data.orgUnitId)) {
-        return res.status(403).json({ error: 'Cannot create campaign for an organization unit outside your scope' });
+        return res.status(403).json({ 
+          error: 'Forbidden', 
+          message: 'Cannot create campaign for an organization unit outside your scope',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        });
       }
     }
 
@@ -380,7 +392,11 @@ router.post('/notices', authenticate, checkPermission('NOTICE_POPUP', 'CREATE'),
     } else {
       const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
       if (accessibleUnitIds !== null && !accessibleUnitIds.includes(data.orgUnitId)) {
-        return res.status(403).json({ error: 'Cannot create notice for an organization unit outside your scope' });
+        return res.status(403).json({ 
+          error: 'Forbidden', 
+          message: 'Cannot create notice for an organization unit outside your scope',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        });
       }
     }
 

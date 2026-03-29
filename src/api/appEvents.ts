@@ -40,8 +40,12 @@ router.get('/members', authenticate, async (req: AuthRequest, res) => {
   try {
     // Assuming approval check is done via membership status
     const member = await prisma.member.findUnique({ where: { userId: req.user?.id } });
-    if (!member || member.status !== 'APPROVED') {
-      return res.status(403).json({ error: 'Unauthorized' });
+    if (!member || member.status !== 'ACTIVE') {
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'You must be an active member to view member events.',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
     const events = await prisma.appEvent.findMany({
       where: { audience: 'MEMBERS', status: 'PUBLISHED' },

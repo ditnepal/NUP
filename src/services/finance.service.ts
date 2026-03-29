@@ -917,6 +917,28 @@ export class FinanceService {
 
     return transactionsWithLogs;
   }
+
+  async getDonationsByUserId(userId: string) {
+    return await prisma.donation.findMany({
+      where: { donor: { userId } },
+      include: {
+        campaign: { select: { title: true } },
+        transaction: { select: { status: true, amount: true, date: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async getDonorProfileByUserId(userId: string) {
+    return await prisma.donorProfile.findUnique({
+      where: { userId },
+      include: {
+        _count: {
+          select: { donations: true }
+        }
+      }
+    });
+  }
 }
 
 export const financeService = new FinanceService();

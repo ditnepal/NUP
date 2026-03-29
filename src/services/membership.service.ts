@@ -1,7 +1,9 @@
+import bcrypt from 'bcryptjs';
 import { safeJsonParse } from '../lib/json';
 import { BaseService } from './base.service';
 import { auditService } from './audit.service';
 import { notificationService } from './notification.service';
+import { messagingEngine } from './messaging.engine';
 
 export class MembershipService extends BaseService {
   /**
@@ -37,6 +39,7 @@ export class MembershipService extends BaseService {
     declaration?: boolean;
     paymentMethod?: string;
     orgUnitId: string;
+    userId?: string;
   }) {
     // 1. Duplicate Detection (only if citizenshipNumber or email provided)
     if (data.citizenshipNumber || data.email) {
@@ -65,7 +68,25 @@ export class MembershipService extends BaseService {
     // 3. Generate Tracking Code
     const trackingCode = `T-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    // 4. Create Member (Pending)
+    // 4. Create User Account (Applicant Member)
+    const tempPassword = Math.random().toString(36).substring(2, 10);
+    const passwordHash = `TEMP_${await bcrypt.hash(tempPassword, 10)}`;
+    
+    // Use email if provided, otherwise use mobile as a unique identifier for the user record
+    const userEmail = data.email || `${data.mobile}@applicant.ppos`;
+    
+    const user = await this.db.user.create({
+      data: {
+        email: userEmail,
+        passwordHash,
+        displayName: data.fullName,
+        role: 'APPLICANT_MEMBER',
+        phoneNumber: data.mobile,
+        isActive: true,
+      }
+    });
+
+    // 5. Create Member (Pending)
     const member = await this.db.member.create({
       data: {
         fullName: data.fullName,
@@ -98,6 +119,7 @@ export class MembershipService extends BaseService {
         trackingCode,
         status: 'PENDING',
         orgUnitId: data.orgUnitId,
+        userId: user.id, // Link to the newly created user
       }
     });
 
@@ -105,10 +127,26 @@ export class MembershipService extends BaseService {
       action: 'MEMBERSHIP_APPLIED',
       entityType: 'Member',
       entityId: member.id,
-      details: { trackingCode }
+      details: { trackingCode, userId: user.id }
     });
 
-    return member;
+    // Send notification (Email/SMS logs)
+    if (member.email || member.mobile) {
+      await messagingEngine.send(
+        member.email ? 'EMAIL' : 'SMS',
+        member.email || member.mobile || '',
+        'Membership Application Received',
+        `Your membership application has been submitted successfully. Tracking Code: ${trackingCode}. Your temporary login ID is ${userEmail} and password is ${tempPassword}.`
+      );
+    }
+
+    return {
+      member,
+      credentials: {
+        loginId: userEmail,
+        tempPassword
+      }
+    };
   }
 
   /**
@@ -147,6 +185,16 @@ export class MembershipService extends BaseService {
       message: 'Your membership has been verified by the local unit and is pending final approval.',
       type: 'SUCCESS'
     });
+
+    // External notification
+    if (member.email || member.mobile) {
+      await messagingEngine.send(
+        member.email ? 'EMAIL' : 'SMS',
+        member.email || member.mobile || '',
+        'Membership Application Verified',
+        `Namaste ${member.fullName}, your membership application has been verified by the local unit and is now pending final approval.`
+      );
+    }
 
     return member;
   }
@@ -200,6 +248,42 @@ export class MembershipService extends BaseService {
             qrCodeData: `QR-${Math.random().toString(36).substring(2, 12).toUpperCase()}` // Auto-generate on approval
           }
         });
+
+        // 5. Upgrade linked user role to MEMBER if it exists and is currently PUBLIC
+        if (member.userId) {
+          const user = await this.db.user.findUnique({
+            where: { id: member.userId },
+            select: { role: true }
+          });
+
+          if (user && (user.role === 'PUBLIC' || user.role === 'APPLICANT_MEMBER')) {
+            await this.db.user.update({
+              where: { id: member.userId },
+              data: { role: 'MEMBER' }
+            });
+          }
+        }
+
+        await notificationService.notify({
+          userId: member.userId || '',
+          title: 'Membership Approved',
+          message: `Congratulations! Your membership has been approved. Your Membership ID is ${membershipId}.`,
+          type: 'SUCCESS'
+        });
+
+        // External notification
+        if (member.email || member.mobile) {
+          const message = member.userId 
+            ? `Congratulations ${member.fullName}! Your membership is approved. ID: ${membershipId}. Log in to your dashboard to view your card.`
+            : `Congratulations ${member.fullName}! Your membership is approved. ID: ${membershipId}. Visit the portal and use tracking code ${member.trackingCode} to claim your account.`;
+          
+          await messagingEngine.send(
+            member.email ? 'EMAIL' : 'SMS',
+            member.email || member.mobile || '',
+            'Membership Approved',
+            message
+          );
+        }
 
         await auditService.log({
           action: 'MEMBERSHIP_APPROVED',
@@ -410,6 +494,16 @@ export class MembershipService extends BaseService {
         targetId: member.id
       }
     });
+
+    // External notification
+    if (member.email || member.mobile) {
+      await messagingEngine.send(
+        member.email ? 'EMAIL' : 'SMS',
+        member.email || member.mobile || '',
+        'Membership Application Update',
+        `Namaste ${member.fullName}, your membership application has been reviewed. Status: REJECTED. Reason: ${reason}. You can view more details on the portal.`
+      );
+    }
 
     return member;
   }

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
+import { api } from '../lib/api';
 import { 
   User, 
   Mail, 
@@ -23,6 +24,27 @@ interface UserProfileDashboardProps {
 }
 
 export const UserProfileDashboard: React.FC<UserProfileDashboardProps> = ({ user, onLogout }) => {
+  const [membership, setMembership] = useState<any>(null);
+  const [loadingMembership, setLoadingMembership] = useState(false);
+
+  useEffect(() => {
+    if (user.role === 'PUBLIC') {
+      fetchMembership();
+    }
+  }, [user]);
+
+  const fetchMembership = async () => {
+    setLoadingMembership(true);
+    try {
+      const data = await api.get('/members/me');
+      setMembership(data);
+    } catch (error) {
+      console.log('No membership profile found');
+    } finally {
+      setLoadingMembership(false);
+    }
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -85,6 +107,14 @@ export const UserProfileDashboard: React.FC<UserProfileDashboardProps> = ({ user
             </div>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
+            {user.role === 'PUBLIC' && !membership && (
+              <button 
+                onClick={() => window.location.href = '/membership'}
+                className="flex-1 md:flex-none px-6 py-2.5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+              >
+                Apply for Membership
+              </button>
+            )}
             <button className="flex-1 md:flex-none px-6 py-2.5 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
               Edit Profile
             </button>
@@ -98,6 +128,59 @@ export const UserProfileDashboard: React.FC<UserProfileDashboardProps> = ({ user
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Stats & Info */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Membership Status for Public Users */}
+          {user.role === 'PUBLIC' && membership && (
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">Membership Application</h3>
+                  <p className="text-slate-500 text-sm">Track your journey to becoming a full member</p>
+                </div>
+                <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest ${
+                  membership.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                  membership.status === 'VERIFIED' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                  membership.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                  'bg-rose-50 text-rose-600 border border-rose-100'
+                }`}>
+                  {membership.status}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tracking Code</p>
+                  <p className="font-mono font-bold text-slate-700">{membership.trackingCode}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Applied On</p>
+                  <p className="font-bold text-slate-700">{new Date(membership.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              {membership.status === 'REJECTED' && (
+                <div className="mt-6 p-4 bg-rose-50 rounded-2xl border border-rose-100">
+                  <p className="text-sm text-rose-700 font-medium">
+                    <span className="font-bold">Decision Note:</span> {membership.reviewNote || 'Please contact support for details.'}
+                  </p>
+                </div>
+              )}
+
+              {membership.status === 'ACTIVE' && (
+                <div className="mt-6 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-sm text-emerald-700 font-medium text-center sm:text-left">
+                    Congratulations! Your membership is now active. Please re-login to unlock all features.
+                  </p>
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="w-full sm:w-auto px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-md"
+                  >
+                    Refresh Session
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {stats.map((stat, i) => (

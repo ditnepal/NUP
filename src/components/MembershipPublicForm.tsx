@@ -5,8 +5,9 @@ import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 import { toast } from 'sonner';
 
 const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (trackingCode: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
-  const { register, handleSubmit, getValues } = useForm();
+  const { register, handleSubmit, getValues, formState: { errors } } = useForm();
   const [success, setSuccess] = useState<string | null>(null);
+  const [credentials, setCredentials] = useState<{ loginId: string; tempPassword: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [units, setUnits] = useState<any[]>([]);
 
@@ -34,9 +35,10 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
       if (idDoc) formData.append('identityDocument', idDoc);
       if (photo) formData.append('profilePhoto', photo);
 
-      const result = await api.postFormData('/members/apply', formData);
+      const result = await api.postFormData('/public/membership/apply', formData);
       toast.success('Application submitted successfully');
       setSuccess(result.trackingCode);
+      setCredentials(result.credentials);
       setIsPendingPayment(selectedMethod.instructions ? true : false);
     } catch (err: any) {
       console.error('Submission error:', err);
@@ -62,15 +64,31 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
           {isPendingPayment ? 'Application Initiated' : 'Application Submitted!'}
         </h2>
         <p className="text-slate-600 mb-8">
-          {isPendingPayment 
-            ? "Your application has been initiated. Please follow the payment instructions provided. Once your payment is verified, your application will be processed."
-            : "Your application has been received and is currently being processed."
-          }
+          Your membership application has been submitted successfully. Your account has been created with temporary credentials.
         </p>
         
-        <div className="bg-white p-6 rounded-2xl border border-emerald-100 mb-8 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Your Tracking Code</p>
-          <p className="text-3xl font-black text-emerald-600 font-mono tracking-tighter">{success}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tracking Code</p>
+            <p className="text-xl font-black text-emerald-600 font-mono tracking-tighter">{success}</p>
+          </div>
+          {credentials && (
+            <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Temporary Credentials</p>
+              <div className="text-left space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Login ID:</p>
+                <p className="text-sm font-bold text-blue-600 break-all">{credentials.loginId}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Password:</p>
+                <p className="text-sm font-bold text-blue-600">{credentials.tempPassword}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 mb-8 text-left">
+          <p className="text-xs text-amber-800 font-medium">
+            <strong>Important:</strong> Please save these credentials. You can use them to log in to your Applicant Dashboard to track your status and view your profile. These credentials have also been sent to your email/mobile.
+          </p>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -78,7 +96,7 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
             onClick={() => onSuccess?.(success, getValues('mobile'))}
             className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100"
           >
-            Check Status Now
+            Go to Applicant Dashboard
           </button>
           <button 
             onClick={onBack}
@@ -98,11 +116,31 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-            <input {...register('fullName')} placeholder="e.g. John Doe" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all" required />
+            <input 
+              {...register('fullName', { 
+                required: 'Full name is required',
+                minLength: { value: 2, message: 'Must be at least 2 characters' }
+              })} 
+              placeholder="e.g. John Doe" 
+              className={`w-full p-4 bg-slate-50 border-2 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all ${errors.fullName ? 'border-rose-500' : 'border-slate-100'}`} 
+            />
+            {errors.fullName && (
+              <p className="text-[10px] font-bold text-rose-500 ml-1">{(errors.fullName as any).message}</p>
+            )}
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Citizenship Number</label>
-            <input {...register('citizenshipNumber')} placeholder="e.g. 12-34-56-7890" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all" required />
+            <input 
+              {...register('citizenshipNumber', { 
+                required: 'Citizenship number is required',
+                minLength: { value: 5, message: 'Must be at least 5 characters' }
+              })} 
+              placeholder="e.g. 12-34-56-7890" 
+              className={`w-full p-4 bg-slate-50 border-2 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all ${errors.citizenshipNumber ? 'border-rose-500' : 'border-slate-100'}`} 
+            />
+            {errors.citizenshipNumber && (
+              <p className="text-[10px] font-bold text-rose-500 ml-1">{(errors.citizenshipNumber as any).message}</p>
+            )}
           </div>
         </div>
         <div className="space-y-1">

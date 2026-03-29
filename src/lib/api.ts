@@ -25,30 +25,36 @@ const handleResponse = async (response: Response) => {
   if (!response.ok) {
     let errorMessage = 'API Error';
     const text = await response.text();
+    let errorData = {};
+    
     try {
-      const error = text ? JSON.parse(text) : {};
-      errorMessage = error.error || errorMessage;
-      if (error.details && Array.isArray(error.details)) {
-        errorMessage += ': ' + error.details.map((d: any) => `${d.path.join('.')}: ${d.message}`).join(', ');
+      errorData = text ? JSON.parse(text) : {};
+      errorMessage = (errorData as any).message || (errorData as any).error || errorMessage;
+      
+      if ((errorData as any).details && Array.isArray((errorData as any).details)) {
+        errorMessage += ': ' + (errorData as any).details.map((d: any) => `${d.path.join('.')}: ${d.message}`).join(', ');
       }
       
       // Handle Unauthorized error (Invalid token)
       if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Missing or invalid token'))) {
         console.warn('Unauthorized: Invalid token. Clearing session...');
         localStorage.removeItem('token');
-        // We can't easily trigger a redirect here without a more complex setup, 
-        // but clearing the token will force the user to log in again on the next refresh.
         window.location.href = '/'; 
       }
     } catch (e) {
-      console.error('API Error (non-JSON):', text.substring(0, 100));
-      if (response.status === 429) {
-        errorMessage = 'Rate limit exceeded. Please wait a moment before trying again.';
+      // Handle non-JSON (HTML) responses from Proxy/Infrastructure
+      if (text.includes('<html>')) {
+        errorMessage = `Infrastructure Error (${response.status}): The request was blocked before reaching the server.`;
       } else {
         errorMessage = `API Error: ${response.status} ${response.statusText}`;
       }
+      console.error(`API Error (non-JSON) [${response.status}]:`, text.substring(0, 100));
     }
-    throw new Error(errorMessage);
+    
+    const error: any = new Error(errorMessage);
+    error.status = response.status;
+    error.data = errorData;
+    throw error;
   }
 
   const text = await response.text();

@@ -2,9 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { execSync } from 'child_process';
+import fs from 'fs';
 dotenv.config();
 
-const DEFAULT_DB_URL = `file:${path.join(process.cwd(), 'prisma/dev.db')}`;
+const dbPath = path.join(process.cwd(), 'prisma/dev.db');
+const DEFAULT_DB_URL = `file:${dbPath}`;
 if (!process.env.DATABASE_URL) {
   console.warn(`[WARN] DATABASE_URL is missing. Using default: ${DEFAULT_DB_URL}`);
   process.env.DATABASE_URL = DEFAULT_DB_URL;
@@ -17,8 +20,21 @@ if (process.env.DATABASE_URL !== DEFAULT_DB_URL && process.env.DATABASE_URL !== 
   process.exit(1);
 }
 
+// Check if database exists and is not empty
+try {
+  const stats = fs.statSync(dbPath);
+  if (stats.size === 0) {
+    console.error('[FATAL] Database file exists but is empty (0 bytes).');
+    console.error('[FATAL] Please run `npx prisma db push` and `npx tsx seed.ts` manually to initialize it.');
+    process.exit(1);
+  }
+} catch (e) {
+  console.error('[FATAL] Database file not found at ' + dbPath);
+  console.error('[FATAL] Please run `npx prisma db push` and `npx tsx seed.ts` manually to initialize it.');
+  process.exit(1);
+}
+
 import { createServer as createViteServer } from 'vite';
-import fs from 'fs';
 import { setupSwagger } from './src/lib/swagger';
 import rateLimit from 'express-rate-limit';
 
@@ -64,6 +80,12 @@ export async function createApp() {
   // Middleware
   app.use(cors());
   app.use(express.json({ limit: '50mb' }));
+
+  // Force JSON content-type for all API routes
+  app.use('/api', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    next();
+  });
 
   // Rate Limiting
   const authLimiter = rateLimit({
@@ -188,8 +210,13 @@ async function startServer() {
   try {
     await systemConfigService.initializeDefaults();
     console.log('[SYSTEM] Default system configurations initialized');
-  } catch (error) {
+  } catch (error: any) {
     console.error('[SYSTEM] Error initializing system configurations:', error);
+    if (error.code === 'P2021') {
+      console.error('[FATAL] Database tables missing (P2021).');
+      console.error('[FATAL] Please run `npx prisma db push` and `npx tsx seed.ts` manually to initialize the database schema.');
+      process.exit(1);
+    }
   }
 
   app.listen(PORT, '0.0.0.0', () => {

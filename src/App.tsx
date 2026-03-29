@@ -8,6 +8,7 @@ import { HierarchyAdmin } from './components/HierarchyAdmin';
 import { MembershipAdmin } from './components/MembershipAdmin';
 import RenewalsManagement from './pages/admin/RenewalsManagement';
 import { VolunteerAdmin } from './components/VolunteerAdmin';
+import { VolunteerEnrollment } from './components/VolunteerEnrollment';
 import { DocumentsView } from './components/DocumentsView';
 import { CmsAdmin } from './components/CmsAdmin';
 import { CommunicationAdmin } from './components/CommunicationAdmin';
@@ -26,14 +27,18 @@ import { GrievancePortal } from './components/GrievancePortal';
 import { SurveyPolls } from './components/SurveyPolls';
 import { PgisDashboard } from './components/PgisDashboard';
 import { PublicPortal } from './components/PublicPortal';
+import { PublicListView } from './components/PublicListViews';
 import { PublicLayout } from './components/PublicLayout';
 import MembershipPublic from './components/MembershipPublic';
 import { PublicDocumentsView } from './components/PublicDocumentsView';
 import { PublicCandidatesView } from './components/PublicCandidates';
 import { PublicCampaignsView } from './components/PublicCampaigns';
 import { WarRoomDashboard } from './components/WarRoomDashboard';
-import { UserProfileDashboard } from './components/UserProfileDashboard';
+import { DashboardHome } from './components/DashboardHome';
+import { CentralizedPublicDashboard } from './components/CentralizedPublicDashboard';
 import { MemberDashboard } from './components/MemberDashboard';
+import { ApplicantMemberDashboard } from './components/ApplicantMemberDashboard';
+import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { EventDetailView } from './components/EventDetailView';
 import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
 import { NoticePopup } from './components/NoticePopup';
@@ -44,7 +49,7 @@ import { api } from './lib/api';
 import { usePermissions } from './hooks/usePermissions';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings, User } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns';
+type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -95,12 +100,8 @@ export default function App() {
             setUser(null);
           } else {
             setUser(userData);
-            if (userData.role === 'MEMBER') {
-              setCurrentView('member-dashboard');
-            } else {
-              setCurrentView('dashboard');
-              fetchData();
-            }
+            setCurrentView('dashboard');
+            fetchData();
           }
         } catch (error) {
           localStorage.removeItem('token');
@@ -133,12 +134,8 @@ export default function App() {
 
   const handleLoginSuccess = (userData: UserProfile) => {
     setUser(userData);
-    if (userData.role === 'MEMBER') {
-      setCurrentView('member-dashboard');
-    } else {
-      setCurrentView('dashboard');
-      fetchData();
-    }
+    setCurrentView('dashboard');
+    fetchData();
   };
 
   const handleLogout = () => {
@@ -168,10 +165,8 @@ export default function App() {
           onPortalClick={() => {
             if (!user) {
               setCurrentView('dashboard'); // This will trigger Login if user is null
-            } else if (user.role === 'PUBLIC') {
-              setCurrentView('grievances');
             } else {
-              setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard');
+              setCurrentView('dashboard');
             }
           }} 
           onDocumentsClick={() => setCurrentView('public-documents')} 
@@ -180,7 +175,7 @@ export default function App() {
           onDonateClick={() => setCurrentView('donations')}
           onGrievanceClick={() => {
             if (!user) {
-              setCurrentView('dashboard'); // Trigger login
+              setCurrentView('public-auth');
             } else {
               setCurrentView('grievances');
             }
@@ -195,17 +190,11 @@ export default function App() {
         />
         {user && (
           <button 
-            onClick={() => {
-              if (user.role === 'PUBLIC') {
-                setCurrentView('grievances');
-              } else {
-                setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard');
-              }
-            }}
+            onClick={() => setCurrentView('dashboard')}
             className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl z-50 flex items-center gap-2 hover:scale-105 transition-all"
           >
             <LayoutDashboard size={20} />
-            Back to Portal
+            Back to Dashboard
           </button>
         )}
       </div>
@@ -219,10 +208,8 @@ export default function App() {
       onPortalClick={() => {
         if (!user) {
           setCurrentView('dashboard');
-        } else if (user.role === 'PUBLIC') {
-          setCurrentView('public');
         } else {
-          setCurrentView(user.role === 'MEMBER' ? 'member-dashboard' : 'dashboard');
+          setCurrentView('dashboard');
         }
       }}
       onDocumentsClick={() => setCurrentView('public-documents')}
@@ -268,19 +255,19 @@ export default function App() {
     );
   }
 
-  if (currentView === 'donations') {
+  if (currentView === 'donations' && !user) {
     return renderPublicLayout(<DonationPortal />);
   }
 
-  if (currentView === 'public-documents') {
+  if (currentView === 'public-documents' && !user) {
     return renderPublicLayout(<PublicDocumentsView />);
   }
 
-  if (currentView === 'public-candidates') {
+  if (currentView === 'public-candidates' && !user) {
     return renderPublicLayout(<PublicCandidatesView />);
   }
 
-  if (currentView === 'public-campaigns') {
+  if (currentView === 'public-campaigns' && !user) {
     return renderPublicLayout(<PublicCampaignsView />);
   }
 
@@ -289,56 +276,24 @@ export default function App() {
   }
 
   if (!user) {
+    if (currentView === 'public-auth') {
+      return (
+        <Login 
+          onLoginSuccess={handleLoginSuccess} 
+          onGoToPublic={() => setCurrentView('public')} 
+          t={t} 
+          isPublicMode={true}
+        />
+      );
+    }
     return <Login onLoginSuccess={handleLoginSuccess} onGoToPublic={() => setCurrentView('public')} t={t} />;
   }
 
-  if (user.role === 'PUBLIC') {
-    const publicView = (currentView === 'grievances' || currentView === 'profile') ? currentView : 'home';
-    
-    return renderPublicLayout(
-      <div className="space-y-8">
-        {publicView === 'home' && (
-          <div className="max-w-4xl mx-auto py-12 px-4">
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-black text-slate-900 mb-4">Welcome, {user.displayName}</h1>
-              <p className="text-xl text-slate-500">Access your public services and manage your profile.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <button 
-                onClick={() => setCurrentView('profile')}
-                className="bg-white p-8 rounded-3xl border-2 border-slate-100 hover:border-emerald-500 transition-all text-left shadow-sm hover:shadow-xl group"
-              >
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <User size={32} />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">My Profile</h3>
-                <p className="text-slate-500 text-lg">Manage your personal information, contact details, and membership status.</p>
-              </button>
-              
-              <button 
-                onClick={() => setCurrentView('grievances')}
-                className="bg-white p-8 rounded-3xl border-2 border-slate-100 hover:border-purple-500 transition-all text-left shadow-sm hover:shadow-xl group"
-              >
-                <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <ShieldAlert size={32} />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">My Grievances</h3>
-                <p className="text-slate-500 text-lg">Submit new complaints or suggestions and track the status of your existing issues.</p>
-              </button>
-            </div>
-          </div>
-        )}
-        {publicView === 'grievances' && <GrievancePortal user={user} />}
-        {publicView === 'profile' && <UserProfileDashboard user={user} onLogout={handleLogout} />}
-      </div>,
-      publicView !== 'home' ? () => setCurrentView('public') : undefined
-    );
-  }
-
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, show: can('DASHBOARD', 'VIEW') && user.role !== 'MEMBER' },
-    { id: 'member-dashboard', label: 'Member Portal', icon: Award, show: user.role === 'MEMBER' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
+    { id: 'member-dashboard', label: 'Member Portal', icon: Award, show: user.role === 'MEMBER' || ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'applicant-dashboard', label: 'Application Status', icon: Clock, show: user.role === 'APPLICANT_MEMBER' || ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'profile', label: 'My Profile', icon: User, show: true },
     { id: 'warroom', label: 'War Room', icon: ShieldAlert, show: can('WAR_ROOM', 'VIEW') && systemConfig['ENABLE_WAR_ROOM'] !== 'false' },
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone, show: can('COMMUNICATION', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
     { id: 'supporters', label: 'Supporters', icon: Users, show: can('SUPPORTERS', 'VIEW') },
@@ -350,16 +305,16 @@ export default function App() {
     { id: 'volunteers', label: 'Volunteers', icon: Heart, show: can('SUPPORTERS', 'VIEW') && ['ADMIN', 'STAFF'].includes(user.role) },
     { id: 'cms', label: 'CMS', icon: Layout, show: can('CMS', 'VIEW') },
     { id: 'documents', label: 'Documents', icon: FileText, show: can('CMS', 'VIEW') },
-    { id: 'communication', label: 'Communication', icon: MessageSquare, show: can('COMMUNICATION', 'VIEW') && user.role !== 'MEMBER' },
+    { id: 'communication', label: 'Communication', icon: MessageSquare, show: can('COMMUNICATION', 'VIEW') && !['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) },
     { id: 'notices', label: 'Notice & Popup', icon: Bell, show: can('NOTICE_POPUP', 'VIEW') },
     { id: 'training', label: 'Training', icon: GraduationCap, show: can('TRAINING', 'VIEW') },
     { id: 'events', label: 'App Announcements', icon: Bell, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
     { id: 'field-events', label: 'Field Events', icon: Calendar, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
     { id: 'finance', label: 'Finance', icon: DollarSign, show: can('FINANCE', 'VIEW') },
     { id: 'election', label: 'Election', icon: Vote, show: can('ELECTION', 'VIEW') },
-    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' },
-    { id: 'grievances', label: 'Grievances', icon: ShieldAlert, show: can('GRIEVANCES', 'VIEW') },
-    { id: 'surveys', label: 'Surveys', icon: ClipboardList, show: can('SURVEYS', 'VIEW') },
+    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' || user.role === 'PUBLIC' },
+    { id: 'grievances', label: 'Grievances', icon: ShieldAlert, show: true },
+    { id: 'surveys', label: 'Surveys', icon: ClipboardList, show: can('SURVEYS', 'VIEW') || user.role === 'PUBLIC' || user.role === 'MEMBER' },
     { id: 'pgis', label: 'PGIS', icon: Shield, show: can('PGIS', 'VIEW') && systemConfig['ENABLE_PGIS'] !== 'false' },
     { id: 'settings', label: 'Settings', icon: Settings, show: user.role === 'ADMIN' },
   ];
@@ -495,330 +450,10 @@ export default function App() {
           </div>
         </header>
 
-        {currentView === 'dashboard' && summary && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800">Dashboard Overview</h2>
-                <p className="text-slate-500 flex items-center gap-2 mt-1">
-                  <Globe size={16} className="text-emerald-600" />
-                  Scope: <span className="font-semibold text-slate-700">{summary.scopeName}</span>
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {summary.totalMembers !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Total Members</p>
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Users size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-slate-800">{summary.totalMembers.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.totalSupporters !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Total Supporters</p>
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><UserPlus size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-slate-800">{summary.totalSupporters.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.strongSupporters !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Strong Supporters</p>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><CheckCircle size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-emerald-600">{summary.strongSupporters.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.totalBooths !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Total Booths</p>
-                    <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><MapPin size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-slate-800">{summary.totalBooths.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.readyBooths !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Ready Booths</p>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><CheckCircle size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-emerald-600">{summary.readyBooths.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.criticalBooths !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Critical Booths</p>
-                    <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><AlertTriangle size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-rose-600">{summary.criticalBooths.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.activeCampaigns !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Active Campaigns</p>
-                    <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><Megaphone size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-slate-800">{summary.activeCampaigns.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.totalIncome !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Total Income</p>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><TrendingUp size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-emerald-600">रू {summary.totalIncome.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.totalExpenses !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Total Expenses</p>
-                    <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><TrendingDown size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-rose-600">रू {summary.totalExpenses.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.totalDonations !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Total Donations</p>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Heart size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-emerald-600">रू {summary.totalDonations.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.activeFundCampaigns !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Active Fundraisers</p>
-                    <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Target size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-slate-800">{summary.activeFundCampaigns.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.openIssues !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Open Issues</p>
-                    <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><AlertTriangle size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-amber-600">{summary.openIssues.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.openGrievances !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Open Grievances</p>
-                    <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><ShieldAlert size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-rose-600">{summary.openGrievances.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.activeSurveys !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Active Surveys</p>
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><ClipboardList size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-indigo-600">{summary.activeSurveys.toLocaleString()}</p>
-                </div>
-              )}
-              {summary.totalOffices !== undefined && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-slate-500">Office Locations</p>
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><MapPin size={18} /></div>
-                  </div>
-                  <p className="text-3xl font-bold text-blue-600">{summary.totalOffices.toLocaleString()}</p>
-                </div>
-              )}
-            </div>
-
-            {summary.actionQueue && summary.actionQueue.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <ListTodo size={20} className="text-blue-600" />
-                  Priority Action Queue
-                </h3>
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <ul className="divide-y divide-slate-100">
-                    {summary.actionQueue.map((item: any) => (
-                      <li key={item.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex items-start sm:items-center gap-4">
-                          <div className={`p-2 rounded-lg shrink-0 ${
-                            item.type === 'GRIEVANCE' ? 'bg-rose-50 text-rose-600' :
-                            item.type === 'BOOTH' ? 'bg-amber-50 text-amber-600' :
-                            item.type === 'TRANSACTION' ? 'bg-emerald-50 text-emerald-600' :
-                            item.type === 'FUNDRAISER' ? 'bg-indigo-50 text-indigo-600' :
-                            item.type === 'ISSUE' ? 'bg-orange-50 text-orange-600' :
-                            item.type === 'EVENT' ? 'bg-blue-50 text-blue-600' :
-                            'bg-slate-50 text-slate-600'
-                          }`}>
-                            {item.type === 'GRIEVANCE' && <ShieldAlert size={18} />}
-                            {item.type === 'BOOTH' && <MapPin size={18} />}
-                            {item.type === 'TRANSACTION' && <DollarSign size={18} />}
-                            {item.type === 'FUNDRAISER' && <TrendingUp size={18} />}
-                            {item.type === 'ISSUE' && <AlertTriangle size={18} />}
-                            {item.type === 'EVENT' && <Calendar size={18} />}
-                            {!['GRIEVANCE', 'BOOTH', 'TRANSACTION', 'FUNDRAISER', 'ISSUE', 'EVENT'].includes(item.type) && <Activity size={18} />}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-slate-800">{item.title}</div>
-                            <div className="text-sm text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-                              <span className="uppercase text-xs font-medium tracking-wider text-slate-400">{item.type}</span>
-                              {item.subtitle && <><span className="text-slate-300">•</span><span>{item.subtitle}</span></>}
-                              {item.date && <><span className="text-slate-300">•</span><span>{new Date(item.date).toLocaleDateString()}</span></>}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {item.priority && (
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                              item.priority === 'CRITICAL' || item.priority === 'HIGH' ? 'bg-rose-100 text-rose-700' :
-                              item.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
-                              'bg-emerald-100 text-emerald-700'
-                            }`}>
-                              {item.priority}
-                            </span>
-                          )}
-                          {item.status && (
-                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                              {item.status}
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {summary.childUnits && summary.childUnits.length > 0 && (
-              <div className="mt-8 space-y-8">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <AlertTriangle size={20} className="text-amber-500" />
-                    Operational Attention Signals
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Highest Grievances */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                        <ShieldAlert size={16} className="text-rose-500" />
-                        Highest Open Grievances
-                      </h4>
-                      <ul className="space-y-2">
-                        {[...summary.childUnits]
-                          .filter(u => u.openGrievances > 0)
-                          .sort((a, b) => b.openGrievances - a.openGrievances)
-                          .slice(0, 3)
-                          .map(u => (
-                            <li key={u.id} className="flex justify-between items-center text-sm">
-                              <span className="text-slate-700 truncate pr-2">{u.name}</span>
-                              <span className="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">{u.openGrievances}</span>
-                            </li>
-                          ))}
-                        {[...summary.childUnits].filter(u => u.openGrievances > 0).length === 0 && (
-                          <li className="text-sm text-slate-500 italic">No open grievances</li>
-                        )}
-                      </ul>
-                    </div>
-
-                    {/* Critical Booths */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                        <MapPin size={16} className="text-amber-500" />
-                        Critical Booths
-                      </h4>
-                      <ul className="space-y-2">
-                        {[...summary.childUnits]
-                          .filter(u => (u.criticalBooths || 0) > 0)
-                          .sort((a, b) => (b.criticalBooths || 0) - (a.criticalBooths || 0))
-                          .slice(0, 3)
-                          .map(u => (
-                            <li key={u.id} className="flex justify-between items-center text-sm">
-                              <span className="text-slate-700 truncate pr-2">{u.name}</span>
-                              <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{u.criticalBooths}</span>
-                            </li>
-                          ))}
-                        {[...summary.childUnits].filter(u => (u.criticalBooths || 0) > 0).length === 0 && (
-                          <li className="text-sm text-slate-500 italic">No critical booths</li>
-                        )}
-                      </ul>
-                    </div>
-
-                    {/* Lowest Member Strength */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                        <Users size={16} className="text-blue-500" />
-                        Lowest Member Strength
-                      </h4>
-                      <ul className="space-y-2">
-                        {[...summary.childUnits]
-                          .sort((a, b) => a.members - b.members)
-                          .slice(0, 3)
-                          .map(u => (
-                            <li key={u.id} className="flex justify-between items-center text-sm">
-                              <span className="text-slate-700 truncate pr-2">{u.name}</span>
-                              <span className="font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">{u.members}</span>
-                            </li>
-                          ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <GitGraph size={20} className="text-emerald-600" />
-                    Child Unit Breakdown
-                  </h3>
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-                          <tr>
-                            <th className="px-6 py-4">Unit Name</th>
-                            <th className="px-6 py-4 text-right">Members</th>
-                            <th className="px-6 py-4 text-right">Supporters</th>
-                            <th className="px-6 py-4 text-right">Booths</th>
-                            <th className="px-6 py-4 text-right">Critical Booths</th>
-                            <th className="px-6 py-4 text-right">Open Grievances</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {summary.childUnits.map((unit: any) => (
-                            <tr key={unit.id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="font-semibold text-slate-800">{unit.name}</div>
-                                <div className="text-xs text-slate-500 uppercase tracking-wider">{unit.level}</div>
-                              </td>
-                              <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.members.toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.supporters.toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right font-medium text-slate-700">{unit.booths.toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right font-medium text-amber-600">{(unit.criticalBooths || 0) > 0 ? (unit.criticalBooths || 0).toLocaleString() : '-'}</td>
-                              <td className="px-6 py-4 text-right font-medium text-rose-600">{unit.openGrievances > 0 ? unit.openGrievances.toLocaleString() : '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+        {currentView === 'dashboard' && (
+          ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(user.role) 
+            ? <DashboardHome user={user} setCurrentView={setCurrentView} />
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} />
         )}
 
         {currentView === 'campaigns' && <CampaignsView campaigns={campaigns} />}
@@ -828,15 +463,33 @@ export default function App() {
         {currentView === 'membership' && <MembershipAdmin user={user} />}
         {currentView === 'renewals' && <RenewalsManagement user={user} />}
         {currentView === 'volunteers' && <VolunteerAdmin />}
+        {currentView === 'volunteer-enrollment' && (
+          <VolunteerEnrollment 
+            user={user} 
+            onSuccess={() => setCurrentView('dashboard')} 
+          />
+        )}
         {currentView === 'cms' && <CmsAdmin user={user} />}
         {currentView === 'documents' && <DocumentsView user={user} />}
         {currentView === 'communication' && <CommunicationAdmin user={user} />}
-        {currentView === 'notices' && <NoticeAdmin user={user} />}
+        {currentView === 'notices' && (
+          (can('NOTICE_POPUP', 'CREATE') || can('NOTICE_POPUP', 'UPDATE')) 
+            ? <NoticeAdmin user={user} /> 
+            : <PublicListView type="notices" onBack={() => setCurrentView('dashboard')} />
+        )}
         {currentView === 'training' && (
           (can('TRAINING', 'CREATE') || can('TRAINING', 'UPDATE')) ? <TrainingAdmin user={user} /> : <TrainingPortal user={user} />
         )}
-        {currentView === 'events' && <AppEventsAdmin user={user} />}
+        {currentView === 'events' && (
+          (can('COMMUNICATION', 'CREATE') || can('COMMUNICATION', 'UPDATE'))
+            ? <AppEventsAdmin user={user} />
+            : <PublicListView type="events" onBack={() => setCurrentView('dashboard')} />
+        )}
         {currentView === 'field-events' && <EventsAdmin user={user} />}
+        {currentView === 'donations' && <DonationPortal />}
+        {currentView === 'public-documents' && <PublicDocumentsView />}
+        {currentView === 'public-candidates' && <PublicCandidatesView />}
+        {currentView === 'public-campaigns' && <PublicCampaignsView />}
         {currentView === 'finance' && <FinanceAdmin user={user} />}
         {currentView === 'fundraiser' && <FundraiserAdmin user={user} />}
         {currentView === 'election' && <ElectionAdmin user={user} key="election-admin" />}
@@ -854,6 +507,13 @@ export default function App() {
         {currentView === 'member-dashboard' && (
           <MemberDashboard 
             user={user} 
+            setCurrentView={setCurrentView}
+          />
+        )}
+        {currentView === 'applicant-dashboard' && (
+          <ApplicantMemberDashboard 
+            user={user} 
+            onLogout={handleLogout}
           />
         )}
         {currentView === 'event-detail' && selectedEventId && (
