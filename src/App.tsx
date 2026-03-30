@@ -237,50 +237,50 @@ export default function App() {
     </PublicLayout>
   );
 
-  if (currentView === 'applicant-status') {
-    return renderPublicLayout(
-      <ApplicantStatusPortal 
-        onBack={() => setCurrentView('public')} 
-        onLoginClick={() => {
-          setCurrentView('dashboard'); // Triggers login
-        }}
-        initialTrackingCode={initialTrackingCode}
-        initialMobile={initialMobile}
-      />
-    );
-  }
-
-  if (currentView === 'membership-public') {
-    return renderPublicLayout(
-      <MembershipPublic onStatusClick={(code, mobile) => {
-        setInitialTrackingCode(code || '');
-        setInitialMobile(mobile || '');
-        setCurrentView('applicant-status');
-      }} />
-    );
-  }
-
-  if (currentView === 'donations' && !user) {
-    return renderPublicLayout(<DonationPortal />);
-  }
-
-  if (currentView === 'public-documents' && !user) {
-    return renderPublicLayout(<PublicDocumentsView />);
-  }
-
-  if (currentView === 'public-candidates' && !user) {
-    return renderPublicLayout(<PublicCandidatesView />);
-  }
-
-  if (currentView === 'public-campaigns' && !user) {
-    return renderPublicLayout(<PublicCampaignsView />);
-  }
-
-  if (currentView === 'training' && (!user || user.role === 'PUBLIC')) {
-    return renderPublicLayout(<TrainingPortal user={user} />);
-  }
-
   if (!user) {
+    if (currentView === 'applicant-status') {
+      return renderPublicLayout(
+        <ApplicantStatusPortal 
+          onBack={() => setCurrentView('public')} 
+          onLoginClick={() => {
+            setCurrentView('dashboard'); // Triggers login
+          }}
+          initialTrackingCode={initialTrackingCode}
+          initialMobile={initialMobile}
+        />
+      );
+    }
+
+    if (currentView === 'membership-public') {
+      return renderPublicLayout(
+        <MembershipPublic onStatusClick={(code, mobile) => {
+          setInitialTrackingCode(code || '');
+          setInitialMobile(mobile || '');
+          setCurrentView('applicant-status');
+        }} />
+      );
+    }
+
+    if (currentView === 'donations') {
+      return renderPublicLayout(<DonationPortal />);
+    }
+
+    if (currentView === 'public-documents') {
+      return renderPublicLayout(<PublicDocumentsView />);
+    }
+
+    if (currentView === 'public-candidates') {
+      return renderPublicLayout(<PublicCandidatesView />);
+    }
+
+    if (currentView === 'public-campaigns') {
+      return renderPublicLayout(<PublicCampaignsView />);
+    }
+
+    if (currentView === 'training') {
+      return renderPublicLayout(<TrainingPortal user={user} />);
+    }
+
     if (currentView === 'public-auth') {
       return (
         <Login 
@@ -482,18 +482,24 @@ export default function App() {
         {currentView === 'notices' && (
           (can('NOTICE_POPUP', 'CREATE') || can('NOTICE_POPUP', 'UPDATE')) 
             ? <NoticeAdmin user={user} /> 
-            : <PublicListView type="notices" onBack={() => setCurrentView('dashboard')} />
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="notices" />
         )}
         {currentView === 'training' && (
-          (can('TRAINING', 'CREATE') || can('TRAINING', 'UPDATE')) ? <TrainingAdmin user={user} /> : <TrainingPortal user={user} />
+          (can('TRAINING', 'CREATE') || can('TRAINING', 'UPDATE')) 
+            ? <TrainingAdmin user={user} /> 
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="training" />
         )}
         {currentView === 'events' && (
           (can('COMMUNICATION', 'CREATE') || can('COMMUNICATION', 'UPDATE'))
             ? <AppEventsAdmin user={user} />
-            : <PublicListView type="events" onBack={() => setCurrentView('dashboard')} />
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="events" />
         )}
         {currentView === 'field-events' && <EventsAdmin user={user} />}
-        {currentView === 'donations' && <DonationPortal />}
+        {currentView === 'donations' && (
+          ['ADMIN', 'STAFF'].includes(user.role)
+            ? <DonationPortal />
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="donations" />
+        )}
         {currentView === 'public-documents' && <PublicDocumentsView />}
         {currentView === 'public-candidates' && <PublicCandidatesView />}
         {currentView === 'public-campaigns' && <PublicCampaignsView />}
@@ -505,29 +511,35 @@ export default function App() {
             ? <ElectionAdmin user={user} key="candidate-admin" defaultTab="candidates" /> 
             : <CandidateDashboard />
         )}
-        {currentView === 'grievances' && <GrievancePortal user={user} />}
-        {currentView === 'surveys' && <SurveyPolls user={user} />}
+        {currentView === 'grievances' && (
+          (can('GRIEVANCES', 'UPDATE') || can('GRIEVANCES', 'DELETE'))
+            ? <GrievancePortal user={user} />
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="grievances" />
+        )}
+        {currentView === 'surveys' && (
+          (can('SURVEYS', 'CREATE') || can('SURVEYS', 'UPDATE'))
+            ? <SurveyPolls user={user} />
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="surveys" />
+        )}
         {currentView === 'pgis' && <PgisDashboard />}
         {currentView === 'warroom' && <WarRoomDashboard />}
         {currentView === 'settings' && <SystemSettings />}
-        {currentView === 'profile' && <UserProfileDashboard user={user} onLogout={handleLogout} />}
+        {currentView === 'profile' && (
+          ['ADMIN', 'STAFF'].includes(user.role)
+            ? <UserProfileDashboard user={user} onLogout={handleLogout} />
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="profile" />
+        )}
         {currentView === 'member-dashboard' && (
-          <MemberDashboard 
-            user={user} 
-            setCurrentView={setCurrentView}
-          />
+          <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="overview" />
         )}
         {currentView === 'applicant-dashboard' && (
-          <ApplicantMemberDashboard 
-            user={user} 
-            onLogout={handleLogout}
-          />
+          <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="overview" />
         )}
         {currentView === 'event-detail' && selectedEventId && (
           <EventDetailView 
             eventId={selectedEventId} 
             user={user}
-            onBack={() => setCurrentView('member-dashboard')} 
+            onBack={() => setCurrentView('dashboard')} 
           />
         )}
       </main>

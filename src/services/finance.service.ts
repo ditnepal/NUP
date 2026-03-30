@@ -918,6 +918,13 @@ export class FinanceService {
     return transactionsWithLogs;
   }
 
+  async getActiveFundraisingCampaigns() {
+    return await prisma.fundraisingCampaign.findMany({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   async getDonationsByUserId(userId: string) {
     return await prisma.donation.findMany({
       where: { donor: { userId } },

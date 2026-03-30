@@ -627,11 +627,17 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
         <motion.div variants={itemVariants} className="space-y-8">
           {/* Upcoming Events */}
           <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-8 border-b border-slate-100">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
                 <Calendar size={24} className="text-blue-500" />
                 Events
               </h3>
+              <button 
+                onClick={() => setCurrentView('events')}
+                className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-colors"
+              >
+                View All
+              </button>
             </div>
             <div className="p-4 space-y-4">
               {events.length > 0 ? events.map((event, i) => (

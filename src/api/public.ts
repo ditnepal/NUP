@@ -572,6 +572,19 @@ router.get('/sections', async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/public/fundraisers
+// @desc    Get active fundraising campaigns
+// @access  Public
+router.get('/fundraisers', async (req, res) => {
+  try {
+    const campaigns = await financeService.getActiveFundraisingCampaigns();
+    res.json(campaigns);
+  } catch (error: any) {
+    console.error('[Public API] Error fetching fundraisers:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   GET /api/v1/public/config
 // @desc    Get public system configurations
 // @access  Public

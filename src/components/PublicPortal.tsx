@@ -643,6 +643,12 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             <div className="lg:col-span-2">
               <div className="flex justify-between items-end mb-12">
                 <h2 className="text-4xl font-black tracking-tight uppercase">Upcoming Events</h2>
+                <button 
+                  onClick={onPortalClick}
+                  className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-2"
+                >
+                  View All Events <ArrowRight size={14} />
+                </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {events.map((event) => (
