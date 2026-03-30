@@ -75,7 +75,7 @@ export async function createApp() {
   const app = express();
 
   // Trust the proxy (needed for rate limiting behind nginx)
-  app.set('trust proxy', 1);
+  app.set('trust proxy', true);
 
   // Middleware
   app.use(cors());
@@ -111,14 +111,8 @@ export async function createApp() {
   app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
   app.get('/test', (req, res) => res.send('Server is running!'));
 
-  // Global Error Handler
-  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error('[GLOBAL ERROR HANDLER]', err);
-    res.status(500).json({ error: 'Internal Server Error', message: err.message });
-  });
-
-  // Move user-alerts higher to ensure it's matched
-  app.use('/api/v1/user-alerts', notificationsRouter);
+  // Move notifications higher to ensure it's matched
+  app.use('/api/v1/notifications', notificationsRouter);
   app.use('/api/v1/system-config', systemConfigRouter);
 
   // Serve uploaded documents

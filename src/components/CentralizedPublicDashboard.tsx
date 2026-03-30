@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, AppEvent } from '../types';
+import { UserProfile, AppEvent, TrainingProgram, Course, Lesson, Grievance, GrievanceCategory } from '../types';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
@@ -13,7 +13,6 @@ import {
   ChevronRight, 
   Clock, 
   CheckCircle2, 
-  AlertCircle,
   ArrowRight,
   TrendingUp,
   Users,
@@ -29,18 +28,12 @@ import {
   ExternalLink,
   Settings,
   Download,
-  Printer,
-  Share2,
-  XCircle,
-  Loader2,
   Bell,
   UserPlus,
-  LogOut,
   MapPin,
   BookOpen,
   Paperclip,
   Search,
-  Filter,
   Pin,
   GraduationCap,
   Layers,
@@ -60,19 +53,6 @@ import MemberIdCard from './MemberIdCard';
 import { MemberCardModal } from './MemberCardModal';
 import { MemberProfileSettings } from './MemberProfileSettings';
 import { GrievanceStatusBadge, GrievancePriorityBadge } from './ui/GrievanceBadges';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell
-} from 'recharts';
-import { TrainingProgram, Course, Lesson, Grievance, GrievanceCategory } from '../types';
 import { toast } from 'sonner';
 
 interface Survey {

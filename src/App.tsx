@@ -38,8 +38,6 @@ import { DashboardHome } from './components/DashboardHome';
 import { CentralizedPublicDashboard } from './components/CentralizedPublicDashboard';
 import { UserAdmin } from './components/UserAdmin';
 import { PortalCenter } from './components/PortalCenter';
-import { MemberDashboard } from './components/MemberDashboard';
-import { ApplicantMemberDashboard } from './components/ApplicantMemberDashboard';
 import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { EventDetailView } from './components/EventDetailView';
 import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
