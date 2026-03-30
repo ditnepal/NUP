@@ -11,7 +11,7 @@ export const PublicCampaignsView = () => {
       try {
         // In a real implementation, this would fetch from a public endpoint
         // For now, we simulate fetching public campaigns
-        const response = await api.get('/public/campaigns').catch(() => []);
+        const response = await api.get('/finance/campaigns').catch(() => []);
         setCampaigns(response);
       } catch (error) {
         console.error('Error fetching campaigns:', error);

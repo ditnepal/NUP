@@ -111,8 +111,8 @@ router.get('/pages/id/:id', async (req, res) => {
 // @access  Public
 router.get('/posts', async (req, res) => {
   try {
-    const { type, lang, categoryId } = req.query;
-    const posts = await cmsService.getPosts(type as string, lang as string, categoryId as string);
+    const { type, lang, categoryId, limit } = req.query;
+    const posts = await cmsService.getPosts(type as string, lang as string, categoryId as string, limit ? Number(limit) : undefined);
     res.json(posts);
   } catch (error: any) {
     console.error('[Public API] Error fetching posts:', error);
@@ -311,6 +311,35 @@ router.post('/complaint', async (req, res) => {
     res.status(201).json({ message: 'Complaint submitted successfully', issueId: issue.id });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/public/candidates
+// @desc    Get public candidates
+// @access  Public
+router.get('/candidates', async (req, res) => {
+  try {
+    const candidates = await prisma.candidate.findMany({
+      where: {
+        status: 'ACTIVE'
+      },
+      include: {
+        constituency: {
+          select: {
+            name: true,
+            type: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 20
+    });
+    res.json(candidates);
+  } catch (error) {
+    console.error('Error fetching public candidates:', error);
+    res.json([]);
   }
 });
 

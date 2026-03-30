@@ -35,7 +35,7 @@ export class CmsService extends BaseService {
   /**
    * Get all published posts by type
    */
-  async getPosts(type: string = 'NEWS', language: string = 'en', categoryId?: string) {
+  async getPosts(type: string = 'NEWS', language: string = 'en', categoryId?: string, limit?: number) {
     const where: any = { status: 'PUBLISHED', type, language };
     if (categoryId) {
       where.categoryId = categoryId;
@@ -47,7 +47,8 @@ export class CmsService extends BaseService {
       orderBy: [
         { isPinned: 'desc' },
         { publishedAt: 'desc' }
-      ]
+      ],
+      take: limit ? Number(limit) : undefined
     });
   }
 

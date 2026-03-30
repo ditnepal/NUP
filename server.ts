@@ -14,24 +14,24 @@ if (!process.env.DATABASE_URL) {
 }
 
 if (process.env.DATABASE_URL !== DEFAULT_DB_URL && process.env.DATABASE_URL !== 'file:/app/applet/prisma/dev.db') {
-  console.error('[FATAL] DATABASE_URL is invalid');
-  console.error(`[FATAL] Expected: ${DEFAULT_DB_URL} or file:/app/applet/prisma/dev.db`);
-  console.error(`[FATAL] Received: ${process.env.DATABASE_URL}`);
-  process.exit(1);
+  console.warn('[WARN] DATABASE_URL might be non-standard');
+  console.warn(`[WARN] Expected: ${DEFAULT_DB_URL} or file:/app/applet/prisma/dev.db`);
+  console.warn(`[WARN] Received: ${process.env.DATABASE_URL}`);
 }
 
 // Check if database exists and is not empty
 try {
-  const stats = fs.statSync(dbPath);
-  if (stats.size === 0) {
-    console.error('[FATAL] Database file exists but is empty (0 bytes).');
-    console.error('[FATAL] Please run `npx prisma db push` and `npx tsx seed.ts` manually to initialize it.');
-    process.exit(1);
+  if (!fs.existsSync(dbPath)) {
+    console.warn('[WARN] Database file not found at ' + dbPath);
+    console.warn('[WARN] Attempting to initialize database...');
+  } else {
+    const stats = fs.statSync(dbPath);
+    if (stats.size === 0) {
+      console.warn('[WARN] Database file exists but is empty (0 bytes).');
+    }
   }
 } catch (e) {
-  console.error('[FATAL] Database file not found at ' + dbPath);
-  console.error('[FATAL] Please run `npx prisma db push` and `npx tsx seed.ts` manually to initialize it.');
-  process.exit(1);
+  console.error('[ERROR] Error checking database file:', e);
 }
 
 import { createServer as createViteServer } from 'vite';
@@ -215,7 +215,7 @@ async function startServer() {
     if (error.code === 'P2021') {
       console.error('[FATAL] Database tables missing (P2021).');
       console.error('[FATAL] Please run `npx prisma db push` and `npx tsx seed.ts` manually to initialize the database schema.');
-      process.exit(1);
+      // process.exit(1); // Keep server alive for debugging
     }
   }
 

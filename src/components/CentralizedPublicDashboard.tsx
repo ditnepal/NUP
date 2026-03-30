@@ -335,63 +335,361 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
         ))}
       </motion.div>
 
-      {/* Volunteer & Donor Status */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {volunteer ? (
-          <div className="bg-indigo-900 rounded-[2.5rem] p-8 text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 -translate-y-1/2" />
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
-                  <Zap size={24} className="text-indigo-300" />
-                  Volunteer Status
-                </h3>
-                <p className="text-indigo-200 text-xs font-medium mt-1">Your contribution matters to us.</p>
-              </div>
-              <span className="px-3 py-1 bg-emerald-500 text-white text-[10px] font-black rounded-full uppercase tracking-widest">
-                {volunteer.status}
-              </span>
-            </div>
-            <div className="space-y-4">
-              <div className="p-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl">
-                <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">Active Assignments</p>
-                <p className="text-sm font-bold">{volunteer.assignments?.length || 0} Projects Assigned</p>
-              </div>
-              <div className="p-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl">
-                <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">Skills Verified</p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {volunteer.skills?.split(',').map((skill: string, i: number) => (
-                    <span key={i} className="px-2 py-0.5 bg-white/10 rounded-md text-[9px] font-bold uppercase">{skill.trim()}</span>
-                  ))}
+      {/* My Membership Section */}
+      <motion.div variants={itemVariants} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
+            <Award size={28} className="text-emerald-600" />
+            My Membership
+          </h2>
+          <span className="px-4 py-1 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-widest border border-slate-200">
+            Portal Foundation v1.0
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Status & Overview */}
+          <div className="lg:col-span-2 space-y-6">
+            {user.role === 'PUBLIC' && (
+              <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-700" />
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
+                    <UserPlus size={32} />
+                  </div>
+                  <h3 className="text-3xl font-black text-slate-900 mb-4">Join the Movement</h3>
+                  <p className="text-slate-500 text-lg mb-8 max-w-md">
+                    You are currently a registered user. Become a full party member to unlock voting rights, exclusive events, and official representation.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <button 
+                      onClick={() => setCurrentView('membership-public')}
+                      className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center gap-2"
+                    >
+                      Apply for Membership <ArrowRight size={18} />
+                    </button>
+                    <button className="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">
+                      View Benefits
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <button 
-              onClick={() => setCurrentView('volunteers')}
-              className="w-full mt-6 py-3 bg-white text-indigo-900 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-50 transition-all"
-            >
-              Volunteer Dashboard
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
-              <Heart size={32} />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-slate-900">Become a Volunteer</h3>
-              <p className="text-slate-500 mt-2">Join our movement and help us make a difference in the community.</p>
-            </div>
-            <button 
-              onClick={() => setCurrentView('volunteer-enrollment')}
-              className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 group"
-            >
-              Join the Movement
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        )}
+            )}
 
+            {user.role === 'APPLICANT_MEMBER' && (
+              <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Application Status</h3>
+                    <p className="text-slate-500 text-xs font-medium mt-1">Tracking your journey to official membership.</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tracking Code</p>
+                    <p className="font-mono font-bold text-indigo-600">#{profile?.id?.slice(-8)?.toUpperCase() || 'PENDING'}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  {/* Progress Tracker */}
+                  <div className="relative">
+                    <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -translate-y-1/2" />
+                    <div 
+                      className="absolute top-1/2 left-0 h-1 bg-amber-500 -translate-y-1/2 transition-all duration-1000" 
+                      style={{ width: `${getProgress()}%` }}
+                    />
+                    <div className="relative flex justify-between">
+                      {[
+                        { label: 'Applied', status: 'SUBMITTED', icon: FileText },
+                        { label: 'Verification', status: 'VERIFYING', icon: Shield },
+                        { label: 'Approval', status: 'PENDING', icon: Clock },
+                        { label: 'Official', status: 'APPROVED', icon: Award },
+                      ].map((step, i) => {
+                        const isCompleted = getProgress() > (i * 30);
+                        const isCurrent = profile?.status === step.status || (i === 2 && profile?.status === 'PENDING');
+                        
+                        return (
+                          <div key={i} className="flex flex-col items-center gap-2">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-colors ${
+                              isCompleted ? 'bg-amber-500 text-white' : 
+                              isCurrent ? 'bg-white text-amber-500 border-amber-500' : 'bg-slate-100 text-slate-400'
+                            }`}>
+                              <step.icon size={16} />
+                            </div>
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${
+                              isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-400'
+                            }`}>{step.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
+                          <Clock size={16} />
+                        </div>
+                        <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Next Steps</h4>
+                      </div>
+                      <p className="text-xs text-amber-700 leading-relaxed">
+                        Your application is currently under review by the district committee. This process typically takes 3-5 business days.
+                      </p>
+                    </div>
+                    <div className="p-6 bg-indigo-50 rounded-3xl border border-indigo-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
+                          <MessageSquare size={16} />
+                        </div>
+                        <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight">Support</h4>
+                      </div>
+                      <p className="text-xs text-indigo-700 leading-relaxed">
+                        Need to update your details? Contact your local coordinator or visit the help center.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {user.role === 'MEMBER' && (
+              <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Member Overview</h3>
+                    <p className="text-slate-500 text-xs font-medium mt-1">Official status and active credentials.</p>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-500 text-white text-[10px] font-black rounded-full uppercase tracking-widest">
+                    Active Member
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Member Since</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {profile?.joinedAt ? format(new Date(profile.joinedAt), 'MMM yyyy') : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Expiry Date</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {profile?.expiryDate ? format(new Date(profile.expiryDate), 'dd MMM yyyy') : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">District Unit</p>
+                    <p className="text-lg font-bold text-slate-900 truncate">
+                      {profile?.orgUnit?.name || 'Global'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex gap-4">
+                  <button 
+                    onClick={() => setCurrentView('renewals')}
+                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                  >
+                    Renew Membership <Zap size={14} />
+                  </button>
+                  <button className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all">
+                    Update Info
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Member Card / Quick Stats */}
+          <div className="space-y-6">
+            {user.role === 'MEMBER' ? (
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Official ID Card</p>
+                <div className="scale-90 origin-top">
+                  <MemberIdCard member={profile} />
+                </div>
+                <button className="w-full py-4 border-2 border-dashed border-slate-200 rounded-3xl text-slate-400 font-bold text-xs hover:border-emerald-200 hover:text-emerald-600 transition-all flex items-center justify-center gap-2">
+                  <Download size={16} /> Download Digital ID
+                </button>
+              </div>
+            ) : (
+              <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white h-full flex flex-col justify-between">
+                <div>
+                  <h4 className="text-lg font-black uppercase tracking-tight mb-4">Membership Benefits</h4>
+                  <ul className="space-y-4">
+                    {[
+                      'Official Voting Rights',
+                      'District Representation',
+                      'Exclusive Member Portal',
+                      'Party ID Card',
+                      'Priority Event Access'
+                    ].map((benefit, i) => (
+                      <li key={i} className="flex items-center gap-3 text-slate-300 text-sm">
+                        <CheckCircle2 size={16} className="text-emerald-400" />
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-8 p-4 bg-white/10 rounded-2xl border border-white/10">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Support Center</p>
+                  <p className="text-xs text-slate-300">Have questions? Our team is here to help you through the process.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* My Volunteer Section */}
+      <motion.div variants={itemVariants} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
+            <Zap size={28} className="text-indigo-600" />
+            My Volunteer
+          </h2>
+          <span className="px-4 py-1 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-widest border border-slate-200">
+            Volunteer Portal v1.0
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Status & Overview */}
+          <div className="lg:col-span-2 space-y-6">
+            {!volunteer && (
+              <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-700" />
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
+                    <Zap size={32} />
+                  </div>
+                  <h3 className="text-3xl font-black text-slate-900 mb-4">Serve the Community</h3>
+                  <p className="text-slate-500 text-lg mb-8 max-w-md">
+                    You haven't applied to be a volunteer yet. Join our team of dedicated volunteers and help make a real impact on the ground.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <button 
+                      onClick={() => setCurrentView('volunteer-enrollment')}
+                      className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
+                    >
+                      Apply to Volunteer <ArrowRight size={18} />
+                    </button>
+                    <button className="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">
+                      Volunteer Roles
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {volunteer && volunteer.status === 'PENDING' && (
+              <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Volunteer Application</h3>
+                    <p className="text-slate-500 text-xs font-medium mt-1">Your application is being processed.</p>
+                  </div>
+                  <span className="px-3 py-1 bg-amber-100 text-amber-600 text-[10px] font-black rounded-full uppercase tracking-widest border border-amber-200">
+                    Under Review
+                  </span>
+                </div>
+
+                <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
+                      <Clock size={16} />
+                    </div>
+                    <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Application Status</h4>
+                  </div>
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    Thank you for your interest! Our volunteer coordinators are reviewing your skills and availability. You will be notified once a suitable project is found.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {volunteer && volunteer.status === 'APPROVED' && (
+              <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Volunteer Dashboard</h3>
+                    <p className="text-slate-500 text-xs font-medium mt-1">Active assignments and contributions.</p>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-500 text-white text-[10px] font-black rounded-full uppercase tracking-widest">
+                    Active Volunteer
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Projects</p>
+                      <p className="text-2xl font-black text-slate-900">{volunteer.assignments?.length || 0}</p>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Hours</p>
+                      <p className="text-2xl font-black text-slate-900">{volunteer.totalHours || 0}h</p>
+                    </div>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Verified Skills</p>
+                    <div className="flex flex-wrap gap-2">
+                      {volunteer.skills?.split(',').map((skill: string, i: number) => (
+                        <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase">
+                          {skill.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setCurrentView('volunteers')}
+                  className="w-full mt-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                >
+                  Open Volunteer Portal <ArrowUpRight size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Quick Stats / Info */}
+          <div className="space-y-6">
+            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white h-full flex flex-col justify-between">
+              <div>
+                <h4 className="text-lg font-black uppercase tracking-tight mb-4">Impact Summary</h4>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-indigo-400">
+                      <TrendingUp size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Community Reach</p>
+                      <p className="text-sm font-bold">12,450+ People Impacted</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-emerald-400">
+                      <Users size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Volunteers</p>
+                      <p className="text-sm font-bold">2,800+ Members Serving</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8 p-4 bg-white/10 rounded-2xl border border-white/10">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Coordinator Note</p>
+                <p className="text-xs text-slate-300">"Every hour you give brings us closer to our shared vision."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Donor Status */}
+      <motion.div variants={itemVariants}>
         {donations.length > 0 ? (
           <div className="bg-rose-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-rose-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 -translate-y-1/2" />

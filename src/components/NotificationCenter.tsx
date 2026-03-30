@@ -15,7 +15,7 @@ export const NotificationCenter: React.FC = () => {
 
   const fetchNotifications = async () => {
     try {
-      const data = await api.get('/user-alerts');
+      const data = await api.get('/notifications');
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -27,7 +27,7 @@ export const NotificationCenter: React.FC = () => {
 
   const markAsRead = async (id: string) => {
     try {
-      await api.patch(`/user-alerts/${id}/read`, {});
+      await api.patch(`/notifications/${id}/read`, {});
       setNotifications(notifications.map(n => n.id === id ? { ...n, status: 'READ' } : n));
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -36,7 +36,7 @@ export const NotificationCenter: React.FC = () => {
 
   const deleteNotification = async (id: string) => {
     try {
-      await api.delete(`/user-alerts/${id}`);
+      await api.delete(`/notifications/${id}`);
       setNotifications(notifications.filter(n => n.id !== id));
     } catch (error) {
       console.error('Error deleting notification:', error);

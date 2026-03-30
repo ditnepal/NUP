@@ -36,6 +36,8 @@ import { PublicCampaignsView } from './components/PublicCampaigns';
 import { WarRoomDashboard } from './components/WarRoomDashboard';
 import { DashboardHome } from './components/DashboardHome';
 import { CentralizedPublicDashboard } from './components/CentralizedPublicDashboard';
+import { UserAdmin } from './components/UserAdmin';
+import { PortalCenter } from './components/PortalCenter';
 import { MemberDashboard } from './components/MemberDashboard';
 import { ApplicantMemberDashboard } from './components/ApplicantMemberDashboard';
 import { UserProfileDashboard } from './components/UserProfileDashboard';
@@ -49,7 +51,7 @@ import { api } from './lib/api';
 import { usePermissions } from './hooks/usePermissions';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings, User } from 'lucide-react';
 
-type View = 'dashboard' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment';
+type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -106,9 +108,12 @@ export default function App() {
         } catch (error) {
           localStorage.removeItem('token');
           setUser(null);
+        } finally {
+          setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
     checkAuth();
   }, []);
@@ -291,9 +296,9 @@ export default function App() {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
-    { id: 'member-dashboard', label: 'Member Portal', icon: Award, show: user.role === 'MEMBER' || ['ADMIN', 'STAFF'].includes(user.role) },
-    { id: 'applicant-dashboard', label: 'Application Status', icon: Clock, show: user.role === 'APPLICANT_MEMBER' || ['ADMIN', 'STAFF'].includes(user.role) },
-    { id: 'profile', label: 'My Profile', icon: User, show: true },
+    { id: 'portal-center', label: 'Portal Center', icon: Globe, show: ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'users', label: 'System Users', icon: Users, show: ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'profile', label: 'Admin Profile', icon: User, show: true },
     { id: 'warroom', label: 'War Room', icon: ShieldAlert, show: can('WAR_ROOM', 'VIEW') && systemConfig['ENABLE_WAR_ROOM'] !== 'false' },
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone, show: can('COMMUNICATION', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
     { id: 'supporters', label: 'Supporters', icon: Users, show: can('SUPPORTERS', 'VIEW') },
@@ -456,6 +461,8 @@ export default function App() {
             : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} />
         )}
 
+        {currentView === 'portal-center' && <PortalCenter user={user} setCurrentView={setCurrentView} />}
+        {currentView === 'users' && <UserAdmin />}
         {currentView === 'campaigns' && <CampaignsView campaigns={campaigns} />}
         {currentView === 'supporters' && <SupportersView supporters={supporters} onRefresh={fetchData} user={user} />}
         {currentView === 'booths' && <BoothsView booths={booths} onRefresh={fetchData} user={user} />}
