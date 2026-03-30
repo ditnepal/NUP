@@ -67,6 +67,7 @@ export interface UserProfile {
   orgUnitId?: string;
   orgUnitLevel?: string;
   orgUnitName?: string;
+  isActive?: boolean;
   createdAt?: string;
 }
 

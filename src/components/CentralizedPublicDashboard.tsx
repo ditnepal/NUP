@@ -38,6 +38,7 @@ import {
   LogOut
 } from 'lucide-react';
 import MemberIdCard from './MemberIdCard';
+import { MemberProfileSettings } from './MemberProfileSettings';
 import { 
   AreaChart, 
   Area, 
@@ -72,6 +73,8 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
   const [donations, setDonations] = useState<any[]>([]);
   const [donorProfile, setDonorProfile] = useState<any>(null);
   const [systemConfig, setSystemConfig] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<'overview' | 'membership' | 'volunteer' | 'donations' | 'profile'>('overview');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const getProgress = () => {
     if (profile?.status === 'APPROVED') return 100;
@@ -175,11 +178,26 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
             <div className="flex flex-wrap gap-3">
               <button 
-                onClick={() => setCurrentView('profile')}
-                className="px-6 py-3 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-400 hover:text-white transition-all flex items-center gap-2"
+                onClick={() => setActiveTab('profile')}
+                className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center gap-2 ${
+                  activeTab === 'profile' 
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
+                    : 'bg-white text-slate-900 hover:bg-emerald-400 hover:text-white'
+                }`}
               >
-                <Settings size={16} />
-                Manage Profile
+                <User size={16} />
+                My Profile
+              </button>
+              <button 
+                onClick={() => setActiveTab('overview')}
+                className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center gap-2 ${
+                  activeTab === 'overview' 
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
+                    : 'bg-white/10 text-white hover:bg-white/20'
+                }`}
+              >
+                <Layout size={16} />
+                Overview
               </button>
               {user.role === 'PUBLIC' && (
                 <button 
@@ -307,8 +325,11 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
         </div>
       </motion.div>
 
-      {/* Quick Actions Grid */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <>
+          {/* Quick Actions Grid */}
+          <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
           { id: 'membership-public', label: 'Membership', icon: UserPlus, color: 'emerald', show: user.role === 'PUBLIC' },
           { id: 'member-dashboard', label: 'My ID Card', icon: Award, color: 'emerald', show: user.role === 'MEMBER' },
@@ -506,7 +527,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               <div className="space-y-4">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Official ID Card</p>
                 <div className="scale-90 origin-top">
-                  <MemberIdCard member={profile} />
+                  {profile && <MemberIdCard member={profile} />}
                 </div>
                 <button className="w-full py-4 border-2 border-dashed border-slate-200 rounded-3xl text-slate-400 font-bold text-xs hover:border-emerald-200 hover:text-emerald-600 transition-all flex items-center justify-center gap-2">
                   <Download size={16} /> Download Digital ID
@@ -634,7 +655,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Verified Skills</p>
                     <div className="flex flex-wrap gap-2">
-                      {volunteer.skills?.split(',').map((skill: string, i: number) => (
+                      {(volunteer.skills?.split(',') || []).map((skill: string, i: number) => (
                         <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase">
                           {skill.trim()}
                         </span>
@@ -924,6 +945,208 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           </div>
         </motion.div>
       </div>
+    </>
+  )}
+
+      {/* Profile Tab Content */}
+      {activeTab === 'profile' && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-8"
+        >
+          {isEditingProfile && (user.role === 'MEMBER' || user.role === 'APPLICANT_MEMBER') ? (
+            <div className="bg-white rounded-[3rem] p-8 md:p-12 border border-slate-200 shadow-xl">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Edit Profile</h2>
+                <button 
+                  onClick={() => setIsEditingProfile(false)}
+                  className="px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+              <MemberProfileSettings 
+                profile={profile} 
+                onBack={() => setIsEditingProfile(false)} 
+                onUpdate={async () => {
+                  const profileData = await api.get('/members/me').catch(() => null);
+                  setProfile(profileData);
+                  setIsEditingProfile(false);
+                }} 
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profile Summary Card */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="bg-white rounded-[3rem] p-8 border border-slate-200 shadow-sm text-center">
+                  <div className="relative inline-block mb-6">
+                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-50 bg-slate-100 shadow-inner">
+                      <img 
+                        src={profile?.profilePhotoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div className="absolute bottom-0 right-0 w-10 h-10 bg-emerald-500 text-white rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                      <CheckCircle2 size={20} />
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">{user.displayName}</h2>
+                  <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">{user.role.replace('_', ' ')}</p>
+                  
+                  <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Verification</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                        user.isActive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
+                      }`}>
+                        {user.isActive ? 'Verified' : 'Unverified'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Member Since</span>
+                      <span className="text-slate-700 font-bold">{format(new Date(user.createdAt), 'MMM yyyy')}</span>
+                    </div>
+                  </div>
+
+                  {(user.role === 'MEMBER' || user.role === 'APPLICANT_MEMBER') && (
+                    <button 
+                      onClick={() => setIsEditingProfile(true)}
+                      className="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-500 transition-all shadow-lg shadow-slate-200"
+                    >
+                      Edit Profile Details
+                    </button>
+                  )}
+                </div>
+
+                {/* Identity Context */}
+                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400 mb-6">Linked Identity</h3>
+                  <div className="space-y-6">
+                    {user.role === 'MEMBER' && (
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center">
+                          <Shield size={24} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Membership</p>
+                          <p className="font-bold text-white">Active Party Member</p>
+                        </div>
+                      </div>
+                    )}
+                    {volunteer && (
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center">
+                          <Heart size={24} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Volunteer</p>
+                          <p className="font-bold text-white">{volunteer.status === 'APPROVED' ? 'Active Volunteer' : 'Volunteer Applicant'}</p>
+                        </div>
+                      </div>
+                    )}
+                    {!volunteer && user.role === 'PUBLIC' && (
+                      <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          You are currently a <span className="text-white font-bold">Registered User</span>. Join as a member or volunteer to unlock more features.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Details & Settings */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Personal Information */}
+                <div className="bg-white rounded-[3rem] p-8 border border-slate-200 shadow-sm">
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-8 flex items-center gap-3">
+                    <User size={24} className="text-emerald-500" />
+                    Personal Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</p>
+                      <p className="text-lg font-bold text-slate-800">{user.displayName}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</p>
+                      <p className="text-lg font-bold text-slate-800">{user.email}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</p>
+                      <p className="text-lg font-bold text-slate-800">{user.phoneNumber || 'Not provided'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Type</p>
+                      <p className="text-lg font-bold text-slate-800 uppercase">{user.role.replace('_', ' ')}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Member Specific Details */}
+                {profile && (
+                  <div className="bg-white rounded-[3rem] p-8 border border-slate-200 shadow-sm">
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-8 flex items-center gap-3">
+                      <Award size={24} className="text-blue-500" />
+                      Membership Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Membership ID</p>
+                        <p className="text-lg font-bold text-slate-800">{profile.membershipId || 'Pending'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Province</p>
+                        <p className="text-lg font-bold text-slate-800">{profile.province || 'Not specified'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">District</p>
+                        <p className="text-lg font-bold text-slate-800">{profile.district || 'Not specified'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Local Level</p>
+                        <p className="text-lg font-bold text-slate-800">{profile.localLevel || 'Not specified'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Account Security */}
+                <div className="bg-white rounded-[3rem] p-8 border border-slate-200 shadow-sm">
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-8 flex items-center gap-3">
+                    <Shield size={24} className="text-rose-500" />
+                    Account Security
+                  </h3>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                      <div>
+                        <p className="font-bold text-slate-800">Password</p>
+                        <p className="text-xs text-slate-500">Last changed {format(new Date(user.createdAt), 'MMM d, yyyy')}</p>
+                      </div>
+                      <button className="px-6 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+                        Change
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                      <div>
+                        <p className="font-bold text-slate-800">Two-Factor Authentication</p>
+                        <p className="text-xs text-slate-500">Add an extra layer of security to your account.</p>
+                      </div>
+                      <button className="px-6 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-md shadow-emerald-100">
+                        Enable
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
     </motion.div>
   );
 };
