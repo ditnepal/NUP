@@ -27,6 +27,7 @@ const volunteerSchema = z.object({
   phone: z.string().optional(),
   skills: z.string(),
   availability: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING']).optional(),
 });
 
 const assignmentSchema = z.object({
@@ -60,7 +61,10 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
 router.post('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const data = volunteerSchema.parse(req.body);
-    const volunteer = await volunteerService.register(data);
+    const volunteer = await volunteerService.register({
+      ...data,
+      userId: req.user!.id
+    });
     res.status(201).json(volunteer);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -99,6 +103,18 @@ router.post('/apply', async (req, res) => {
       availability: data.availability || ''
     });
     res.status(201).json(application);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/volunteers/applications
+// @desc    Get volunteer applications
+// @access  Private (Admin)
+router.get('/applications', authenticate, authorize(['ADMIN', 'VOLUNTEER_MANAGER']), async (req, res) => {
+  try {
+    const applications = await volunteerService.getApplications();
+    res.json(applications);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

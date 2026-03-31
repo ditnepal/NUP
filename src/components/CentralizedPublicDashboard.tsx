@@ -438,7 +438,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <div>
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Membership ID</p>
                       <p className="text-2xl font-black text-white tracking-tighter">
-                        {profile.membershipId || `PPOS-${user.id.slice(0, 6).toUpperCase()}`}
+                        {profile.membershipId || `NUP-${user.id.slice(0, 6).toUpperCase()}`}
                       </p>
                     </div>
                     <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center">
@@ -2719,11 +2719,29 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-500 font-bold uppercase tracking-wider text-xs">Verification</span>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                      }`}>
-                        {user.isActive ? 'Verified' : 'Unverified'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                        }`}>
+                          {user.isActive ? 'Verified' : 'Unverified'}
+                        </span>
+                        {!user.isActive && user.role === 'PUBLIC' && (
+                          <button 
+                            onClick={async () => {
+                              try {
+                                await api.post('/auth/verify-me', {});
+                                toast.success('Identity verified successfully!');
+                                window.location.reload();
+                              } catch (err) {
+                                toast.error('Verification failed');
+                              }
+                            }}
+                            className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 underline uppercase tracking-wider"
+                          >
+                            Verify Now
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-500 font-bold uppercase tracking-wider text-xs">Member Since</span>

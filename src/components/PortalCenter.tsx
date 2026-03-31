@@ -22,6 +22,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 
 interface PortalCenterProps {
   user: UserProfile;
@@ -42,12 +43,9 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersData, summaryData] = await Promise.all([
-        api.get('/users'),
-        api.get('/dashboard/summary')
-      ]);
-      setUsers(usersData);
-      setSummary(summaryData);
+      const data = await api.get('/dashboard/portal-center');
+      setSummary(data);
+      setUsers(data.recentUsers || []);
     } catch (error) {
       console.error('Error fetching Portal Center data:', error);
     } finally {
@@ -55,20 +53,29 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
     }
   };
 
-  const registeredUsers = users.filter(u => u.role === 'PUBLIC');
-  const filteredRegisteredUsers = registeredUsers.filter(u => 
+  const filteredRegisteredUsers = users.filter(u => 
     u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const journeySteps = [
     { 
-      id: 'public', 
+      id: 'registered', 
       title: 'Registered Public User', 
       description: 'Initial entry point for citizens. Can report grievances and view public content.',
       icon: Users,
       color: 'slate',
-      status: 'Entry Level'
+      status: 'Entry Level',
+      count: summary?.registeredUsers || 0
+    },
+    { 
+      id: 'verified', 
+      title: 'Verified Public User', 
+      description: 'Users who have verified their email and completed their basic profile.',
+      icon: ShieldCheck,
+      color: 'blue',
+      status: 'Trusted Status',
+      count: summary?.verifiedUsers || 0
     },
     { 
       id: 'applicant', 
@@ -76,7 +83,8 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
       description: 'Public users who have submitted a membership application. Awaiting verification.',
       icon: Clock,
       color: 'amber',
-      status: 'Verification Phase'
+      status: 'Verification Phase',
+      count: summary?.membershipApplicants || 0
     },
     { 
       id: 'member', 
@@ -84,15 +92,26 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
       description: 'Verified party members with full voting rights and official ID cards.',
       icon: Award,
       color: 'emerald',
-      status: 'Official Status'
+      status: 'Official Status',
+      count: summary?.approvedMembers || 0
     },
     { 
-      id: 'volunteer', 
-      title: 'Volunteer', 
-      description: 'Members or supporters who actively contribute skills to party campaigns.',
+      id: 'volunteer_applicant', 
+      title: 'Volunteer Applicant', 
+      description: 'Supporters who have applied to contribute their skills to party campaigns.',
       icon: Heart,
       color: 'rose',
-      status: 'Active Engagement'
+      status: 'Engagement Phase',
+      count: summary?.volunteerApplicants || 0
+    },
+    { 
+      id: 'volunteer_active', 
+      title: 'Active Volunteer', 
+      description: 'Approved volunteers actively working on assignments and reporting progress.',
+      icon: Zap,
+      color: 'indigo',
+      status: 'Active Engagement',
+      count: summary?.activeVolunteers || 0
     }
   ];
 
@@ -139,24 +158,24 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
                 <Users size={24} />
               </div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Registered Public Users</p>
-              <h3 className="text-3xl font-black text-slate-900">{registeredUsers.length}</h3>
+              <h3 className="text-3xl font-black text-slate-900">{summary?.registeredUsers || 0}</h3>
               <p className="text-xs text-slate-500 mt-2 font-medium">Independent active app users</p>
             </div>
             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4">
                 <Clock size={24} />
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pending Applications</p>
-              <h3 className="text-3xl font-black text-slate-900">{users.filter(u => u.role === 'APPLICANT_MEMBER').length}</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pending Memberships</p>
+              <h3 className="text-3xl font-black text-slate-900">{summary?.membershipApplicants || 0}</h3>
               <p className="text-xs text-slate-500 mt-2 font-medium">Awaiting membership verification</p>
             </div>
             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4">
-                <Activity size={24} />
+                <Heart size={24} />
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Portal Engagement</p>
-              <h3 className="text-3xl font-black text-slate-900">High</h3>
-              <p className="text-xs text-slate-500 mt-2 font-medium">Based on recent user activity</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Volunteer Applicants</p>
+              <h3 className="text-3xl font-black text-slate-900">{summary?.volunteerApplicants || 0}</h3>
+              <p className="text-xs text-slate-500 mt-2 font-medium">Ready to contribute skills</p>
             </div>
           </div>
 
@@ -203,45 +222,85 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
                 <thead>
                   <tr>
                     <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Registration Date</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Journey Stage</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Engagement</th>
                     <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {filteredRegisteredUsers.map(u => (
-                    <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-500">
-                            {u.displayName.charAt(0)}
+                    {filteredRegisteredUsers.map(u => (
+                      <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-500">
+                              {u.displayName.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-800">{u.displayName}</p>
+                              <p className="text-xs text-slate-500">{u.email}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-800">{u.displayName}</p>
-                            <p className="text-xs text-slate-500">{u.email}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                              u.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'
+                            }`}>
+                              {u.isActive ? 'Verified' : 'Unverified'}
+                            </span>
+                            {u.memberProfile && (
+                              <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                u.memberProfile.status === 'ACTIVE' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
+                              }`}>
+                                {u.memberProfile.status === 'ACTIVE' ? 'Member' : 'Member Applicant'}
+                              </span>
+                            )}
+                            {u.volunteerProfile && (
+                              <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                u.volunteerProfile.status === 'ACTIVE' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'
+                              }`}>
+                                {u.volunteerProfile.status === 'ACTIVE' ? 'Volunteer' : 'Vol. Applicant'}
+                              </span>
+                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 font-medium">
-                        {new Date(u.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
-                          u.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-                        }`}>
-                          {u.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button 
-                          onClick={() => setCurrentView('users')}
-                          className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
-                        >
-                          <ArrowRight size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {u.donorProfile && <Heart size={14} className="text-rose-500 fill-rose-500" />}
+                            <span className="text-xs font-medium text-slate-500">
+                              {u.donorProfile ? 'Donor' : 'Supporter'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {!u.isActive && (
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    await api.patch(`/users/${u.id}/status`, { isActive: true, decisionNote: 'Verified via Portal Center' });
+                                    toast.success('User verified');
+                                    fetchData();
+                                  } catch (err) {
+                                    toast.error('Failed to verify');
+                                  }
+                                }}
+                                className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                                title="Verify User"
+                              >
+                                <CheckCircle2 size={18} />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => setCurrentView('users')}
+                              className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                            >
+                              <ArrowRight size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   {filteredRegisteredUsers.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-6 py-12 text-center text-slate-400 font-medium italic">
@@ -270,6 +329,7 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
                   <span className={`px-2 py-0.5 bg-${step.color}-100 text-${step.color}-700 text-[9px] font-black rounded-full uppercase tracking-widest`}>
                     {step.status}
                   </span>
+                  <span className="ml-auto text-lg font-black text-slate-900">{step.count}</span>
                 </div>
                 <h3 className="text-2xl font-black text-slate-800 mb-3 tracking-tight">{step.title}</h3>
                 <p className="text-slate-500 font-medium leading-relaxed">

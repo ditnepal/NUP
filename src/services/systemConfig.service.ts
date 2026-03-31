@@ -67,8 +67,8 @@ export class SystemConfigService {
    */
   async initializeDefaults(): Promise<void> {
     const defaults = [
-      { key: 'PARTY_NAME', value: 'Progressive People\'s Organization', description: 'The official name of the organization' },
-      { key: 'PARTY_TAGLINE', value: 'Empowering Citizens, Building the Future', description: 'Official tagline shown on public portal' },
+      { key: 'PARTY_NAME', value: 'PPOS', description: 'The official name of the organization' },
+      { key: 'PARTY_TAGLINE', value: 'Political Party Organization System', description: 'Official tagline shown on public portal' },
       { key: 'DEFAULT_LANGUAGE', value: 'en', description: 'Default system language (en, ne)' },
       { key: 'ENABLE_WAR_ROOM', value: 'true', description: 'Toggle War Room module visibility' },
       { key: 'ENABLE_PGIS', value: 'true', description: 'Toggle PGIS module visibility' },

@@ -1,4 +1,4 @@
-# PPOS Role-Dashboard-Permission Matrix
+# NUP OS Role-Dashboard-Permission Matrix
 
 ## Roles and Dashboards
 

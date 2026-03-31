@@ -616,6 +616,49 @@ router.get('/config', async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/public/offices
+// @desc    Get all public offices
+// @access  Public
+router.get('/offices', async (req, res) => {
+  try {
+    const offices = await prisma.office.findMany({
+      where: { isActive: true },
+      include: { orgUnit: { select: { name: true, level: true } } },
+      orderBy: { name: 'asc' }
+    });
+    res.json(offices);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/public/hierarchy
+// @desc    Get public organization hierarchy
+// @access  Public
+router.get('/hierarchy', async (req, res) => {
+  try {
+    const units = await prisma.organizationUnit.findMany({
+      where: { isActive: true },
+      orderBy: [
+        { level: 'asc' },
+        { name: 'asc' }
+      ],
+      select: {
+        id: true,
+        name: true,
+        level: true,
+        parentId: true,
+        _count: {
+          select: { children: true, members: true }
+        }
+      }
+    });
+    res.json(units);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   GET /api/v1/public/my-application
 // @desc    Get the application linked to the logged-in user
 // @access  Private (Applicant Member)

@@ -68,23 +68,39 @@ export class MembershipService extends BaseService {
     // 3. Generate Tracking Code
     const trackingCode = `T-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    // 4. Create User Account (Applicant Member)
-    const tempPassword = Math.random().toString(36).substring(2, 10);
-    const passwordHash = `TEMP_${await bcrypt.hash(tempPassword, 10)}`;
-    
-    // Use email if provided, otherwise use mobile as a unique identifier for the user record
-    const userEmail = data.email || `${data.mobile}@applicant.ppos`;
-    
-    const user = await this.db.user.create({
-      data: {
-        email: userEmail,
-        passwordHash,
-        displayName: data.fullName,
-        role: 'APPLICANT_MEMBER',
-        phoneNumber: data.mobile,
-        isActive: true,
+    // 4. Handle User Account
+    let user;
+    let tempPassword = '';
+    let userEmail = data.email || `${data.mobile}@applicant.ppos`;
+
+    if (data.userId) {
+      // Use existing user
+      user = await this.db.user.findUnique({ where: { id: data.userId } });
+      if (!user) throw new Error('User not found');
+      
+      // Update role to APPLICANT_MEMBER if it's currently PUBLIC
+      if (user.role === 'PUBLIC') {
+        user = await this.db.user.update({
+          where: { id: user.id },
+          data: { role: 'APPLICANT_MEMBER' }
+        });
       }
-    });
+    } else {
+      // Create new User Account (Applicant Member)
+      tempPassword = Math.random().toString(36).substring(2, 10);
+      const passwordHash = `TEMP_${await bcrypt.hash(tempPassword, 10)}`;
+      
+      user = await this.db.user.create({
+        data: {
+          email: userEmail,
+          passwordHash,
+          displayName: data.fullName,
+          role: 'APPLICANT_MEMBER',
+          phoneNumber: data.mobile,
+          isActive: true,
+        }
+      });
+    }
 
     // 5. Create Member (Pending)
     const member = await this.db.member.create({

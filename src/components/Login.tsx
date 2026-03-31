@@ -9,14 +9,16 @@ export const Login = ({
   t,
   initialRequirePasswordChange = false,
   initialTempUser = null,
-  isPublicMode = false
+  isPublicMode = false,
+  initialIsRegistering = undefined
 }: { 
   onLoginSuccess: (user: any) => void, 
   onGoToPublic: () => void, 
   t: any,
   initialRequirePasswordChange?: boolean,
   initialTempUser?: any,
-  isPublicMode?: boolean
+  isPublicMode?: boolean,
+  initialIsRegistering?: boolean
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,7 +43,7 @@ export const Login = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [tempUser, setTempUser] = useState<any>(initialTempUser);
-  const [isRegistering, setIsRegistering] = useState(isPublicMode);
+  const [isRegistering, setIsRegistering] = useState(initialIsRegistering !== undefined ? initialIsRegistering : isPublicMode);
   const [displayName, setDisplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
@@ -182,19 +184,19 @@ export const Login = ({
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center space-y-6">
-        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto">
+        <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto border border-emerald-500/20">
           <ShieldCheck size={40} />
         </div>
         <div>
-          <h1 className="text-3xl font-black text-slate-800">
+          <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">
             {isPublicMode 
-              ? (isRegistering ? 'Public Registration' : 'Public Sign In')
-              : (isRegistering ? 'Public Registration' : t('login_title'))}
+              ? (isRegistering ? 'Identity Setup' : 'System Access')
+              : (isRegistering ? 'Identity Setup' : 'Admin Gateway')}
           </h1>
-          <p className="text-slate-500 mt-2">
+          <p className="text-slate-500 mt-2 text-sm font-medium">
             {isPublicMode
-              ? (isRegistering ? 'Create an account to submit and track grievances.' : 'Sign in to track your submitted grievances.')
-              : (isRegistering ? 'Create an account to submit and track grievances.' : t('login_subtitle'))}
+              ? (isRegistering ? 'Initialize your citizen profile to access the ecosystem.' : 'Securely authenticate to your dashboard.')
+              : (isRegistering ? 'Initialize your citizen profile to access the ecosystem.' : 'Authorized personnel only.')}
           </p>
           
           {isPublicMode && isRegistering && (

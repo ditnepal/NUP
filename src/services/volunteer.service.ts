@@ -13,11 +13,12 @@ export class VolunteerService extends BaseService {
     phone?: string;
     skills: string;
     availability?: string;
+    status?: string;
   }) {
     const volunteer = await this.db.volunteer.create({
       data: {
         ...data,
-        status: 'ACTIVE'
+        status: data.status || 'PENDING'
       }
     });
 
@@ -110,6 +111,15 @@ export class VolunteerService extends BaseService {
       details: { fullName: data.fullName }
     });
     return application;
+  }
+
+  /**
+   * Get all volunteer applications
+   */
+  async getApplications() {
+    return await this.db.volunteerApplication.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
   }
 
   /**

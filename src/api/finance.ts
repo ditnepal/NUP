@@ -1,4 +1,5 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { authenticate, AuthRequest } from './middleware/auth';
 import { checkPermission } from './middleware/permissions';
 import { financeService } from '../services/finance.service';
@@ -145,6 +146,18 @@ router.get('/donations/return/:provider', async (req, res) => {
 // @access  Public/Private
 router.post('/donations', async (req: AuthRequest, res) => {
   try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-nup-os-2026';
+        const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+        req.user = { id: decoded.id } as any;
+      } catch (e) {
+        // Ignore invalid token for public donations
+      }
+    }
+
     const data = donationSchema.parse(req.body);
     
     // Check if this is a manual payment method to set isManual flag
@@ -152,20 +165,10 @@ router.post('/donations', async (req: AuthRequest, res) => {
     const selectedMethod = integrations.find(i => i.provider === data.paymentMethod);
     const isManual = selectedMethod?.instructions ? true : false;
 
-    // If it's a manual payment, require authentication and permission
+    // If it's a manual payment, require authentication
     if (isManual) {
       if (!req.user) {
         return res.status(401).json({ error: 'Authentication required for manual donations' });
-      }
-      
-      // Check permission for the target orgUnitId
-      const hasPermission = await permissionService.can(req.user, 'FUNDRAISING', 'CREATE', data.orgUnitId);
-      if (!hasPermission) {
-        return res.status(403).json({ 
-          error: 'Forbidden', 
-          message: 'Insufficient permissions for this organizational unit',
-          code: 'INSUFFICIENT_PERMISSIONS'
-        });
       }
     }
 

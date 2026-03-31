@@ -1,4 +1,4 @@
-# PPOS Module Ownership Map
+# NUP OS Module Ownership Map
 
 ## Module Ownership and Responsibility
 

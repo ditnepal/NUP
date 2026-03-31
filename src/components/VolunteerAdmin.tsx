@@ -6,7 +6,9 @@ import { VolunteerProfileView } from './VolunteerProfileView';
 import { toast } from 'sonner';
 
 export const VolunteerAdmin: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'volunteers' | 'applications'>('volunteers');
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,22 +22,60 @@ export const VolunteerAdmin: React.FC = () => {
     phone: '',
     skills: '',
     availability: '',
-    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE'
+    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'PENDING'
   });
 
   useEffect(() => {
-    fetchVolunteers();
-  }, []);
+    if (activeTab === 'volunteers') {
+      fetchVolunteers();
+    } else {
+      fetchApplications();
+    }
+  }, [activeTab]);
 
   const fetchVolunteers = async () => {
     try {
       setLoading(true);
-      const data = await api.get('/volunteers');
+      const data = await api.get('/volunteers?all=true');
       setVolunteers(data);
     } catch (error) {
       console.error('Error fetching volunteers:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get('/volunteers/applications');
+      setApplications(data);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveApplication = async (id: string) => {
+    try {
+      await api.post(`/volunteers/${id}/approve`, {});
+      toast.success('Application approved! Volunteer created.');
+      await fetchApplications();
+    } catch (error: any) {
+      console.error('Error approving application:', error);
+      toast.error(error.message || 'Failed to approve application.');
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await api.put(`/volunteers/${id}`, { status: 'ACTIVE' });
+      toast.success('Volunteer approved successfully');
+      await fetchVolunteers();
+    } catch (error: any) {
+      console.error('Error approving volunteer:', error);
+      toast.error(error.message || 'Failed to approve volunteer.');
     }
   };
 
@@ -134,8 +174,32 @@ export const VolunteerAdmin: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Volunteer Management</h1>
           <p className="text-gray-500">Manage party volunteers, skills, and task assignments.</p>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
+        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('volunteers')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'volunteers' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Volunteers
+            </button>
+            <button
+              onClick={() => setActiveTab('applications')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'applications' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Public Apps
+              {applications.length > 0 && (
+                <span className="ml-2 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full text-[10px]">
+                  {applications.length}
+                </span>
+              )}
+            </button>
+          </div>
+          <div className="flex gap-3">
+            <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
@@ -154,70 +218,136 @@ export const VolunteerAdmin: React.FC = () => {
           </button>
         </div>
       </div>
+    </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVolunteers.map((volunteer) => (
-          <div key={volunteer.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 font-bold text-xl">
-                  {volunteer.fullName.charAt(0)}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {activeTab === 'volunteers' ? (
+          filteredVolunteers.map((volunteer) => (
+            <div key={volunteer.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 font-bold text-xl">
+                    {volunteer.fullName.charAt(0)}
+                  </div>
+                  <div className="flex gap-2">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      volunteer.status === 'ACTIVE' ? 'bg-green-50 text-green-600' : 
+                      volunteer.status === 'PENDING' ? 'bg-amber-50 text-amber-600' :
+                      'bg-gray-50 text-gray-600'
+                    }`}>
+                      {volunteer.status}
+                    </span>
+                    {volunteer.status === 'PENDING' && (
+                      <button 
+                        onClick={() => handleApprove(volunteer.id)}
+                        className="p-1 text-amber-500 hover:text-amber-600 transition-colors"
+                        title="Approve Volunteer"
+                      >
+                        <CheckCircle size={16} />
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleOpenModal(volunteer)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(volunteer.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    volunteer.status === 'ACTIVE' ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-600'
-                  }`}>
-                    {volunteer.status}
-                  </span>
-                  <button 
-                    onClick={() => handleOpenModal(volunteer)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(volunteer.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                <h3 className="font-bold text-gray-900 text-lg">{volunteer.fullName}</h3>
+                <p className="text-sm text-gray-500 mt-1">{volunteer.email || volunteer.phone || 'No contact info'}</p>
+                
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Briefcase size={16} className="text-gray-400" />
+                    <span className="font-medium">Skills:</span> {volunteer.skills}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Clock size={16} className="text-gray-400" />
+                    <span className="font-medium">Availability:</span> {volunteer.availability || 'Not specified'}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <ClipboardList size={16} className="text-gray-400" />
+                    <span className="font-medium">Active Tasks:</span> {volunteer.assignments?.length || 0}
+                  </div>
                 </div>
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg">{volunteer.fullName}</h3>
-              <p className="text-sm text-gray-500 mt-1">{volunteer.email || volunteer.phone || 'No contact info'}</p>
-              
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Briefcase size={16} className="text-gray-400" />
-                  <span className="font-medium">Skills:</span> {volunteer.skills}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock size={16} className="text-gray-400" />
-                  <span className="font-medium">Availability:</span> {volunteer.availability || 'Not specified'}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <ClipboardList size={16} className="text-gray-400" />
-                  <span className="font-medium">Active Tasks:</span> {volunteer.assignments?.length || 0}
-                </div>
-              </div>
 
-              <div className="mt-6 flex gap-2">
-                <button 
-                  onClick={() => setSelectedVolunteerId(volunteer.id)}
-                  className="flex-1 bg-gray-50 text-gray-700 font-semibold py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm"
-                >
-                  View Profile
-                </button>
-                <button className="flex-1 bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                  Assign Task
-                </button>
+                <div className="mt-6 flex gap-2">
+                  <button 
+                    onClick={() => setSelectedVolunteerId(volunteer.id)}
+                    className="flex-1 bg-gray-50 text-gray-700 font-semibold py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm"
+                  >
+                    View Profile
+                  </button>
+                  <button className="flex-1 bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                    Assign Task
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-        {filteredVolunteers.length === 0 && (
+          ))
+        ) : (
+          applications.map((app) => (
+            <div key={app.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600 font-bold text-xl">
+                    {app.fullName.charAt(0)}
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-600">
+                      {app.status}
+                    </span>
+                    <button 
+                      onClick={() => handleApproveApplication(app.id)}
+                      className="p-1 text-emerald-500 hover:text-emerald-600 transition-colors"
+                      title="Approve Application"
+                    >
+                      <CheckCircle size={20} />
+                    </button>
+                  </div>
+                </div>
+                <h3 className="font-bold text-gray-900 text-lg">{app.fullName}</h3>
+                <p className="text-sm text-gray-500 mt-1">{app.email || app.phone || 'No contact info'}</p>
+                
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Briefcase size={16} className="text-gray-400" />
+                    <span className="font-medium">Skills:</span> {app.skills}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Clock size={16} className="text-gray-400" />
+                    <span className="font-medium">Availability:</span> {app.availability || 'Not specified'}
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <button 
+                    onClick={() => handleApproveApplication(app.id)}
+                    className="w-full bg-emerald-600 text-white font-semibold py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle size={16} />
+                    Approve & Register
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+        {activeTab === 'volunteers' && filteredVolunteers.length === 0 && (
           <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
             {searchTerm ? 'No volunteers match your search.' : 'No volunteers found. Start by registering your first volunteer.'}
+          </div>
+        )}
+        {activeTab === 'applications' && applications.length === 0 && (
+          <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+            No pending public applications found.
           </div>
         )}
       </div>
@@ -294,6 +424,7 @@ export const VolunteerAdmin: React.FC = () => {
                   onChange={e => setFormData({ ...formData, status: e.target.value as any })}
                 >
                   <option value="ACTIVE">Active</option>
+                  <option value="PENDING">Pending</option>
                   <option value="INACTIVE">Inactive</option>
                 </select>
               </div>

@@ -27,7 +27,6 @@ import { GrievancePortal } from './components/GrievancePortal';
 import { SurveyPolls } from './components/SurveyPolls';
 import { PgisDashboard } from './components/PgisDashboard';
 import { PublicPortal } from './components/PublicPortal';
-import { PublicListView } from './components/PublicListViews';
 import { PublicLayout } from './components/PublicLayout';
 import MembershipPublic from './components/MembershipPublic';
 import { PublicDocumentsView } from './components/PublicDocumentsView';
@@ -36,6 +35,8 @@ import { PublicCampaignsView } from './components/PublicCampaigns';
 import { WarRoomDashboard } from './components/WarRoomDashboard';
 import { DashboardHome } from './components/DashboardHome';
 import { CentralizedPublicDashboard } from './components/CentralizedPublicDashboard';
+import { PublicEntry } from './components/PublicEntry';
+import PublicAbout from './components/PublicAbout';
 import { UserAdmin } from './components/UserAdmin';
 import { PortalCenter } from './components/PortalCenter';
 import { UserProfileDashboard } from './components/UserProfileDashboard';
@@ -49,7 +50,7 @@ import { api } from './lib/api';
 import { usePermissions } from './hooks/usePermissions';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings, User } from 'lucide-react';
 
-type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'donate' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment';
+type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'donate' | 'public' | 'public-portal' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment' | 'public-about';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -60,6 +61,7 @@ export default function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [initialTrackingCode, setInitialTrackingCode] = useState<string>('');
   const [initialMobile, setInitialMobile] = useState<string>('');
+  const [initialIsRegistering, setInitialIsRegistering] = useState<boolean | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { can } = usePermissions(user);
@@ -160,8 +162,63 @@ export default function App() {
     );
   }
 
+  const renderPublicLayout = (children: React.ReactNode, onBack?: () => void, fullWidth?: boolean) => (
+    <PublicLayout
+      user={user}
+      onBack={onBack || (() => setCurrentView('public'))}
+      onPortalClick={() => {
+        if (!user) {
+          setCurrentView('dashboard');
+        } else {
+          setCurrentView('dashboard');
+        }
+      }}
+      onDocumentsClick={() => setCurrentView('public-documents')}
+      onTrainingClick={() => setCurrentView('training')}
+      onJoinClick={() => setCurrentView('membership-public')}
+      onStatusClick={() => {
+        setInitialTrackingCode('');
+        setInitialMobile('');
+        setCurrentView('applicant-status');
+      }}
+      onCandidatesClick={() => setCurrentView('public-candidates')}
+      onCampaignsClick={() => setCurrentView('public-campaigns')}
+      onAboutClick={() => setCurrentView('public-about')}
+      onHomeClick={() => setCurrentView('public')}
+      onNewsClick={() => setCurrentView('public-portal')}
+      onLoginClick={() => setCurrentView('dashboard')}
+      onLogout={handleLogout}
+    >
+      {fullWidth ? children : (
+        <div className="max-w-7xl mx-auto p-6">
+          {children}
+        </div>
+      )}
+    </PublicLayout>
+  );
+
   if (currentView === 'public') {
-    return (
+    return renderPublicLayout(
+      <PublicEntry 
+        user={user}
+        systemConfig={systemConfig}
+        setCurrentView={setCurrentView}
+        onLoginClick={() => {
+          setInitialIsRegistering(false);
+          setCurrentView('public-auth');
+        }}
+        onRegisterClick={() => {
+          setInitialIsRegistering(true);
+          setCurrentView('public-auth');
+        }}
+      />,
+      undefined,
+      true
+    );
+  }
+
+  if (currentView === 'public-portal') {
+    return renderPublicLayout(
       <div className="relative">
         <PublicPortal 
           user={user} 
@@ -185,6 +242,8 @@ export default function App() {
           }}
           onCandidatesClick={() => setCurrentView('public-candidates')}
           onCampaignsClick={() => setCurrentView('public-campaigns')}
+          onAboutClick={() => setCurrentView('public-about')}
+          onHomeClick={() => setCurrentView('public')}
           onStatusClick={() => {
             setInitialTrackingCode('');
             setInitialMobile('');
@@ -200,40 +259,11 @@ export default function App() {
             Back to Dashboard
           </button>
         )}
-      </div>
+      </div>,
+      undefined,
+      true
     );
   }
-
-  const renderPublicLayout = (children: React.ReactNode, onBack?: () => void) => (
-    <PublicLayout
-      user={user}
-      onBack={onBack || (() => setCurrentView('public'))}
-      onPortalClick={() => {
-        if (!user) {
-          setCurrentView('dashboard');
-        } else {
-          setCurrentView('dashboard');
-        }
-      }}
-      onDocumentsClick={() => setCurrentView('public-documents')}
-      onTrainingClick={() => setCurrentView('training')}
-      onJoinClick={() => setCurrentView('membership-public')}
-      onStatusClick={() => {
-        setInitialTrackingCode('');
-        setInitialMobile('');
-        setCurrentView('applicant-status');
-      }}
-      onCandidatesClick={() => setCurrentView('public-candidates')}
-      onCampaignsClick={() => setCurrentView('public-campaigns')}
-      onHomeClick={() => setCurrentView('public')}
-      onLoginClick={() => setCurrentView('dashboard')}
-      onLogout={handleLogout}
-    >
-      <div className="max-w-7xl mx-auto p-6">
-        {children}
-      </div>
-    </PublicLayout>
-  );
 
   if (!user) {
     if (currentView === 'applicant-status') {
@@ -279,6 +309,10 @@ export default function App() {
       return renderPublicLayout(<TrainingPortal user={user} />);
     }
 
+    if (currentView === 'public-about') {
+      return renderPublicLayout(<PublicAbout />);
+    }
+
     if (currentView === 'public-auth') {
       return (
         <Login 
@@ -286,6 +320,7 @@ export default function App() {
           onGoToPublic={() => setCurrentView('public')} 
           t={t} 
           isPublicMode={true}
+          initialIsRegistering={initialIsRegistering}
         />
       );
     }
@@ -473,6 +508,13 @@ export default function App() {
             user={user} 
             onSuccess={() => setCurrentView('dashboard')} 
           />
+        )}
+        {currentView === 'membership-public' && (
+          <MembershipPublic onStatusClick={(code, mobile) => {
+            setInitialTrackingCode(code || '');
+            setInitialMobile(mobile || '');
+            setCurrentView('applicant-status');
+          }} />
         )}
         {currentView === 'cms' && <CmsAdmin user={user} />}
         {currentView === 'documents' && <DocumentsView user={user} />}

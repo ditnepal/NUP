@@ -134,10 +134,7 @@ router.post('/:id/assign', authenticate, checkPermission('GRIEVANCES', 'UPDATE',
 });
 
 // Responses
-router.post('/:id/responses', authenticate, checkPermission('GRIEVANCES', 'UPDATE', async (req) => {
-  const grievance = await prisma.grievance.findUnique({ where: { id: req.params.id } });
-  return grievance?.orgUnitId || undefined;
-}), async (req: AuthRequest, res) => {
+router.post('/:id/responses', authenticate, async (req: AuthRequest, res) => {
   try {
     const data = responseSchema.parse(req.body);
     

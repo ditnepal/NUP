@@ -365,7 +365,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
                     <div className="flex justify-between items-end pt-4">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">ID Number</p>
-                        <p className="font-mono font-bold text-sm">PPOS-{user.id.slice(0, 8).toUpperCase()}</p>
+                        <p className="font-mono font-bold text-sm">NUP-{user.id.slice(0, 8).toUpperCase()}</p>
                       </div>
                       <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
                         <Award size={20} className="text-emerald-600" />

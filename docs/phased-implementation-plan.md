@@ -1,4 +1,4 @@
-# PPOS Phased Implementation Plan
+# NUP OS Phased Implementation Plan
 
 ## Phase 1: Foundation (Completed)
 - Core models (User, OrganizationUnit, Role, Permission).

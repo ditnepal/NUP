@@ -6,9 +6,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'NUP OS API',
+      title: 'PPOS API',
       version: '1.0.0',
-      description: 'API documentation for the Nagarik Unmukti Party Operating System (PPOS)',
+      description: 'API documentation for the Political Party Organization System (PPOS)',
     },
     servers: [
       {

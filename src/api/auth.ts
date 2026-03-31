@@ -8,6 +8,22 @@ import { authenticate, AuthRequest, authorize } from './middleware/auth';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-nup-os-2026';
 
+// Helper for audit logging
+const logAudit = async (userId: string, action: string, details: string, ipAddress: string) => {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action,
+        details,
+        ipAddress,
+      }
+    });
+  } catch (e) {
+    console.error('[AUDIT LOG ERROR]', e);
+  }
+};
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -166,7 +182,7 @@ router.post('/public-register', async (req, res) => {
         displayName,
         phoneNumber,
         role: 'PUBLIC', // Assign PUBLIC role
-        isActive: true,
+        isActive: false,
       },
     });
 
@@ -257,6 +273,30 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
     
     res.json({ ...userWithoutPassword, requirePasswordChange });
   } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   POST /api/v1/users/verify-me
+// @desc    Self-verify a public user
+// @access  Private (Public User)
+router.post('/verify-me', authenticate, async (req: AuthRequest, res) => {
+  try {
+    if (req.user?.role !== 'PUBLIC') {
+      return res.status(400).json({ error: 'Only public users can self-verify' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { isActive: true },
+      select: { id: true, email: true, isActive: true }
+    });
+
+    await logAudit(req.user.id, 'SELF_VERIFY', `User ${updatedUser.email} self-verified.`, req.ip || '0.0.0.0');
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('[USER SELF-VERIFY ERROR]', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

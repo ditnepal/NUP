@@ -13,7 +13,9 @@ interface PublicLayoutProps {
   onStatusClick?: () => void;
   onCandidatesClick?: () => void;
   onCampaignsClick?: () => void;
+  onAboutClick?: () => void;
   onHomeClick?: () => void;
+  onNewsClick?: () => void;
   onLoginClick?: () => void;
   onLogout?: () => void;
 }
@@ -29,15 +31,17 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
   onStatusClick,
   onCandidatesClick,
   onCampaignsClick,
+  onAboutClick,
   onHomeClick,
+  onNewsClick,
   onLoginClick,
   onLogout
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [systemConfig, setSystemConfig] = useState<Record<string, string>>({
-    PARTY_NAME: 'Progressive People\'s Organization',
+    PARTY_NAME: 'Nagarik Unmukti Party',
     PARTY_TAGLINE: 'Empowering Citizens, Building the Future',
-    CONTACT_EMAIL: 'info@ppos.org',
+    CONTACT_EMAIL: 'info@nupos.org',
     CONTACT_PHONE: '+977-1-0000000'
   });
 
@@ -71,17 +75,25 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
                 </button>
               )}
               <button onClick={onHomeClick} className="flex items-center gap-2 text-emerald-600 hover:opacity-80 transition-opacity">
-                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <Globe size={20} />
+                <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center border border-emerald-500/20">
+                  <Globe size={18} />
                 </div>
-                <span className="font-black text-xl tracking-tight text-slate-800">{systemConfig['PARTY_NAME'] || 'NUP'}</span>
+                <span className="font-black text-xl tracking-tighter text-slate-900 uppercase">{systemConfig['PARTY_NAME'] || 'Nagarik Unmukti Party'}</span>
               </button>
             </div>
             
             <div className="hidden md:flex items-center gap-8">
-              <button onClick={onDocumentsClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Manifesto</button>
-              <button onClick={onTrainingClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Training</button>
-              <button onClick={onStatusClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Check Status</button>
+              <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full border border-slate-200">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Live</span>
+              </div>
+              <button onClick={onAboutClick} className="text-xs font-bold text-slate-600 hover:text-emerald-600 transition-colors uppercase tracking-widest">About</button>
+              <button onClick={onNewsClick} className="text-xs font-bold text-slate-600 hover:text-emerald-600 transition-colors uppercase tracking-widest">News</button>
+              <button onClick={onCandidatesClick} className="text-xs font-bold text-slate-600 hover:text-emerald-600 transition-colors uppercase tracking-widest">Candidates</button>
+              <button onClick={onCampaignsClick} className="text-xs font-bold text-slate-600 hover:text-emerald-600 transition-colors uppercase tracking-widest">Campaigns</button>
+              <button onClick={onDocumentsClick} className="text-xs font-bold text-slate-600 hover:text-emerald-600 transition-colors uppercase tracking-widest">Manifesto</button>
+              <button onClick={onTrainingClick} className="text-xs font-bold text-slate-600 hover:text-emerald-600 transition-colors uppercase tracking-widest">Training</button>
+              <button onClick={onStatusClick} className="text-xs font-bold text-slate-600 hover:text-emerald-600 transition-colors uppercase tracking-widest">Check Status</button>
               {user ? (
                 <div className="flex items-center gap-4">
                   <div className="flex flex-col items-end">
@@ -120,6 +132,10 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
       {isMenuOpen && (
         <div className="fixed inset-0 z-40 bg-white pt-20 px-6 md:hidden">
           <div className="flex flex-col gap-6">
+            <button onClick={() => { onAboutClick?.(); setIsMenuOpen(false); }} className="text-2xl font-bold text-slate-800 text-left">About Us</button>
+            <button onClick={() => { onNewsClick?.(); setIsMenuOpen(false); }} className="text-2xl font-bold text-slate-800 text-left">News</button>
+            <button onClick={() => { onCandidatesClick?.(); setIsMenuOpen(false); }} className="text-2xl font-bold text-slate-800 text-left">Candidates</button>
+            <button onClick={() => { onCampaignsClick?.(); setIsMenuOpen(false); }} className="text-2xl font-bold text-slate-800 text-left">Campaigns</button>
             <button onClick={() => { onDocumentsClick?.(); setIsMenuOpen(false); }} className="text-2xl font-bold text-slate-800 text-left">Manifesto</button>
             <button onClick={() => { onTrainingClick?.(); setIsMenuOpen(false); }} className="text-2xl font-bold text-slate-800 text-left">Training</button>
             <button onClick={() => { onStatusClick?.(); setIsMenuOpen(false); }} className="text-2xl font-bold text-slate-800 text-left">Check Status</button>
@@ -152,7 +168,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-2 text-emerald-400 mb-8">
                 <Globe size={32} />
-                <span className="font-black text-3xl tracking-tight">{systemConfig['PARTY_NAME'] || 'NUP'}</span>
+                <span className="font-black text-3xl tracking-tight">{systemConfig['PARTY_NAME'] || 'NUP OS'}</span>
               </div>
               <p className="text-slate-400 text-lg max-w-md leading-relaxed">
                 {systemConfig['PARTY_TAGLINE']}
@@ -162,10 +178,12 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
             <div>
               <h4 className="font-bold text-lg mb-6 uppercase tracking-widest text-emerald-400">Organization</h4>
               <ul className="space-y-4 text-slate-400">
-                <li><button onClick={onHomeClick} className="hover:text-white transition-colors text-left">About Us</button></li>
+                <li><button onClick={onAboutClick} className="hover:text-white transition-colors text-left">About Us</button></li>
                 <li><button onClick={onCandidatesClick} className="hover:text-white transition-colors text-left">Candidates</button></li>
                 <li><button onClick={onCampaignsClick} className="hover:text-white transition-colors text-left">Campaigns</button></li>
                 <li><button onClick={onDocumentsClick} className="hover:text-white transition-colors text-left">Manifesto</button></li>
+                <li><button onClick={onTrainingClick} className="hover:text-white transition-colors text-left">Training</button></li>
+                <li><button onClick={onStatusClick} className="hover:text-white transition-colors text-left">Check Status</button></li>
               </ul>
             </div>
 

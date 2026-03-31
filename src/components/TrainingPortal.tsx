@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { api } from '../lib/api';
 import { BookOpen, ExternalLink, Paperclip, ChevronRight, Clock, Search, Filter, Pin, GraduationCap, Users, Shield, Layers, FileText, ArrowLeft, PlayCircle } from 'lucide-react';
 import { TrainingProgram, Course, Lesson, UserProfile } from '../types';
@@ -111,7 +112,7 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
             
             <div className="space-y-4 pt-6 border-t border-slate-50 mt-auto">
               <div className="flex items-center justify-between text-xs font-medium text-slate-400 uppercase tracking-widest">
-                <span className="flex items-center gap-1"><Clock size={14} /> {new Date(program.createdAt).toLocaleDateString()}</span>
+                <span className="flex items-center gap-1"><Clock size={14} /> {format(new Date(program.createdAt), 'MMM d, yyyy')}</span>
                 <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-500">{program.category}</span>
               </div>
 
@@ -276,7 +277,7 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-8">
       <div className="mb-12">
         <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase mb-2">Training & Resources</h1>
         <p className="text-slate-500 text-lg">Access official party training materials, policy documents, and educational resources.</p>

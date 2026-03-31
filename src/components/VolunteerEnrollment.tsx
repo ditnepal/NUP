@@ -57,7 +57,7 @@ export const VolunteerEnrollment: React.FC<VolunteerEnrollmentProps> = ({ user, 
       await api.post('/volunteers', {
         ...formData,
         skills: [...formData.interests, formData.skills].filter(Boolean).join(', '),
-        status: 'ACTIVE'
+        status: 'PENDING'
       });
       toast.success('Volunteer registration successful!');
       setStep('success');
@@ -79,9 +79,9 @@ export const VolunteerEnrollment: React.FC<VolunteerEnrollmentProps> = ({ user, 
         <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8">
           <CheckCircle2 size={48} />
         </div>
-        <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Welcome to the Team!</h2>
+        <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Application Received!</h2>
         <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-          Thank you for choosing to volunteer with us. Your application has been received and you are now registered as an active volunteer. Our team will reach out to you shortly with next steps.
+          Thank you for choosing to volunteer with us. Your application has been received and is currently under review. Our team will reach out to you shortly with next steps.
         </p>
         <button 
           onClick={onSuccess}

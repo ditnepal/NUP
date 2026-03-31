@@ -1,4 +1,4 @@
-# PPOS Hierarchy Scope Model
+# NUP OS Hierarchy Scope Model
 
 ## Overview
 The Hierarchy Scope Model determines how data is filtered and accessed based on a user's position within the organizational structure.

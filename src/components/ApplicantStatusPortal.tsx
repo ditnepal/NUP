@@ -142,6 +142,10 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
           <div className="p-8 md:p-12">
             <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-widest border border-emerald-100 mb-4">
+                <Search size={12} />
+                Tracking System
+              </div>
               <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4">Application Status</h1>
               <p className="text-slate-500">Enter your tracking code and mobile number to check your membership status.</p>
             </div>
@@ -150,8 +154,8 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
               <form onSubmit={handleLookup} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                      <Hash size={14} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Hash size={12} />
                       Tracking Code
                     </label>
                     <input
@@ -160,12 +164,12 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                       value={trackingCode}
                       onChange={(e) => setTrackingCode(e.target.value)}
                       placeholder="e.g. NUP-2026-XXXX"
-                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all font-mono"
+                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all font-mono text-sm font-bold"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                      <Phone size={14} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Phone size={12} />
                       Mobile Number
                     </label>
                     <input
@@ -174,14 +178,14 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       placeholder="e.g. 98XXXXXXXX"
-                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all"
+                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all text-sm font-bold"
                     />
                   </div>
                 </div>
 
                 {error && (
-                  <div className="p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl text-sm font-medium flex items-center gap-3">
-                    <XCircle size={20} className="shrink-0" />
+                  <div className="p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl text-xs font-bold flex items-center gap-3">
+                    <XCircle size={18} className="shrink-0" />
                     {error}
                   </div>
                 )}
@@ -189,13 +193,13 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {loading ? (
-                    'Searching...'
+                    'Searching System...'
                   ) : (
                     <>
-                      <Search size={20} />
+                      <Search size={16} />
                       Check Status
                     </>
                   )}
@@ -204,13 +208,13 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
             ) : (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col items-center text-center pb-8 border-b border-slate-100">
-                  <div className="mb-6 p-4 bg-slate-50 rounded-full">
+                  <div className="mb-6 p-6 bg-slate-50 rounded-full">
                     {getStatusIcon(statusData.status)}
                   </div>
                   <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">
                     {statusData.fullName}
                   </h2>
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${getStatusColor(statusData.status)}`}>
+                  <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(statusData.status)}`}>
                     {statusData.status === 'ACTIVE' ? 'APPROVED / ACTIVE' : statusData.status}
                   </div>
                 </div>

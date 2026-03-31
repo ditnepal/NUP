@@ -17,9 +17,11 @@ interface PublicPortalProps {
   onGrievanceClick?: () => void;
   onCandidatesClick?: () => void;
   onCampaignsClick?: () => void;
+  onAboutClick?: () => void;
+  onHomeClick?: () => void;
 }
 
-export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick, onDonateClick, onGrievanceClick, onCandidatesClick, onCampaignsClick }) => {
+export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick, onDonateClick, onGrievanceClick, onCandidatesClick, onCampaignsClick, onAboutClick, onHomeClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -31,9 +33,9 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   const [polls, setPolls] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
   const [systemConfig, setSystemConfig] = useState<Record<string, string>>({
-    PARTY_NAME: 'Progressive People\'s Organization',
+    PARTY_NAME: 'Nagarik Unmukti Party',
     PARTY_TAGLINE: 'Empowering Citizens, Building the Future',
-    CONTACT_EMAIL: 'info@ppos.org',
+    CONTACT_EMAIL: 'info@nupos.org',
     CONTACT_PHONE: '+977-1-0000000'
   });
   const [loading, setLoading] = useState(true);
@@ -177,71 +179,42 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2 text-emerald-600">
-              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <Globe size={20} />
-              </div>
-              <span className="font-black text-xl tracking-tight text-slate-800">{systemConfig['PARTY_NAME'] || 'NUP'}</span>
-            </div>
-            
-            <div className="hidden md:flex items-center gap-8">
-              <button onClick={onDocumentsClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Manifesto</button>
-              <a href="#news" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">News</a>
-              <button onClick={onTrainingClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Training</button>
-              <button onClick={onStatusClick} className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Check Status</button>
-              <a href="#contact" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Contact</a>
-              {user ? (
-                <button 
-                  onClick={onPortalClick}
-                  className="bg-slate-900 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center gap-2"
-                >
-                  <User size={16} />
-                  Member Portal
-                </button>
-              ) : (
-                <button onClick={onJoinClick} className="bg-emerald-600 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
-                  Join Us
-                </button>
-              )}
-            </div>
-
-            <button className="md:hidden p-2 text-slate-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-white pt-20 px-6 md:hidden">
-          <div className="flex flex-col gap-6">
-            <button onClick={onDocumentsClick} className="text-2xl font-bold text-slate-800 text-left">Manifesto</button>
-            <a href="#news" className="text-2xl font-bold text-slate-800">News</a>
-            <button onClick={onTrainingClick} className="text-2xl font-bold text-slate-800 text-left">Training</button>
-            <button onClick={onStatusClick} className="text-2xl font-bold text-slate-800 text-left">Check Status</button>
-            <a href="#contact" className="text-2xl font-bold text-slate-800">Contact</a>
-            {user ? (
+    <div className="space-y-12">
+      {/* Hero Section */}
+      <section className="relative py-20 md:py-32 overflow-hidden bg-slate-900 text-white rounded-3xl">
+        <div className="px-8 relative z-10">
+          <div className="max-w-3xl">
+            <span className="inline-block px-4 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest mb-8">
+              Official Portal
+            </span>
+            <h1 className="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tight">
+              Building a <span className="text-emerald-400 italic">Prosperous</span> Nepal Together.
+            </h1>
+            <p className="text-xl text-slate-300 mb-12 max-w-2xl leading-relaxed">
+              Join the movement for change. Our portal provides the latest news, updates, and resources for our members and supporters.
+            </p>
+            <div className="flex flex-wrap gap-4">
               <button 
-                onClick={onPortalClick}
-                className="bg-slate-900 text-white w-full py-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-2"
+                onClick={onJoinClick}
+                className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-900/20 flex items-center gap-3 group"
               >
-                <User size={20} />
-                Member Portal
+                Join the Movement
+                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
-            ) : (
-              <button onClick={onJoinClick} className="bg-emerald-600 text-white w-full py-4 rounded-2xl text-lg font-bold">
-                Join Us
+              <button 
+                onClick={onAboutClick}
+                className="bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-white/20 transition-all"
+              >
+                Learn More
               </button>
-            )}
+            </div>
           </div>
         </div>
-      )}
+        
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-emerald-500/10 to-transparent pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none" />
+      </section>
 
       {/* Dynamic Sections or Baseline Fallback */}
       {sections.length > 0 ? (
@@ -419,31 +392,33 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
       ) : (
         <>
           {/* Hero Section */}
-          <section className="relative py-24 md:py-32 overflow-hidden bg-slate-50">
+          <section className="relative py-24 md:py-32 overflow-hidden bg-slate-900">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="max-w-3xl">
-                <motion.span 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="inline-block px-4 py-1.5 bg-rose-50 text-rose-700 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest mb-8 border border-emerald-500/20"
                 >
-                  {systemConfig['PARTY_NAME']}
-                </motion.span>
+                  <Globe size={12} />
+                  Official Public Portal
+                </motion.div>
                 <motion.h1 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="text-5xl md:text-7xl font-black text-slate-900 leading-[0.9] mb-8 tracking-tighter"
+                  className="text-6xl md:text-8xl font-black text-white leading-[0.85] mb-8 tracking-tighter uppercase"
                 >
-                  {systemConfig['PARTY_TAGLINE'].toUpperCase()}
+                  Stay Informed. <br />
+                  <span className="text-emerald-500">Stay Connected.</span>
                 </motion.h1>
                 <motion.p 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="text-lg md:text-xl text-slate-600 mb-10 leading-relaxed max-w-xl font-medium"
+                  className="text-xl text-slate-400 mb-10 leading-relaxed max-w-xl font-medium"
                 >
-                  Join the movement for transparency, accountability, and sustainable development. Together, we can build a stronger nation for everyone.
+                  The official source for party news, policy updates, and community announcements. Real-time data from the heart of our movement.
                 </motion.p>
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
@@ -451,71 +426,53 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   transition={{ delay: 0.3 }}
                   className="flex flex-col sm:flex-row gap-5"
                 >
-                  <button onClick={onJoinClick} className="bg-rose-600 text-white px-8 py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 group">
-                    Become a Member <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  <button onClick={onJoinClick} className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-lg font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group">
+                    Join the Movement <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </button>
-                  <button onClick={onStatusClick} className="bg-white text-slate-900 border border-slate-200 px-8 py-4 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                    Check Application Status
+                  <button onClick={onStatusClick} className="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-10 py-5 rounded-2xl text-lg font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2">
+                    Check Status
                   </button>
                 </motion.div>
               </div>
             </div>
             
             {/* Abstract Background Element */}
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-50 -skew-x-12 translate-x-1/4 z-0 hidden lg:block"></div>
+            <div className="absolute top-0 right-0 w-1/3 h-full bg-emerald-600/5 -skew-x-12 translate-x-1/4 z-0 hidden lg:block"></div>
           </section>
 
           {/* Action Blocks */}
-          <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center mb-6">
-                  <Heart size={24} />
+          <section className="py-24 px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden">
+                <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-3xl flex items-center justify-center mb-8 border border-emerald-500/20">
+                  <Heart size={32} />
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-slate-900">Volunteer</h3>
-                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Contribute your skills and time to our local campaigns and initiatives.</p>
+                <h3 className="text-2xl font-black mb-4 text-slate-900 uppercase tracking-tight">Volunteer</h3>
+                <p className="text-slate-500 mb-8 leading-relaxed font-medium">Contribute your skills and time to our local campaigns and initiatives. Be the change.</p>
                 <button 
                   onClick={() => setIsVolunteerModalOpen(true)}
-                  className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all"
+                  className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 transition-all"
                 >
-                  Apply Now <ChevronRight size={16} />
+                  Apply Now <ChevronRight size={18} />
                 </button>
               </div>
 
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-6">
-                  <Megaphone size={24} />
+              <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden">
+                <div className="w-16 h-16 bg-amber-500/10 text-amber-600 rounded-3xl flex items-center justify-center mb-8 border border-amber-500/20">
+                  <Megaphone size={32} />
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-slate-900">Donate</h3>
-                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Support our mission with a financial contribution. Every rupee counts.</p>
-                <button onClick={onDonateClick} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">Contribute <ChevronRight size={16} /></button>
+                <h3 className="text-2xl font-black mb-4 text-slate-900 uppercase tracking-tight">Donate</h3>
+                <p className="text-slate-500 mb-8 leading-relaxed font-medium">Support our mission with a financial contribution. Every contribution fuels our progress.</p>
+                <button onClick={onDonateClick} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 transition-all">Contribute <ChevronRight size={18} /></button>
               </div>
 
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-6">
-                  <MessageSquare size={24} />
+              <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden">
+                <div className="w-16 h-16 bg-slate-200 text-slate-600 rounded-3xl flex items-center justify-center mb-8 border border-slate-300">
+                  <MessageSquare size={32} />
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-slate-900">Complaints</h3>
-                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Report issues in your local area or provide feedback to the party.</p>
-                <button onClick={onGrievanceClick} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">Submit Issue <ChevronRight size={16} /></button>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-6">
-                  <Download size={24} />
-                </div>
-                <h3 className="text-lg font-bold mb-2 text-slate-900">Downloads</h3>
-                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Access our manifesto, policy documents, and membership forms.</p>
-                <button onClick={onDocumentsClick} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">Browse Files <ChevronRight size={16} /></button>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-6">
-                  <GraduationCap size={24} />
-                </div>
-                <h3 className="text-lg font-bold mb-2 text-slate-900">Training</h3>
-                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Access official party training materials and educational resources.</p>
-                <button onClick={onTrainingClick} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">View Programs <ChevronRight size={16} /></button>
+                <h3 className="text-2xl font-black mb-4 text-slate-900 uppercase tracking-tight">Complaints</h3>
+                <p className="text-slate-500 mb-8 leading-relaxed font-medium">Report issues in your local area or provide feedback to the party. We listen.</p>
+                <button onClick={onGrievanceClick} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 transition-all">Submit Issue <ChevronRight size={18} /></button>
               </div>
             </div>
           </section>
@@ -523,8 +480,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
       )}
 
       {/* Latest News & Notices */}
-      <section id="news" className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="news" className="py-24 bg-slate-50 px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             
             {/* News */}
@@ -714,8 +670,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               </div>
             )}
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* Post Detail Modal */}
       {selectedPost && (
@@ -889,53 +844,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
         </div>
       )}
 
-      {/* Footer */}
-      <footer id="contact" className="bg-slate-900 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 text-emerald-400 mb-8">
-                <Globe size={32} />
-                <span className="font-black text-3xl tracking-tight">{systemConfig['PARTY_NAME'] || 'NUP'}</span>
-              </div>
-              <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-                {systemConfig['PARTY_TAGLINE']}
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-bold text-lg mb-6 uppercase tracking-widest text-emerald-400">Organization</h4>
-              <ul className="space-y-4 text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-                <li><button onClick={onCandidatesClick} className="hover:text-white transition-colors text-left">Candidates</button></li>
-                <li><button onClick={onCampaignsClick} className="hover:text-white transition-colors text-left">Campaigns</button></li>
-                <li><a href="#" className="hover:text-white transition-colors">Leadership</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Committees</a></li>
-                <li><button onClick={onDocumentsClick} className="hover:text-white transition-colors text-left">Manifesto</button></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-lg mb-6 uppercase tracking-widest text-emerald-400">Contact</h4>
-              <ul className="space-y-4 text-slate-400">
-                <li>{systemConfig['CONTACT_ADDRESS'] || 'Kathmandu, Nepal'}</li>
-                <li>{systemConfig['CONTACT_EMAIL']}</li>
-                <li>{systemConfig['CONTACT_PHONE']}</li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="pt-12 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-slate-500 text-sm">
-              © 2026 {systemConfig['PARTY_NAME']}. All rights reserved.
-            </p>
-            <div className="flex gap-8 text-sm text-slate-500">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

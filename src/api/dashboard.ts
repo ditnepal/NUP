@@ -283,4 +283,69 @@ router.get('/diagnostics/db', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+// @route   GET /api/v1/dashboard/portal-center
+// @desc    Get data for the Centralized Public User Dashboard admin view
+// @access  Private (Admin/Staff)
+router.get('/portal-center', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const role = req.user?.role;
+    if (role !== 'ADMIN' && role !== 'STAFF') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const [
+      registeredUsers,
+      verifiedUsers,
+      membershipApplicants,
+      approvedMembers,
+      publicVolunteerApps,
+      pendingVolunteerRegs,
+      activeVolunteers,
+      totalDonors,
+      totalGrievances,
+      recentUsers
+    ] = await Promise.all([
+      prisma.user.count({ where: { role: 'PUBLIC' } }),
+      prisma.user.count({ where: { role: 'PUBLIC', isActive: true } }),
+      prisma.member.count({ where: { status: 'PENDING' } }),
+      prisma.member.count({ where: { status: 'ACTIVE' } }),
+      prisma.volunteerApplication.count({ where: { status: 'PENDING' } }),
+      prisma.volunteer.count({ where: { status: 'PENDING' } }),
+      prisma.volunteer.count({ where: { status: 'ACTIVE' } }),
+      prisma.donorProfile.count(),
+      prisma.grievance.count(),
+      prisma.user.findMany({
+        where: { role: 'PUBLIC' },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          isActive: true,
+          createdAt: true,
+          memberProfile: { select: { status: true } },
+          volunteerProfile: { select: { status: true } },
+          donorProfile: { select: { id: true } }
+        }
+      })
+    ]);
+
+    res.json({
+      registeredUsers,
+      verifiedUsers,
+      membershipApplicants,
+      approvedMembers,
+      volunteerApplicants: publicVolunteerApps + pendingVolunteerRegs,
+      activeVolunteers,
+      totalDonors,
+      totalGrievances,
+      recentUsers
+    });
+  } catch (error: any) {
+    console.error('Portal Center summary error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

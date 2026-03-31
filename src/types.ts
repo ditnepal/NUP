@@ -587,7 +587,7 @@ export interface Volunteer {
   phone?: string;
   skills: string;
   availability?: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
   createdAt: string;
   updatedAt: string;
   member?: Member;

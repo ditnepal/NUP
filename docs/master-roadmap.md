@@ -1,7 +1,7 @@
-# PPOS Master Roadmap
+# NUP OS Master Roadmap
 
 ## Overview
-The Political Operating System (PPOS) is a centrally governed but operationally distributed platform designed to manage political party activities across multiple hierarchical levels.
+The Political Operating System (NUP OS) is a centrally governed but operationally distributed platform designed to manage political party activities across multiple hierarchical levels.
 
 ## Target Architecture
 - **Hierarchy-Driven Dashboards**: Users see data and actions relevant to their assigned level.
