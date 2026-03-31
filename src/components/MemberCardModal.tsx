@@ -4,6 +4,8 @@ import { Download, Printer, X } from 'lucide-react';
 import MemberIdCard from './MemberIdCard';
 import html2canvas from 'html2canvas';
 
+import { toast } from 'sonner';
+
 interface MemberCardModalProps {
   member: Member;
   onClose: () => void;
@@ -73,6 +75,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
       link.click();
     } catch (error) {
       console.error('Error generating card image:', error);
+      toast.error('Failed to download ID card');
     }
   };
 

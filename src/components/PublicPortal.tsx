@@ -425,7 +425,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 <motion.span 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider mb-8"
+                  className="inline-block px-4 py-1.5 bg-rose-50 text-rose-700 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8"
                 >
                   {systemConfig['PARTY_NAME']}
                 </motion.span>
@@ -433,7 +433,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="text-5xl md:text-8xl font-black text-slate-900 leading-[0.85] mb-10 tracking-tighter"
+                  className="text-5xl md:text-7xl font-black text-slate-900 leading-[0.9] mb-8 tracking-tighter"
                 >
                   {systemConfig['PARTY_TAGLINE'].toUpperCase()}
                 </motion.h1>
@@ -441,7 +441,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="text-xl md:text-2xl text-slate-600 mb-12 leading-relaxed max-w-2xl"
+                  className="text-lg md:text-xl text-slate-600 mb-10 leading-relaxed max-w-xl font-medium"
                 >
                   Join the movement for transparency, accountability, and sustainable development. Together, we can build a stronger nation for everyone.
                 </motion.p>
@@ -451,10 +451,10 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   transition={{ delay: 0.3 }}
                   className="flex flex-col sm:flex-row gap-5"
                 >
-                  <button onClick={onJoinClick} className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-2xl shadow-emerald-200 flex items-center justify-center gap-2 group">
-                    Become a Member <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                  <button onClick={onJoinClick} className="bg-rose-600 text-white px-8 py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 group">
+                    Become a Member <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                   </button>
-                  <button onClick={onStatusClick} className="bg-white text-slate-800 border-2 border-slate-200 px-10 py-5 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                  <button onClick={onStatusClick} className="bg-white text-slate-900 border border-slate-200 px-8 py-4 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
                     Check Application Status
                   </button>
                 </motion.div>
@@ -468,54 +468,54 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
           {/* Action Blocks */}
           <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Heart size={28} />
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center mb-6">
+                  <Heart size={24} />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Volunteer</h3>
-                <p className="text-slate-500 mb-6">Contribute your skills and time to our local campaigns and initiatives.</p>
+                <h3 className="text-lg font-bold mb-2 text-slate-900">Volunteer</h3>
+                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Contribute your skills and time to our local campaigns and initiatives.</p>
                 <button 
                   onClick={() => setIsVolunteerModalOpen(true)}
-                  className="text-blue-600 font-bold flex items-center gap-1 hover:gap-2 transition-all"
+                  className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all"
                 >
                   Apply Now <ChevronRight size={16} />
                 </button>
               </div>
 
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Megaphone size={28} />
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-6">
+                  <Megaphone size={24} />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Donate</h3>
-                <p className="text-slate-500 mb-6">Support our mission with a financial contribution. Every rupee counts.</p>
-                <button onClick={onDonateClick} className="text-amber-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Contribute <ChevronRight size={16} /></button>
+                <h3 className="text-lg font-bold mb-2 text-slate-900">Donate</h3>
+                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Support our mission with a financial contribution. Every rupee counts.</p>
+                <button onClick={onDonateClick} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">Contribute <ChevronRight size={16} /></button>
               </div>
 
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <MessageSquare size={28} />
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-6">
+                  <MessageSquare size={24} />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Complaints</h3>
-                <p className="text-slate-500 mb-6">Report issues in your local area or provide feedback to the party.</p>
-                <button onClick={onGrievanceClick} className="text-purple-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Submit Issue <ChevronRight size={16} /></button>
+                <h3 className="text-lg font-bold mb-2 text-slate-900">Complaints</h3>
+                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Report issues in your local area or provide feedback to the party.</p>
+                <button onClick={onGrievanceClick} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">Submit Issue <ChevronRight size={16} /></button>
               </div>
 
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Download size={28} />
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center mb-6">
+                  <Download size={24} />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Downloads</h3>
-                <p className="text-slate-500 mb-6">Access our manifesto, policy documents, and membership forms.</p>
-                <button onClick={onDocumentsClick} className="text-rose-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">Browse Files <ChevronRight size={16} /></button>
+                <h3 className="text-lg font-bold mb-2 text-slate-900">Downloads</h3>
+                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Access our manifesto, policy documents, and membership forms.</p>
+                <button onClick={onDocumentsClick} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">Browse Files <ChevronRight size={16} /></button>
               </div>
 
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <GraduationCap size={28} />
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-6">
+                  <GraduationCap size={24} />
                 </div>
-                <h3 className="text-xl font-bold mb-3">Training</h3>
-                <p className="text-slate-500 mb-6">Access official party training materials and educational resources.</p>
-                <button onClick={onTrainingClick} className="text-emerald-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">View Programs <ChevronRight size={16} /></button>
+                <h3 className="text-lg font-bold mb-2 text-slate-900">Training</h3>
+                <p className="text-sm text-slate-600 mb-6 leading-relaxed">Access official party training materials and educational resources.</p>
+                <button onClick={onTrainingClick} className="text-rose-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">View Programs <ChevronRight size={16} /></button>
               </div>
             </div>
           </section>

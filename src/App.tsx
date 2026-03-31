@@ -49,7 +49,7 @@ import { api } from './lib/api';
 import { usePermissions } from './hooks/usePermissions';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings, User } from 'lucide-react';
 
-type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment';
+type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'donate' | 'public' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -498,6 +498,7 @@ export default function App() {
             ? <DonationPortal />
             : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="donations" />
         )}
+        {currentView === 'donate' && <DonationPortal />}
         {currentView === 'public-documents' && <PublicDocumentsView />}
         {currentView === 'public-candidates' && <PublicCandidatesView />}
         {currentView === 'public-campaigns' && <PublicCampaignsView />}
