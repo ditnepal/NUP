@@ -383,7 +383,7 @@ export const DonationPortal: React.FC = () => {
           </div>
 
           {/* Active Campaigns */}
-          {campaigns.map((campaign) => (
+          {campaigns?.map((campaign) => (
             <div key={campaign.id} className="bg-white rounded-[2.5rem] border border-gray-200 p-10 shadow-sm hover:shadow-2xl transition-all group flex flex-col">
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-[1.25rem] flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                 <TrendingUp size={32} />

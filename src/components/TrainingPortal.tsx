@@ -42,7 +42,7 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
     }
   };
 
-  const categories = ['All', ...new Set(programs.map(p => p.category))];
+  const categories = ['All', ...new Set(programs?.map(p => p.category) || [])];
 
   const filteredPrograms = programs.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -65,7 +65,7 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-          {categories.map(cat => (
+          {categories?.map(cat => (
             <button
               key={cat}
               onClick={() => setFilterCategory(cat)}
@@ -82,7 +82,7 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredPrograms.map((program) => (
+        {filteredPrograms?.map((program) => (
           <div key={program.id} className={`bg-white rounded-3xl border ${program.isPinned ? 'border-emerald-200 shadow-emerald-50' : 'border-slate-100'} p-8 shadow-sm hover:shadow-xl transition-all group flex flex-col`}>
             <div className="flex justify-between items-start mb-6">
               <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">

@@ -30,7 +30,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onDelet
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {documents.map((doc) => (
+          {documents?.map((doc) => (
             <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">

@@ -971,7 +971,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
             {grievances.length > 0 ? (
               <div className="space-y-4">
-                {grievances.slice(0, 2).map((g, i) => (
+                {grievances?.slice(0, 2).map((g, i) => (
                   <div key={i} className="p-5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between group hover:bg-white hover:shadow-md transition-all">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-rose-500 shadow-sm">
@@ -1042,7 +1042,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           </div>
           <div className="space-y-4">
             {programs.length > 0 ? (
-              programs.slice(0, 2).map((p, i) => (
+              programs?.slice(0, 2).map((p, i) => (
                 <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-500 shadow-sm">
@@ -1084,7 +1084,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="space-y-4">
             {surveys.length > 0 || polls.length > 0 ? (
               <>
-                {surveys.slice(0, 1).map((s, i) => (
+                {surveys?.slice(0, 1).map((s, i) => (
                   <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-indigo-500 shadow-sm">
@@ -1098,7 +1098,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <ChevronRight size={16} className="text-slate-400" />
                   </div>
                 ))}
-                {polls.slice(0, 1).map((p, i) => (
+                {polls?.slice(0, 1).map((p, i) => (
                   <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-indigo-500 shadow-sm">
@@ -1191,7 +1191,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
             </div>
             <div className="space-y-4">
               {donations.length > 0 ? (
-                donations.slice(0, 2).map((donation, i) => (
+                donations?.slice(0, 2).map((donation, i) => (
                   <div key={i} className="p-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl flex justify-between items-center">
                     <div>
                       <h4 className="font-bold text-sm">{donation.campaign?.title || 'General Donation'}</h4>
@@ -1254,7 +1254,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
             <div className="p-8">
               {summary?.actionQueue && summary.actionQueue.length > 0 ? (
                 <div className="space-y-4">
-                  {summary.actionQueue.map((item: any, i: number) => (
+                  {summary?.actionQueue?.map((item: any, i: number) => (
                     <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-3xl border border-slate-100 hover:bg-white hover:shadow-md transition-all group">
                       <div className="flex items-center gap-5">
                         <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 shadow-sm group-hover:text-emerald-600 transition-colors">
@@ -1329,7 +1329,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 Alerts & Notices
               </h3>
               <div className="space-y-4">
-                {notices.slice(0, 2).map((notice, i) => (
+                {notices?.slice(0, 2).map((notice, i) => (
                   <div key={i} className="p-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl">
                     <h4 className="font-bold text-sm mb-1">{notice.title}</h4>
                     <p className="text-xs text-emerald-100 line-clamp-2">{notice.content}</p>
@@ -1354,7 +1354,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </h3>
             </div>
             <div className="p-6 space-y-6">
-              {news.map((item, i) => (
+              {news?.map((item, i) => (
                 <div key={i} className="group cursor-pointer flex gap-4">
                   <div className="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden shrink-0 shadow-sm">
                     <img 
@@ -1388,7 +1388,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </button>
             </div>
             <div className="p-4 space-y-2">
-              {events.slice(0, 3).map((event: any, i) => {
+              {events?.slice(0, 3).map((event: any, i) => {
                 const date = event.eventDate || event.startDate;
                 return (
                   <div key={i} className="p-4 rounded-xl hover:bg-slate-50 transition-all flex items-center gap-4 group">
@@ -1436,7 +1436,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 <p className="text-slate-600">You're all caught up! Check back later for new updates.</p>
               </div>
             ) : (
-              notices.map((notice, i) => (
+              notices?.map((notice, i) => (
                 <motion.div 
                   key={notice.id || i}
                   initial={{ opacity: 0, y: 20 }}
@@ -1507,7 +1507,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 <p className="text-slate-600">You're all caught up! Check back later for new events.</p>
               </div>
             ) : (
-              events.map((event, i) => (
+              events?.map((event, i) => (
                 <motion.div 
                   key={event.id || i}
                   initial={{ opacity: 0, y: 20 }}
@@ -1591,7 +1591,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   />
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                  {['All', ...new Set(programs.map(p => p.category))].map(cat => (
+                  {['All', ...new Set(programs?.map(p => p.category) || [])].map(cat => (
                     <button
                       key={cat}
                       onClick={() => setFilterCategory(cat)}
@@ -1812,7 +1812,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
           {surveyTab === 'surveys' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {surveys.map((survey) => (
+              {surveys?.map((survey) => (
                 <div key={survey.id} className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm hover:shadow-md transition-all group flex flex-col">
                   <div className="flex justify-between items-start mb-6">
                     <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -1863,7 +1863,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {polls.map((poll) => (
+              {polls?.map((poll) => (
                 <div key={poll.id} className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
                   <div className="flex justify-between items-start">
                     <h3 className="text-xl font-bold text-slate-900">{poll.question}</h3>
@@ -2085,7 +2085,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </div>
             ) : (
               <div className="grid gap-4">
-                {grievances.map((g) => (
+                {grievances?.map((g) => (
                   <motion.div 
                     key={g.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -2493,7 +2493,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <h3 className="text-xl font-bold text-slate-900 mb-6">Active Assignments</h3>
                     <div className="space-y-4">
                       {volunteer.assignments?.length > 0 ? (
-                        volunteer.assignments.map((as: any, i: number) => (
+                        volunteer?.assignments?.map((as: any, i: number) => (
                           <div key={i} className="p-6 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
                             <div>
                               <h4 className="font-bold text-slate-900">{as.title}</h4>
@@ -2579,7 +2579,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </h3>
               <div className="space-y-4">
                 {donations.length > 0 ? (
-                  donations.map((donation, i) => (
+                  donations?.map((donation, i) => (
                     <div key={i} className="p-6 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center hover:bg-white hover:shadow-sm transition-all group">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -2619,7 +2619,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </h3>
               <div className="space-y-4">
                 {activeCampaigns.length > 0 ? (
-                  activeCampaigns.slice(0, 3).map((campaign, i) => (
+                  activeCampaigns?.slice(0, 3).map((campaign, i) => (
                     <div key={i} className="p-6 bg-slate-50 rounded-xl border border-slate-100 space-y-4">
                       <div className="flex justify-between items-start">
                         <div>

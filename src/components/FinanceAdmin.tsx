@@ -893,7 +893,11 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                             required
                             min="1"
                             value={transactionFormData.amount}
-                            onChange={(e) => setTransactionFormData({...transactionFormData, amount: Number(e.target.value)})}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const num = Number(val);
+                              setTransactionFormData({...transactionFormData, amount: isNaN(num) ? 0 : num});
+                            }}
                             className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-lg"
                           />
                         </div>

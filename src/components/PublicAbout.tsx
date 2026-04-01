@@ -215,7 +215,7 @@ const PublicAbout: React.FC = () => {
               </div>
             ) : (
               <div className="grid gap-4">
-                {hierarchy.map((unit) => (
+                {hierarchy?.map((unit) => (
                   <motion.div
                     key={unit.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -275,7 +275,7 @@ const PublicAbout: React.FC = () => {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredOffices.map((office) => (
+                {filteredOffices?.map((office) => (
                   <motion.div
                     key={office.id}
                     initial={{ opacity: 0, scale: 0.95 }}

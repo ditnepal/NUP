@@ -28,7 +28,7 @@ export const NotificationCenter: React.FC = () => {
   const markAsRead = async (id: string) => {
     try {
       await api.patch(`/notifications/${id}/read`, {});
-      setNotifications(notifications.map(n => n.id === id ? { ...n, status: 'READ' } : n));
+      setNotifications(notifications?.map(n => n.id === id ? { ...n, status: 'READ' } : n));
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -79,7 +79,7 @@ export const NotificationCenter: React.FC = () => {
             <div className="max-h-[400px] overflow-y-auto">
               {notifications.length > 0 ? (
                 <div className="divide-y divide-gray-50">
-                  {notifications.map((notification) => (
+                  {notifications?.map((notification) => (
                     <div 
                       key={notification.id} 
                       className={`p-4 hover:bg-gray-50 transition-colors group ${

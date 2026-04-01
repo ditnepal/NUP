@@ -236,7 +236,7 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
               </tr>
             </thead>
             <tbody className="text-sm">
-              {filteredBooths.map((booth) => (
+              {filteredBooths?.map((booth) => (
                 <tr key={booth.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="py-3">
                     <div className="font-semibold text-slate-800">{booth.name}</div>
@@ -345,7 +345,7 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
                       <label className="text-sm font-semibold text-slate-700">Polling Station</label>
                       <select name="pollingStationId" defaultValue={editingBooth?.pollingStationId} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500">
                         <option value="">Select Polling Station (Optional)</option>
-                        {pollingStations.map(ps => (
+                        {pollingStations?.map(ps => (
                           <option key={ps.id} value={ps.id}>{ps.name} ({ps.location})</option>
                         ))}
                       </select>

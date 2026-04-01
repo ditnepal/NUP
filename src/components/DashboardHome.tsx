@@ -243,7 +243,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
                 Priority Actions
               </h3>
               <div className="space-y-4">
-                {summary.actionQueue && summary.actionQueue.length > 0 ? summary.actionQueue.map((action: any, i: number) => (
+                {summary.actionQueue && summary.actionQueue.length > 0 ? summary.actionQueue?.map((action: any, i: number) => (
                   <button 
                     key={i}
                     onClick={() => {
@@ -532,7 +532,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
               <div className="p-8">
                 {summary?.actionQueue && summary.actionQueue.length > 0 ? (
                   <div className="space-y-4">
-                    {summary.actionQueue.map((item: any, i: number) => (
+                    {summary.actionQueue?.map((item: any, i: number) => (
                       <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400">
@@ -601,7 +601,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
               <button className="text-sm font-bold text-emerald-600 hover:underline">View All</button>
             </div>
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-              {news.length > 0 ? news.map((item, i) => (
+              {news?.length > 0 ? news?.map((item, i) => (
                 <div key={i} className="group cursor-pointer">
                   <div className="aspect-video bg-slate-100 rounded-3xl mb-4 overflow-hidden shadow-sm">
                     <img src={item.featuredImage || `https://picsum.photos/seed/${item.title}/400/225`} alt="News" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
@@ -640,7 +640,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
               </button>
             </div>
             <div className="p-4 space-y-4">
-              {events.length > 0 ? events.map((event, i) => (
+              {events?.length > 0 ? events?.map((event, i) => (
                 <div key={i} className="p-4 rounded-3xl hover:bg-slate-50 transition-all flex items-center gap-4 group">
                   <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center text-center shrink-0 group-hover:scale-110 transition-transform">
                     <span className="text-[10px] font-black uppercase leading-none">{format(new Date(event.eventDate), 'MMM')}</span>

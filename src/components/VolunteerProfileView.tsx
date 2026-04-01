@@ -92,7 +92,7 @@ export const VolunteerProfileView: React.FC<VolunteerProfileViewProps> = ({ volu
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <h2 className="text-lg font-bold text-slate-900">Skills</h2>
             <div className="flex flex-wrap gap-2">
-              {volunteer.skills.split(',').map(skill => (
+              {volunteer.skills?.split(',').map(skill => (
                 <span key={skill} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm">{skill.trim()}</span>
               ))}
             </div>
@@ -104,7 +104,7 @@ export const VolunteerProfileView: React.FC<VolunteerProfileViewProps> = ({ volu
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
             <h2 className="text-lg font-bold text-slate-900 mb-4">Assigned Tasks</h2>
             <div className="space-y-4">
-              {volunteer.assignments && volunteer.assignments.length > 0 ? volunteer.assignments.map((assignment, i) => (
+              {volunteer.assignments && volunteer.assignments.length > 0 ? volunteer.assignments?.map((assignment, i) => (
                 <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                   <div className="flex items-center gap-3">
                     <ClipboardList className="text-blue-600" />

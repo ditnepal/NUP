@@ -447,7 +447,7 @@ ${overview.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.tota
                 <button className="text-sm font-bold text-gray-400 hover:text-black">View All</button>
               </div>
               <div className="space-y-4">
-                {overview.topPriorities.map((p, idx) => (
+                {overview.topPriorities?.map((p, idx) => (
                   <div key={p.id} className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 group hover:bg-gray-100 transition-all">
                     <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold text-gray-400 group-hover:text-black shadow-sm">
                       {idx + 1}
@@ -468,7 +468,7 @@ ${overview.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.tota
                 <button className="text-sm font-bold text-gray-400 hover:text-black">Detailed Report</button>
               </div>
               <div className="space-y-6">
-                {overview.areaStrengths.map((s) => (
+                {overview.areaStrengths?.map((s) => (
                   <div key={s.id} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-gray-900">{s.orgUnit.name}</span>
@@ -536,7 +536,7 @@ ${overview.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.tota
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {reports.map((r) => (
+                {reports?.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-900 line-clamp-1 font-medium">{r.content}</p>
@@ -585,7 +585,7 @@ ${overview.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.tota
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4">
-            {signals.map((s) => (
+            {signals?.map((s) => (
               <div key={s.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex gap-6 items-start hover:border-black transition-all cursor-pointer">
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
                   s.source === 'REPORT' ? 'bg-blue-50 text-blue-600' :

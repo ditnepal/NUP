@@ -156,7 +156,7 @@ export const NoticeAdmin: React.FC<Props> = ({ user }) => {
             )}
           </div>
         ) : (
-          data.map(item => (
+          data?.map(item => (
             <div key={item.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col">
               <div className="p-6 flex-1">
                 <div className="flex justify-between items-start mb-4">

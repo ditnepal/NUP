@@ -222,7 +222,7 @@ export const VolunteerAdmin: React.FC = () => {
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {activeTab === 'volunteers' ? (
-          filteredVolunteers.map((volunteer) => (
+          filteredVolunteers?.map((volunteer) => (
             <div key={volunteer.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -293,7 +293,7 @@ export const VolunteerAdmin: React.FC = () => {
             </div>
           ))
         ) : (
-          applications.map((app) => (
+          applications?.map((app) => (
             <div key={app.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">

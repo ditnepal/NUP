@@ -134,7 +134,7 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCampaigns.map((campaign) => (
+          {filteredCampaigns?.map((campaign) => (
             <Card key={campaign.id} className="p-6 hover:border-emerald-200 transition-colors">
               <div className="flex justify-between items-start mb-4">
                 <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">

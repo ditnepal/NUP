@@ -613,7 +613,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
             onChange={(e) => setSelectedCycle(cycles.find(c => c.id === e.target.value))}
             className="px-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            {cycles.map(c => (
+            {cycles?.map(c => (
               <option key={c.id} value={c.id}>{c.name} ({c.year})</option>
             ))}
           </select>
@@ -783,7 +783,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   Recent Incidents
                 </h3>
                 <div className="space-y-3">
-                  {incidents.slice(0, 3).map(inc => (
+                  {incidents?.slice(0, 3).map(inc => (
                     <div key={inc.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex justify-between items-start mb-2">
                         <span className={`px-2 py-1 rounded-md text-xs font-bold ${
@@ -808,7 +808,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   Top Results
                 </h3>
                 <div className="space-y-3">
-                  {results.slice(0, 5).map(res => (
+                  {results?.slice(0, 5).map(res => (
                     <div key={res.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-all">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
@@ -846,7 +846,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {filteredConstituencies.map(con => (
+                  {filteredConstituencies?.map(con => (
                     <tr key={con.id} className="hover:bg-slate-50 transition-all">
                       <td className="py-4 font-medium text-slate-900">{con.name}</td>
                       <td className="py-4 text-slate-500">{con.code}</td>
@@ -891,7 +891,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {filteredPollingStations.map(station => (
+                  {filteredPollingStations?.map(station => (
                     <tr key={station.id} className="hover:bg-slate-50 transition-all">
                       <td className="py-4 font-medium text-slate-900">{station.name}</td>
                       <td className="py-4 text-slate-500">{station.code || 'N/A'}</td>
@@ -941,7 +941,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {filteredCycles.map(cyc => (
+                  {filteredCycles?.map(cyc => (
                     <tr key={cyc.id} className="hover:bg-slate-50 transition-all">
                       <td className="py-4 font-medium text-slate-900">{cyc.name}</td>
                       <td className="py-4 text-slate-500">{cyc.year}</td>
@@ -992,7 +992,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredCandidates.map(cand => (
+                {filteredCandidates?.map(cand => (
                   <tr key={cand.id} className="hover:bg-slate-50/50 transition-all">
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-slate-900">{cand.name}</p>
@@ -1074,7 +1074,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
               <h3 className="font-bold text-slate-900">Incident Log</h3>
             </div>
             <div className="space-y-3">
-              {filteredIncidents.map(inc => (
+              {filteredIncidents?.map(inc => (
                 <div key={inc.id} className="p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
@@ -1132,7 +1132,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
               <h3 className="font-bold text-slate-900">Election Results</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredResults.map(res => (
+              {filteredResults?.map(res => (
                 <div key={res.id} className="p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all relative overflow-hidden">
                   {res.isWinner && (
                     <div className="absolute top-0 right-0 bg-emerald-500 text-white px-3 py-1 text-[10px] font-bold rounded-bl-lg">
@@ -1202,7 +1202,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {readiness.map(booth => (
+                {readiness?.map(booth => (
                   <tr key={booth.id} className="hover:bg-slate-50/50 transition-all">
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-slate-900">{booth.name}</p>
@@ -1367,7 +1367,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                       className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <option value="">Select Constituency</option>
-                      {constituencies.map(con => (
+                      {constituencies?.map(con => (
                         <option key={con.id} value={con.id}>{con.name}</option>
                       ))}
                     </select>
@@ -1499,7 +1499,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">Select Constituency (Optional)</option>
-                    {constituencies.map(c => (
+                    {constituencies?.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
@@ -1834,7 +1834,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                       className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <option value="">N/A</option>
-                      {pollingStations.map(ps => (
+                      {pollingStations?.map(ps => (
                         <option key={ps.id} value={ps.id}>{ps.name}</option>
                       ))}
                     </select>
@@ -1847,7 +1847,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                       className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <option value="">N/A</option>
-                      {booths.filter(b => !incidentForm.pollingStationId || b.pollingStationId === incidentForm.pollingStationId).map(b => (
+                      {booths?.filter(b => !incidentForm.pollingStationId || b.pollingStationId === incidentForm.pollingStationId).map(b => (
                         <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
                     </select>
@@ -1928,7 +1928,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">Select Candidate</option>
-                    {candidates.map(c => (
+                    {candidates?.map(c => (
                       <option key={c.id} value={c.id}>{c.name} ({c.position})</option>
                     ))}
                   </select>
@@ -1941,7 +1941,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">Select Constituency (Optional)</option>
-                    {constituencies.map(c => (
+                    {constituencies?.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>

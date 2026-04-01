@@ -1,8 +1,34 @@
-const API_URL = '/api/v1';
+const getApiUrl = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin + '/api/v1';
+  }
+  return '/api/v1';
+};
+
+const API_URL = getApiUrl();
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+const getAuthHeaders = (endpoint: string): Record<string, string> => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {};
+  
+  // Only send token if it exists and is not a placeholder string
+  // AND if the endpoint is not explicitly public
+  const isPublic = endpoint.startsWith('/public') || endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register');
+  
+  if (token && token !== 'null' && token !== 'undefined' && token.length > 10 && !isPublic) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+};
+
 const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, backoff = 2000): Promise<Response> => {
+  console.log(`[API] Fetching: ${options.method || 'GET'} ${url}`, {
+    headers: options.headers ? Object.keys(options.headers) : []
+  });
+  
   try {
     const response = await fetch(url, options);
     if (response.status === 429 && retries > 0) {
@@ -22,9 +48,10 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, ba
 };
 
 const handleResponse = async (response: Response) => {
+  const text = await response.text();
+  
   if (!response.ok) {
     let errorMessage = 'API Error';
-    const text = await response.text();
     let errorData = {};
     
     try {
@@ -39,16 +66,20 @@ const handleResponse = async (response: Response) => {
       if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Missing or invalid token'))) {
         console.warn('Unauthorized: Invalid token. Clearing session...');
         localStorage.removeItem('token');
-        window.location.href = '/'; 
+        // Only redirect if not already on login page
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+          window.location.href = '/'; 
+        }
       }
     } catch (e) {
       // Handle non-JSON (HTML) responses from Proxy/Infrastructure
       if (text.includes('<html>')) {
-        errorMessage = `Infrastructure Error (${response.status}): The request was blocked before reaching the server.`;
+        errorMessage = `Infrastructure Error (${response.status}): The request was blocked before reaching the server. Check if the URL is correct and if you have the necessary permissions.`;
+        console.error(`[API 403 HTML] Full response:`, text);
       } else {
         errorMessage = `API Error: ${response.status} ${response.statusText}`;
       }
-      console.error(`API Error (non-JSON) [${response.status}]:`, text.substring(0, 100));
+      console.error(`API Error (non-JSON) [${response.status}]:`, text.substring(0, 200));
     }
     
     const error: any = new Error(errorMessage);
@@ -57,7 +88,6 @@ const handleResponse = async (response: Response) => {
     throw error;
   }
 
-  const text = await response.text();
   try {
     return text ? JSON.parse(text) : {};
   } catch (e) {
@@ -68,22 +98,18 @@ const handleResponse = async (response: Response) => {
 
 export const api = {
   get: async (endpoint: string) => {
-    const token = localStorage.getItem('token');
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(endpoint),
     });
     return handleResponse(response);
   },
 
   post: async (endpoint: string, data: any) => {
-    const token = localStorage.getItem('token');
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        ...getAuthHeaders(endpoint),
       },
       body: JSON.stringify(data),
     });
@@ -91,24 +117,20 @@ export const api = {
   },
 
   postFormData: async (endpoint: string, formData: FormData) => {
-    const token = localStorage.getItem('token');
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(endpoint),
       body: formData,
     });
     return handleResponse(response);
   },
 
   put: async (endpoint: string, data: any) => {
-    const token = localStorage.getItem('token');
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        ...getAuthHeaders(endpoint),
       },
       body: JSON.stringify(data),
     });
@@ -116,12 +138,11 @@ export const api = {
   },
 
   patch: async (endpoint: string, data: any) => {
-    const token = localStorage.getItem('token');
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        ...getAuthHeaders(endpoint),
       },
       body: JSON.stringify(data),
     });
@@ -129,12 +150,11 @@ export const api = {
   },
 
   delete: async (endpoint: string, data?: any) => {
-    const token = localStorage.getItem('token');
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        ...getAuthHeaders(endpoint),
       },
       body: data ? JSON.stringify(data) : undefined,
     });

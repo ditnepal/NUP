@@ -52,6 +52,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Partial<Record<AppModule, AppAct
   MEMBER: {
     DASHBOARD: ['VIEW'],
     MEMBERSHIP: ['VIEW', 'CREATE'],
+    ELECTION: ['VIEW'],
     COMMUNICATION: ['VIEW'],
     TRAINING: ['VIEW'],
     GRIEVANCES: ['VIEW', 'CREATE'],
@@ -59,6 +60,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Partial<Record<AppModule, AppAct
   },
   PUBLIC: {
     DASHBOARD: ['VIEW'],
+    ELECTION: ['VIEW'],
     GRIEVANCES: ['VIEW', 'CREATE']
   },
   APPLICANT_MEMBER: {

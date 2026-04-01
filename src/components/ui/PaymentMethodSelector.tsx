@@ -76,7 +76,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({ mo
 
   return (
     <div className="space-y-4">
-      {methods.map((method) => (
+      {methods?.map((method) => (
         <div key={method.id} className="space-y-3">
           <button 
             type="button"

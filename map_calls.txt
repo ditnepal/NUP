@@ -1,0 +1,237 @@
+src/components/VolunteerProfileView.tsx:              {volunteer.skills.split(',').map(skill => (
+src/components/VolunteerProfileView.tsx:              {volunteer.assignments && volunteer.assignments.length > 0 ? volunteer.assignments.map((assignment, i) => (
+src/components/MembershipPublicAssisted.tsx:        {units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.level})</option>)}
+src/components/MembershipAdmin.tsx:          ].filter(tab => can(tab.permission.module as any, tab.permission.action as any)).map((tab) => {
+src/components/MembershipAdmin.tsx:              {units.map((unit) => (
+src/components/MembershipAdmin.tsx:              {['ACTIVE', 'VERIFIED', 'REJECTED', 'SUSPENDED', 'TERMINATED'].map((status) => (
+src/components/MembershipAdmin.tsx:                  {renewals.map((renewal) => (
+src/components/UserProfileDashboard.tsx:            {stats.map((stat, i) => (
+src/components/UserProfileDashboard.tsx:                    {['Strategic Planning', 'Field Coordination', 'Data Analysis'].map((item, i) => (
+src/components/UserProfileDashboard.tsx:              ].map((item, i) => (
+src/components/UserProfileDashboard.tsx:              ].map((activity, i) => (
+src/components/ui/TransactionTable.tsx:            {(transactions || []).map((tx) => (
+src/components/ui/RegistrationTable.tsx:          {registrations?.map((reg) => (
+src/components/ui/DocumentTable.tsx:          {documents?.map((doc) => (
+src/components/ui/AuditTrail.tsx:      .map(([k, v]) => {
+src/components/ui/AuditTrail.tsx:        {logs?.map((log) => {
+src/components/ui/PaymentMethodSelector.tsx:      {methods?.map((method) => (
+src/components/VolunteerEnrollment.tsx:          ].map((item, i) => (
+src/components/VolunteerEnrollment.tsx:              {interestOptions.map(interest => (
+src/components/EventsAdmin.tsx:                {selectedEvent.speakers.map((speaker) => (
+src/components/EventsAdmin.tsx:                {selectedEvent.agenda.map((item) => (
+src/components/EventsAdmin.tsx:        {events.map((event) => (
+src/components/TrainingPortal.tsx:  const categories = ['All', ...new Set(programs.map(p => p.category))];
+src/components/TrainingPortal.tsx:          {categories.map(cat => (
+src/components/TrainingPortal.tsx:        {filteredPrograms.map((program) => (
+src/components/TrainingPortal.tsx:        {selectedProgram?.courses?.map((course) => (
+src/components/TrainingPortal.tsx:        {selectedCourse?.lessons?.map((lesson) => (
+src/components/CmsAdmin.tsx:              ) : filteredItems.map((item) => (
+src/components/CmsAdmin.tsx:                          {categories.filter(c => c.type === 'POST').map(cat => (
+src/components/TrainingAdmin.tsx:          {programs.map((program) => (
+src/components/TrainingAdmin.tsx:          {selectedProgram?.courses?.map((course) => (
+src/components/TrainingAdmin.tsx:          {selectedCourse?.lessons?.map((lesson) => (
+src/components/BoothsView.tsx:              {filteredBooths.map((booth) => (
+src/components/BoothsView.tsx:                        {pollingStations.map(ps => (
+src/components/NoticeAdmin.tsx:          data.map(item => (
+src/components/MembershipPublicForm.tsx:              {units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.level})</option>)}
+src/components/EventDetailView.tsx:            {event.speakers.map((speaker: any) => (
+src/components/EventDetailView.tsx:            {event.agenda.map((item: any) => (
+src/components/EventDetailView.tsx:              {event.registrations?.map((reg: any) => (
+src/components/PublicCandidates.tsx:          {[1, 2, 3].map(i => (
+src/components/PublicCandidates.tsx:          {candidates.map((candidate) => (
+src/components/PublicEntry.tsx:              ].map((stat, idx) => (
+src/components/PublicEntry.tsx:            ].map((social, idx) => (
+src/components/GrievancePortal.tsx:                {filteredGrievances.map((g) => (
+src/components/GrievancePortal.tsx:                        {categories.map(c => (
+src/components/GrievancePortal.tsx:                        {selectedGrievance.responses.filter(r => !r.isInternal).map(response => (
+src/components/GrievancePortal.tsx:              ) : filteredGrievances.map((g) => (
+src/components/GrievancePortal.tsx:                    {categories.map(c => (
+src/components/GrievancePortal.tsx:              {categories.map(c => (
+src/components/GrievancePortal.tsx:                          {staff.map(s => (
+src/components/GrievancePortal.tsx:                  {selectedGrievance.responses?.map((resp: any) => (
+src/components/FinanceAdmin.tsx:        {availableTabs.map((tab) => (
+src/components/FinanceAdmin.tsx:                      (analytics.recentDonations || []).map((donation: any) => (
+src/components/FinanceAdmin.tsx:                      (analytics.campaigns || []).map((fundraiser) => (
+src/components/FinanceAdmin.tsx:                  {(integrations || []).map((integration) => (
+src/components/FinanceAdmin.tsx:                        {integration.supportedModules.map(module => (
+src/components/FinanceAdmin.tsx:                              {selectedTransaction.reconciliationNote.split('\n').filter(line => line.includes('Captured')).map((line, idx) => {
+src/components/FinanceAdmin.tsx:                                        {Object.entries(data).map(([key, val]) => (
+src/components/FinanceAdmin.tsx:                            {['MEMBERSHIP', 'RENEWALS', 'FUNDRAISER'].map(module => (
+src/components/PgisDashboard.tsx:${overview.attentionNeeded?.slice(0, 3).map((item: any) => `- [${item.priority}] ${item.type}: ${item.title} (${item.location})`).join('\n') || 'None identified'}
+src/components/PgisDashboard.tsx:${overview.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.totalIssues} issues`).join('\n') || 'None detected'}
+src/components/PgisDashboard.tsx:                    {overview.hotspots?.slice(0, 3).map((spot: any) => (
+src/components/PgisDashboard.tsx:                  overview.attentionNeeded.map((item: any) => (
+src/components/PgisDashboard.tsx:                  overview.hotspots.map((spot: any, idx: number) => (
+src/components/PgisDashboard.tsx:                {overview.topPriorities.map((p, idx) => (
+src/components/PgisDashboard.tsx:                {overview.areaStrengths.map((s) => (
+src/components/PgisDashboard.tsx:                {reports.map((r) => (
+src/components/PgisDashboard.tsx:            {signals.map((s) => (
+src/components/MembershipPublicVideo.tsx:        {units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.level})</option>)}
+src/components/NoticePopup.tsx:        {visibleNotices.map((notice) => {
+src/components/DocumentsView.tsx:            {['ALL', 'POLICY', 'MANIFESTO', 'FORMS', 'REPORTS', 'OTHER'].map(cat => (
+src/components/DocumentsView.tsx:              {filteredDocuments.map(doc => (
+src/components/UserAdmin.tsx:            modules.map(m => (
+src/components/UserAdmin.tsx:          {warnings.map((w, i) => (
+src/components/UserAdmin.tsx:        ].map((stat, i) => (
+src/components/UserAdmin.tsx:              {roles.map(r => <option key={r} value={r}>{r}</option>)}
+src/components/UserAdmin.tsx:              {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+src/components/UserAdmin.tsx:                  {filteredUsers.map(user => {
+src/components/UserAdmin.tsx:            filteredUsers.map(user => {
+src/components/UserAdmin.tsx:                      {filteredRoles.map(r => <option key={r} value={r}>{r}</option>)}
+src/components/UserAdmin.tsx:                    {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+src/components/UserAdmin.tsx:                      {roles.map(r => <option key={r} value={r}>{r}</option>)}
+src/components/UserAdmin.tsx:                      {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+src/components/MemberCardModal.tsx:      const loadPromises = Array.from(images).map(async (img) => {
+src/components/CandidateDashboard.tsx:            {results?.length > 0 ? results?.map(res => (
+src/components/CandidateDashboard.tsx:            {candidate.documents?.map((doc: any) => (
+src/components/CentralizedPublicDashboard.tsx:                    ].map((step, i) => (
+src/components/CentralizedPublicDashboard.tsx:        ].filter(a => a.show).map((action, i) => (
+src/components/CentralizedPublicDashboard.tsx:                      ].map((step, i) => {
+src/components/CentralizedPublicDashboard.tsx:                    ].map((benefit, i) => (
+src/components/CentralizedPublicDashboard.tsx:                      {(volunteer.skills?.split(',') || []).map((skill: string, i: number) => (
+src/components/CentralizedPublicDashboard.tsx:                {grievances.slice(0, 2).map((g, i) => (
+src/components/CentralizedPublicDashboard.tsx:              programs.slice(0, 2).map((p, i) => (
+src/components/CentralizedPublicDashboard.tsx:                {surveys.slice(0, 1).map((s, i) => (
+src/components/CentralizedPublicDashboard.tsx:                {polls.slice(0, 1).map((p, i) => (
+src/components/CentralizedPublicDashboard.tsx:                donations.slice(0, 2).map((donation, i) => (
+src/components/CentralizedPublicDashboard.tsx:                  {summary.actionQueue.map((item: any, i: number) => (
+src/components/CentralizedPublicDashboard.tsx:              ].map((stat, i) => (
+src/components/CentralizedPublicDashboard.tsx:                {notices.slice(0, 2).map((notice, i) => (
+src/components/CentralizedPublicDashboard.tsx:              {news.map((item, i) => (
+src/components/CentralizedPublicDashboard.tsx:              {events.slice(0, 3).map((event: any, i) => {
+src/components/CentralizedPublicDashboard.tsx:              notices.map((notice, i) => (
+src/components/CentralizedPublicDashboard.tsx:              events.map((event, i) => (
+src/components/CentralizedPublicDashboard.tsx:                  {['All', ...new Set(programs.map(p => p.category))].map(cat => (
+src/components/CentralizedPublicDashboard.tsx:                }).map((program) => (
+src/components/CentralizedPublicDashboard.tsx:                {selectedProgram.courses?.map((course) => (
+src/components/CentralizedPublicDashboard.tsx:                {selectedCourse.lessons?.map((lesson) => (
+src/components/CentralizedPublicDashboard.tsx:              {surveys.map((survey) => (
+src/components/CentralizedPublicDashboard.tsx:              {polls.map((poll) => (
+src/components/CentralizedPublicDashboard.tsx:                    {poll.options.map((opt) => {
+src/components/CentralizedPublicDashboard.tsx:                const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
+src/components/CentralizedPublicDashboard.tsx:              {currentSurvey.questions.map((q: any, index: number) => (
+src/components/CentralizedPublicDashboard.tsx:                      {q.options.map((opt: string, oIndex: number) => (
+src/components/CentralizedPublicDashboard.tsx:                      {[1, 2, 3, 4, 5].map((rating) => (
+src/components/CentralizedPublicDashboard.tsx:                {grievances.map((g) => (
+src/components/CentralizedPublicDashboard.tsx:                    {grievanceCategories.map(c => (
+src/components/CentralizedPublicDashboard.tsx:                    {selectedGrievance.responses.filter(r => !r.isInternal).map(response => (
+src/components/CentralizedPublicDashboard.tsx:                    ].map((benefit, i) => (
+src/components/CentralizedPublicDashboard.tsx:                        volunteer.assignments.map((as: any, i: number) => (
+src/components/CentralizedPublicDashboard.tsx:                  donations.map((donation, i) => (
+src/components/CentralizedPublicDashboard.tsx:                  activeCampaigns.slice(0, 3).map((campaign, i) => (
+src/components/FundraiserAdmin.tsx:        {(['overview', 'manage'] as const).map((tab) => {
+src/components/FundraiserAdmin.tsx:                      analytics.recentDonations.map((donation: any) => (
+src/components/FundraiserAdmin.tsx:                      analytics.campaigns.map((fundraiser) => (
+src/components/FundraiserAdmin.tsx:              {analytics?.campaigns && analytics.campaigns.map((fundraiser) => (
+src/components/FundraiserAdmin.tsx:                    {candidates.map(c => (
+src/components/WarRoomDashboard.tsx:  const boothData = Object.entries(boothCounts).map(([name, count]) => ({ name, value: count }));
+src/components/WarRoomDashboard.tsx:${data.attentionNeeded?.slice(0, 3).map((item: any) => `- [${item.priority}] ${item.type}: ${item.title} (${item.location})`).join('\n') || 'None identified'}
+src/components/WarRoomDashboard.tsx:${data.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.totalIssues} issues`).join('\n') || 'None detected'}
+src/components/WarRoomDashboard.tsx:  const grievanceData = Object.entries(analytics.grievances || {}).map(([name, count]) => ({ name, value: count }));
+src/components/WarRoomDashboard.tsx:  const areaScores = (analytics.areaScores || []).map((s: any) => ({ 
+src/components/WarRoomDashboard.tsx:                  {data.hotspots?.slice(0, 3).map((spot: any) => (
+src/components/WarRoomDashboard.tsx:                data.attentionNeeded.map((item: any) => (
+src/components/WarRoomDashboard.tsx:                data.hotspots.map((spot: any, idx: number) => (
+src/components/WarRoomDashboard.tsx:                analytics.recentSignals.map((signal: any, idx: number) => (
+src/components/WarRoomDashboard.tsx:                      {boothData.map((entry: any, index: number) => (
+src/components/WarRoomDashboard.tsx:                {boothData.map((item: any, index: number) => (
+src/components/WarRoomDashboard.tsx:              {analytics.incidents.length > 0 ? analytics.incidents.map((incident: any, idx: number) => (
+src/components/SystemSettings.tsx:    setConfigs(prev => prev.map(c => c.key === key ? { ...c, value: newValue } : c));
+src/components/SystemSettings.tsx:        configs: configs.map(({ key, value, description }) => ({ key, value, description })),
+src/components/SystemSettings.tsx:          ].map(tab => (
+src/components/PublicCampaigns.tsx:          {[1, 2, 3].map(i => (
+src/components/PublicCampaigns.tsx:          {campaigns.map((campaign) => (
+src/components/DashboardHome.tsx:            ].map((stat, i) => (
+src/components/DashboardHome.tsx:                ].map((item, i) => (
+src/components/DashboardHome.tsx:                {summary.actionQueue && summary.actionQueue.length > 0 ? summary.actionQueue.map((action: any, i: number) => (
+src/components/DashboardHome.tsx:                    {['Voter ID Verified', 'Dues Paid', 'Profile 100%'].map((tag, i) => (
+src/components/DashboardHome.tsx:                ].map((step, i) => (
+src/components/DashboardHome.tsx:                    {summary.actionQueue.map((item: any, i: number) => (
+src/components/DashboardHome.tsx:        ].map((module, i) => (
+src/components/DashboardHome.tsx:              {news.length > 0 ? news.map((item, i) => (
+src/components/DashboardHome.tsx:              {events.length > 0 ? events.map((event, i) => (
+src/components/CommunicationAdmin.tsx:            {['ADMIN', 'STAFF', 'MEMBER', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].map(role => (
+src/components/CommunicationAdmin.tsx:            {templates.map(t => (
+src/components/CommunicationAdmin.tsx:            {segments.map(s => (
+src/components/CommunicationAdmin.tsx:        updatedProviders = providers.map(p => p.id === editingItem.id ? { ...p, ...formData, updatedAt: now } : p);
+src/components/CommunicationAdmin.tsx:        updatedProviders = updatedProviders.map(p => 
+src/components/CommunicationAdmin.tsx:            {data.map((item) => (
+src/components/CommunicationAdmin.tsx:                          return roles.map((r: string) => (
+src/components/CommunicationAdmin.tsx:            {(['SMS', 'EMAIL', 'WHATSAPP', 'PUSH'] as const).map(channel => (
+src/components/VolunteerAdmin.tsx:          filteredVolunteers.map((volunteer) => (
+src/components/VolunteerAdmin.tsx:          applications.map((app) => (
+src/components/PublicDocumentsView.tsx:          {['ALL', 'POLICY', 'MANIFESTO', 'FORMS', 'REPORTS', 'OTHER'].map(cat => (
+src/components/PublicDocumentsView.tsx:          {[1, 2, 3].map(i => (
+src/components/PublicDocumentsView.tsx:          {filteredDocuments.map((doc) => (
+src/components/SupportersView.tsx:              {filteredSupporters.map((supporter) => (
+src/components/SupportersView.tsx:                      {supporter.issues?.split(',').slice(0, 2).map(issue => (
+src/components/SupportersView.tsx:                      {viewingSupporter.interactions.map((interaction) => (
+src/components/MembershipPublic.tsx:                {surveys.map(survey => (
+src/components/MembershipPublic.tsx:                {polls.map(poll => (
+src/components/MembershipPublic.tsx:                      {poll.options?.map((opt: string, idx: number) => (
+src/components/CampaignsView.tsx:          {filteredCampaigns.map((campaign) => (
+src/components/NotificationCenter.tsx:      setNotifications(notifications.map(n => n.id === id ? { ...n, status: 'READ' } : n));
+src/components/NotificationCenter.tsx:                  {notifications.map((notification) => (
+src/components/PublicPortal.tsx:        sections.map((section) => {
+src/components/PublicPortal.tsx:                    {content.items?.map((item: any, idx: number) => (
+src/components/PublicPortal.tsx:                  {categories.map(cat => (
+src/components/PublicPortal.tsx:                {news.map((item) => (
+src/components/PublicPortal.tsx:                {notices.filter(n => !n.isPopup).map((notice) => (
+src/components/PublicPortal.tsx:                {events.map((event) => (
+src/components/PublicPortal.tsx:                  {surveys.map((survey) => (
+src/components/PublicPortal.tsx:                  {polls.map((poll) => (
+src/components/PublicPortal.tsx:                        {poll.options?.map((opt: string, idx: number) => (
+src/components/PublicPortal.tsx:                    {postSurveys.map((survey) => (
+src/components/PublicPortal.tsx:                    {postPolls.map((poll) => (
+src/components/PublicPortal.tsx:                          {poll.options?.map((opt: string, idx: number) => (
+src/components/ElectionAdmin.tsx:            {cycles.map(c => (
+src/components/ElectionAdmin.tsx:        {availableTabs.map((tab) => (
+src/components/ElectionAdmin.tsx:                  {incidents.slice(0, 3).map(inc => (
+src/components/ElectionAdmin.tsx:                  {results.slice(0, 5).map(res => (
+src/components/ElectionAdmin.tsx:                  {filteredConstituencies.map(con => (
+src/components/ElectionAdmin.tsx:                  {filteredPollingStations.map(station => (
+src/components/ElectionAdmin.tsx:                  {filteredCycles.map(cyc => (
+src/components/ElectionAdmin.tsx:                {filteredCandidates.map(cand => (
+src/components/ElectionAdmin.tsx:              {filteredIncidents.map(inc => (
+src/components/ElectionAdmin.tsx:              {filteredResults.map(res => (
+src/components/ElectionAdmin.tsx:                {readiness.map(booth => (
+src/components/ElectionAdmin.tsx:                      {constituencies.map(con => (
+src/components/ElectionAdmin.tsx:                    {constituencies.map(c => (
+src/components/ElectionAdmin.tsx:                      {pollingStations.map(ps => (
+src/components/ElectionAdmin.tsx:                      {booths.filter(b => !incidentForm.pollingStationId || b.pollingStationId === incidentForm.pollingStationId).map(b => (
+src/components/ElectionAdmin.tsx:                    {candidates.map(c => (
+src/components/ElectionAdmin.tsx:                    {constituencies.map(c => (
+src/components/AppEventsAdmin.tsx:          events.map(event => (
+src/components/MemberTable.tsx:            ) : members?.map((member) => (
+src/components/SurveyPolls.tsx:      const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
+src/components/SurveyPolls.tsx:          {surveys.map((s) => (
+src/components/SurveyPolls.tsx:          {polls.map((p) => (
+src/components/SurveyPolls.tsx:                {p.options.map((o) => {
+src/components/SurveyPolls.tsx:                {newSurvey.questions.map((q, qIndex) => (
+src/components/SurveyPolls.tsx:                        {q.options.map((opt, oIndex) => (
+src/components/SurveyPolls.tsx:                {newPoll.options.map((opt, index) => (
+src/components/SurveyPolls.tsx:              {currentSurvey.questions.map((q: any, index: number) => (
+src/components/SurveyPolls.tsx:                      {q.options.map((opt: string, oIndex: number) => (
+src/components/SurveyPolls.tsx:                      {[1, 2, 3, 4, 5].map((rating) => (
+src/components/SurveyPolls.tsx:              {surveyAnalytics.questions.map((q: any, index: number) => (
+src/components/SurveyPolls.tsx:                      {q.options.map((opt: string, oIndex: number) => {
+src/components/SurveyPolls.tsx:                      {[1, 2, 3, 4, 5].map((rating) => {
+src/components/SurveyPolls.tsx:                      {Object.entries(q.answers).map(([answer, count]: [string, any], aIndex) => (
+src/components/HierarchyAdmin.tsx:            {unit.children?.map((child: any) => renderUnit(child, depth + 1))}
+src/components/HierarchyAdmin.tsx:                  rootUnits?.map(unit => renderUnit(unit))
+src/components/HierarchyAdmin.tsx:                    allOffices?.map(office => (
+src/components/HierarchyAdmin.tsx:                      {committees?.map(committee => (
+src/components/HierarchyAdmin.tsx:                              committee.bearers?.map(bearer => (
+src/components/HierarchyAdmin.tsx:                        {offices?.map(office => (
+src/components/HierarchyAdmin.tsx:                        ?.map(u => (
+src/components/HierarchyAdmin.tsx:                      {unitUsers?.map(u => (
+src/components/PortalCenter.tsx:          ].map((tab) => (
+src/components/PortalCenter.tsx:                    {filteredRegisteredUsers.map(u => (
+src/components/PortalCenter.tsx:          {journeySteps.map((step, i) => (
+src/components/PortalCenter.tsx:          ].map((link) => (
+src/components/DonationPortal.tsx:                {[500, 1000, 5000].map((val) => (
+src/components/DonationPortal.tsx:          {campaigns.map((campaign) => (
+src/components/PublicAbout.tsx:            ].map((tab) => (
+src/components/PublicAbout.tsx:                ].map((item, idx) => (
+src/components/PublicAbout.tsx:                {hierarchy.map((unit) => (
+src/components/PublicAbout.tsx:                {filteredOffices.map((office) => (

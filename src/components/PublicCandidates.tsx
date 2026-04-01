@@ -58,7 +58,7 @@ export const PublicCandidatesView = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {candidates.map((candidate) => (
+          {candidates?.map((candidate) => (
             <div key={candidate.id} className="group bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 transition-all flex flex-col">
               <div className="p-8 flex flex-col items-center text-center border-b border-slate-50">
                 <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-6 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">

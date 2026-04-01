@@ -27,10 +27,10 @@ export function CandidateDashboard() {
   const fetchCandidateData = async () => {
     try {
       const cycles = await api.get('/election/cycles');
-      if (cycles.length > 0) {
+      if (cycles?.length > 0) {
         const activeCycle = cycles.find((c: any) => c.status === 'ACTIVE') || cycles[0];
         const candidates = await api.get(`/election/candidates?cycleId=${activeCycle.id}`);
-        if (candidates.length > 0) {
+        if (candidates?.length > 0) {
           // For now, we show the first one. In a real scenario, this would be filtered by user ID
           const currentCandidate = candidates[0];
           setCandidate(currentCandidate);
@@ -181,7 +181,7 @@ export function CandidateDashboard() {
             <button className="text-xs font-bold text-emerald-600 hover:underline">View All</button>
           </div>
           <div className="space-y-4">
-            {results.length > 0 ? results.map(res => (
+            {results?.length > 0 ? results?.map(res => (
               <div key={res.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                 <div>
                   <p className="text-sm font-bold text-slate-900">{res.booth?.name || 'Booth'}</p>

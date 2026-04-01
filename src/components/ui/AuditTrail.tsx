@@ -54,7 +54,7 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ logs, title = "Operation
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{title}</h3>
       </div>
       <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-        {logs.map((log) => {
+        {logs?.map((log) => {
           const isExpanded = expandedLogs[log.id];
           const detailsStr = formatDetails(log.details);
           const isLong = detailsStr.length > 120;

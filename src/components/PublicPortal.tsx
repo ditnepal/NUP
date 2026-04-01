@@ -218,7 +218,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
 
       {/* Dynamic Sections or Baseline Fallback */}
       {sections.length > 0 ? (
-        sections.map((section) => {
+        sections?.map((section) => {
           let content: any = {};
           try {
             if (section.content) {
@@ -499,7 +499,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   >
                     All
                   </button>
-                  {categories.map(cat => (
+                  {categories?.map(cat => (
                     <button 
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
@@ -513,7 +513,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 </div>
               </div>
               <div className="grid gap-8">
-                {news.map((item) => (
+                {news?.map((item) => (
                   <div 
                     key={item.id} 
                     onClick={() => handlePostClick(item)}
@@ -568,7 +568,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 <h2 className="text-4xl font-black tracking-tight uppercase">Notices</h2>
               </div>
               <div className="grid gap-6">
-                {notices.filter(n => !n.isPopup).map((notice) => (
+                {notices?.filter(n => !n.isPopup).map((notice) => (
                   <div key={notice.id} className={`bg-white rounded-3xl border ${notice.isPinned ? 'border-emerald-200 shadow-emerald-50' : 'border-slate-100'} shadow-sm p-8`}>
                     {notice.isPinned && (
                       <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4">
@@ -610,7 +610,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {events.map((event) => (
+                {events?.map((event) => (
                   <div key={event.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
                     <h3 className="text-xl font-bold mb-2">{event.title}</h3>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-2">{event.summary || event.description}</p>
@@ -640,7 +640,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   <h2 className="text-4xl font-black tracking-tight uppercase text-emerald-600">Community Voice</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {surveys.map((survey) => (
+                  {surveys?.map((survey) => (
                     <div key={survey.id} className="bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm p-8">
                       <div className="flex items-center gap-2 mb-4">
                         <MessageSquare size={20} className="text-emerald-600" />
@@ -653,7 +653,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                       </button>
                     </div>
                   ))}
-                  {polls.map((poll) => (
+                  {polls?.map((poll) => (
                     <div key={poll.id} className="bg-blue-50 rounded-3xl border border-blue-100 shadow-sm p-8">
                       <div className="flex items-center gap-2 mb-4">
                         <Megaphone size={20} className="text-blue-600" />
@@ -730,7 +730,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                     Related Feedback
                   </h3>
                   <div className="grid gap-6">
-                    {postSurveys.map((survey) => (
+                    {postSurveys?.map((survey) => (
                       <div key={survey.id} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                         <h4 className="font-bold mb-2">{survey.title}</h4>
                         <p className="text-sm text-slate-600 mb-4">{survey.description}</p>
@@ -739,7 +739,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                         </button>
                       </div>
                     ))}
-                    {postPolls.map((poll) => (
+                    {postPolls?.map((poll) => (
                       <div key={poll.id} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                         <h4 className="font-bold mb-4">{poll.title}</h4>
                         <div className="grid gap-2">

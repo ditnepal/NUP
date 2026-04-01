@@ -105,7 +105,7 @@ export const AppEventsAdmin: React.FC<AppEventsAdminProps> = ({ user }) => {
             </p>
           </div>
         ) : (
-          events.map(event => (
+          events?.map(event => (
             <div key={event.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all group">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">

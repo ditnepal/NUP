@@ -65,7 +65,7 @@ const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick }) =>
               </div>
               
               <div className="space-y-6">
-                {surveys.map(survey => (
+                {surveys?.map(survey => (
                   <div key={survey.id} className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50">
                     <h3 className="font-bold text-white mb-1">{survey.title}</h3>
                     <p className="text-sm text-slate-400 mb-4">{survey.description}</p>
@@ -77,7 +77,7 @@ const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick }) =>
                     </button>
                   </div>
                 ))}
-                {polls.map(poll => (
+                {polls?.map(poll => (
                   <div key={poll.id} className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50">
                     <h3 className="font-bold text-white mb-4">{poll.title}</h3>
                     <div className="grid gap-3">

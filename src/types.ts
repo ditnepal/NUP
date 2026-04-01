@@ -97,6 +97,12 @@ export interface Office {
   email?: string;
   latitude?: number;
   longitude?: number;
+  description?: string;
+  province?: string;
+  district?: string;
+  locality?: string;
+  ward?: number;
+  municipality?: string;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;

@@ -342,7 +342,7 @@ ${aiSummary || 'Analysis pending...'}
 
             <div className="space-y-3">
               {data.attentionNeeded && data.attentionNeeded.length > 0 ? (
-                data.attentionNeeded.map((item: any) => (
+                data.attentionNeeded?.map((item: any) => (
                   <div key={item.id} className="flex items-start gap-4 p-3 rounded-xl bg-slate-800/30 border border-slate-800 hover:border-red-500/30 transition-all">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -394,7 +394,7 @@ ${aiSummary || 'Analysis pending...'}
 
             <div className="space-y-3">
               {data.hotspots && data.hotspots.length > 0 ? (
-                data.hotspots.map((spot: any, idx: number) => (
+                data.hotspots?.map((spot: any, idx: number) => (
                   <div key={spot.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-800/30 border border-slate-800">
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-black text-slate-600 w-4">{idx + 1}</span>
@@ -490,7 +490,7 @@ ${aiSummary || 'Analysis pending...'}
             </div>
             <div className="divide-y divide-slate-800 max-h-[400px] overflow-y-auto scrollbar-hide">
               {analytics.recentSignals && analytics.recentSignals.length > 0 ? (
-                analytics.recentSignals.map((signal: any, idx: number) => (
+                analytics.recentSignals?.map((signal: any, idx: number) => (
                   <div key={idx} className="p-4 hover:bg-slate-800/30 transition-colors flex gap-4">
                     <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${
                       signal.priority === 'CRITICAL' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 
@@ -645,7 +645,7 @@ ${aiSummary || 'Analysis pending...'}
               Strategic Risk Alerts
             </h3>
             <div className="space-y-4">
-              {analytics.incidents.length > 0 ? analytics.incidents.map((incident: any, idx: number) => (
+              {analytics.incidents?.length > 0 ? analytics.incidents?.map((incident: any, idx: number) => (
                 <div key={idx} className="p-4 bg-red-500/5 border border-red-500/10 rounded-xl flex gap-3">
                   <div className="mt-1 text-red-500">
                     <AlertTriangle size={16} />

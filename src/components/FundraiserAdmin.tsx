@@ -163,7 +163,7 @@ export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
                   </div>
                   <div className="divide-y divide-gray-100">
                     {analytics.recentDonations && analytics.recentDonations.length > 0 ? (
-                      analytics.recentDonations.map((donation: any) => (
+                      analytics.recentDonations?.map((donation: any) => (
                         <div key={donation.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><Users size={20} /></div>
@@ -194,7 +194,7 @@ export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
                   </div>
                   <div className="p-6 space-y-6">
                     {analytics.campaigns && analytics.campaigns.length > 0 ? (
-                      analytics.campaigns.map((fundraiser) => (
+                      analytics.campaigns?.map((fundraiser) => (
                         <div key={fundraiser.id}>
                           <div className="flex justify-between text-sm mb-2">
                             <span className="font-bold text-gray-900">{fundraiser.title}</span>
@@ -233,7 +233,7 @@ export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
                   <p className="text-sm text-gray-500 mt-2">Start a new fundraising drive for the party, candidate, or cause.</p>
                 </button>
               )}
-              {analytics?.campaigns && analytics.campaigns.map((fundraiser) => (
+              {analytics?.campaigns && analytics.campaigns?.map((fundraiser) => (
                 <FundraiserCard key={fundraiser.id} fundraiser={fundraiser} />
               ))}
             </div>
@@ -299,7 +299,7 @@ export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                   >
                     <option value="">Choose a candidate...</option>
-                    {candidates.map(c => (
+                    {candidates?.map(c => (
                       <option key={c.id} value={c.id}>{c.name} - {c.position}</option>
                     ))}
                   </select>

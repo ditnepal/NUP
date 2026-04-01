@@ -294,7 +294,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
             </motion.div>
           )}
 
-          {surveys.map((s) => (
+          {surveys?.map((s) => (
             <motion.div 
               key={s.id}
               initial={{ opacity: 0, y: 20 }}
@@ -353,7 +353,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
               </div>
             </motion.div>
           )}
-          {polls.map((p) => (
+          {polls?.map((p) => (
             <div key={p.id} className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-2xl font-bold">{p.question}</h3>
@@ -368,7 +368,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
                 </div>
               </div>
               <div className="space-y-4">
-                {p.options.map((o) => {
+                {p.options?.map((o) => {
                   const percentage = p._count.votes > 0 ? (o._count.votes / p._count.votes) * 100 : 0;
                   return (
                     <div key={o.id} className="space-y-2">
@@ -486,7 +486,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
                   </button>
                 </div>
                 
-                {newSurvey.questions.map((q, qIndex) => (
+                {newSurvey.questions?.map((q, qIndex) => (
                   <div key={qIndex} className="p-4 border border-gray-100 rounded-2xl space-y-4 bg-gray-50">
                     <div className="flex justify-between">
                       <span className="font-medium text-sm">Question {qIndex + 1}</span>
@@ -537,7 +537,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
 
                     {q.type === 'MULTIPLE_CHOICE' && (
                       <div className="space-y-2 pl-4 border-l-2 border-gray-200">
-                        {q.options.map((opt, oIndex) => (
+                        {q.options?.map((opt, oIndex) => (
                           <div key={oIndex} className="flex gap-2">
                             <input 
                               type="text"
@@ -664,7 +664,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
               
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-gray-700">Options</label>
-                {newPoll.options.map((opt, index) => (
+                {newPoll.options?.map((opt, index) => (
                   <div key={index} className="flex gap-2">
                     <input 
                       type="text"
@@ -731,7 +731,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
             <p className="text-gray-600 mb-8">{currentSurvey.description}</p>
             
             <form onSubmit={handleSubmitSurvey} className="space-y-8">
-              {currentSurvey.questions.map((q: any, index: number) => (
+              {currentSurvey.questions?.map((q: any, index: number) => (
                 <div key={q.id} className="space-y-4">
                   <label className="block font-medium text-gray-900">
                     {index + 1}. {q.text}
@@ -827,7 +827,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
             </div>
 
             <div className="space-y-8">
-              {surveyAnalytics.questions.map((q: any, index: number) => (
+              {surveyAnalytics.questions?.map((q: any, index: number) => (
                 <div key={q.id} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
                   <h3 className="font-bold text-lg mb-4">{index + 1}. {q.text}</h3>
                   

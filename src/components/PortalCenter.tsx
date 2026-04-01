@@ -228,7 +228,7 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                    {filteredRegisteredUsers.map(u => (
+                    {filteredRegisteredUsers?.map(u => (
                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">

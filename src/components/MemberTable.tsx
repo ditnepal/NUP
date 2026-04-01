@@ -51,7 +51,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                   </div>
                 </td>
               </tr>
-            ) : members.map((member) => (
+            ) : members?.map((member) => (
               <tr key={member.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center">

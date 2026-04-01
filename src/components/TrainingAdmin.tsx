@@ -197,7 +197,7 @@ export const TrainingAdmin: React.FC<Props> = ({ user }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
-          {programs.map((program) => (
+          {programs?.map((program) => (
             <tr key={program.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">

@@ -312,7 +312,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
           <label className="text-xs text-gray-500">Template</label>
           <select name="templateId" defaultValue={editingItem?.templateId} className="w-full p-2 border rounded" required>
             <option value="">Select a template...</option>
-            {templates.map(t => (
+            {templates?.map(t => (
               <option key={t.id} value={t.id}>{t.name} ({t.type})</option>
             ))}
           </select>
@@ -322,7 +322,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
           <label className="text-xs text-gray-500">Audience Segment</label>
           <select name="segmentId" defaultValue={editingItem?.segmentId} className="w-full p-2 border rounded">
             <option value="">Select a segment (Optional)...</option>
-            {segments.map(s => (
+            {segments?.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
@@ -548,7 +548,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {data.map((item) => (
+            {data?.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 font-medium text-gray-900">
                   {item.name}
@@ -583,7 +583,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
                           const parsed = JSON.parse(item.criteria);
                           const roles = parsed.roles || (parsed.role ? [parsed.role] : []);
                           if (roles.length === 0) return <span className="text-xs text-gray-400">No roles selected</span>;
-                          return roles.map((r: string) => (
+                          return roles?.map((r: string) => (
                             <span key={r} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                               {r.replace('_', ' ')}
                             </span>

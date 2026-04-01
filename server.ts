@@ -4,7 +4,14 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { execSync } from 'child_process';
 import fs from 'fs';
-dotenv.config();
+
+// Load environment variables from .env file
+const envResult = dotenv.config();
+
+// Explicitly override if .env has a value
+if (envResult.parsed && envResult.parsed.DATABASE_URL) {
+  process.env.DATABASE_URL = envResult.parsed.DATABASE_URL;
+}
 
 const dbPath = path.join(process.cwd(), 'prisma/dev.db');
 const DEFAULT_DB_URL = `file:${dbPath}`;
@@ -75,11 +82,31 @@ export async function createApp() {
   const app = express();
 
   // Trust the proxy (needed for rate limiting behind nginx)
-  app.set('trust proxy', 1);
+  // Set to true to trust all proxies, or 1 to trust the first proxy
+  app.set('trust proxy', true);
 
-  // Middleware
+  // Middleware - CORS MUST BE FIRST
   app.use(cors());
   app.use(express.json({ limit: '50mb' }));
+
+  // Request logger for debugging
+  app.use((req, res, next) => {
+    console.log(`[DEBUG] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}`);
+    next();
+  });
+
+  // Debug endpoint to check headers seen by server
+  app.get('/api/v1/debug/headers', (req, res) => {
+    res.json({
+      headers: req.headers,
+      ip: req.ip,
+      ips: req.ips,
+      protocol: req.protocol,
+      secure: req.secure,
+      url: req.url,
+      originalUrl: req.originalUrl
+    });
+  });
 
   // Force JSON content-type for all API routes
   app.use('/api', (req, res, next) => {
@@ -111,10 +138,6 @@ export async function createApp() {
   app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
   app.get('/test', (req, res) => res.send('Server is running!'));
 
-  // Move notifications higher to ensure it's matched
-  app.use('/api/v1/notifications', notificationsRouter);
-  app.use('/api/v1/system-config', systemConfigRouter);
-
   // Serve uploaded documents
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
@@ -122,35 +145,41 @@ export async function createApp() {
   }
   app.use('/uploads', express.static(uploadsDir));
 
-  app.use('/api/v1/auth', authLimiter, authRouter);
-  app.use('/api/v1/members', membersRouter);
-  app.use('/api/v1/renewals', renewalsRouter);
-  app.use('/api/v1/supporters', supportersRouter);
-  app.use('/api/v1/cms', cmsRouter);
-  app.use('/api/v1/public', publicLimiter, publicRouter);
-  app.use('/api/public', publicLimiter, publicRouter);
-  app.use('/api/v1/dashboard', dashboardRouter);
-  app.use('/api/v1/auditlogs', auditlogsRouter);
-  app.use('/api/v1/booths', boothsRouter);
-  app.use('/api/v1/campaigns', campaignsRouter);
-  app.use('/api/v1/candidates', candidatesRouter);
-  app.use('/api/v1/committees', committeesRouter);
-  app.use('/api/v1/documents', documentsRouter);
-  app.use('/api/v1/events', eventsRouter);
-  app.use('/api/v1/app-events', appEventsRouter);
-  app.use('/api/v1/grievances', grievancesRouter);
-  app.use('/api/v1/surveys', surveyRouter);
-  app.use('/api/v1/pgis', pgisRouter);
-  app.use('/api/v1/transactions', transactionsRouter);
-  app.use('/api/v1/hierarchy', hierarchyRouter);
-  app.use('/api/v1/offices', officesRouter);
-  app.use('/api/v1/volunteers', volunteersRouter);
-  app.use('/api/v1/communication', communicationRouter);
-  app.use('/api/v1/training', trainingRouter);
-  app.use('/api/v1/finance', financeRouter);
-  app.use('/api/v1/election', electionRouter);
-  app.use('/api/v1/warroom', warroomRouter);
-  app.use('/api/v1/users', usersRouter);
+  // API Routes - Mount on both /api and /api/v1 for compatibility
+  const apiPrefixes = ['/api/v1', '/api'];
+  
+  apiPrefixes.forEach(prefix => {
+    app.use(`${prefix}/auth`, authRouter);
+    app.use(`${prefix}/members`, membersRouter);
+    app.use(`${prefix}/renewals`, renewalsRouter);
+    app.use(`${prefix}/supporters`, supportersRouter);
+    app.use(`${prefix}/cms`, cmsRouter);
+    app.use(`${prefix}/public`, publicRouter);
+    app.use(`${prefix}/dashboard`, dashboardRouter);
+    app.use(`${prefix}/auditlogs`, auditlogsRouter);
+    app.use(`${prefix}/booths`, boothsRouter);
+    app.use(`${prefix}/campaigns`, campaignsRouter);
+    app.use(`${prefix}/candidates`, candidatesRouter);
+    app.use(`${prefix}/committees`, committeesRouter);
+    app.use(`${prefix}/documents`, documentsRouter);
+    app.use(`${prefix}/events`, eventsRouter);
+    app.use(`${prefix}/app-events`, appEventsRouter);
+    app.use(`${prefix}/grievances`, grievancesRouter);
+    app.use(`${prefix}/surveys`, surveyRouter);
+    app.use(`${prefix}/pgis`, pgisRouter);
+    app.use(`${prefix}/transactions`, transactionsRouter);
+    app.use(`${prefix}/hierarchy`, hierarchyRouter);
+    app.use(`${prefix}/offices`, officesRouter);
+    app.use(`${prefix}/volunteers`, volunteersRouter);
+    app.use(`${prefix}/communication`, communicationRouter);
+    app.use(`${prefix}/training`, trainingRouter);
+    app.use(`${prefix}/finance`, financeRouter);
+    app.use(`${prefix}/election`, electionRouter);
+    app.use(`${prefix}/warroom`, warroomRouter);
+    app.use(`${prefix}/users`, usersRouter);
+    app.use(`${prefix}/notifications`, notificationsRouter);
+    app.use(`${prefix}/system-config`, systemConfigRouter);
+  });
 
   // Catch-all for API routes to return 404 JSON instead of HTML
   app.all('/api/*', (req, res) => {

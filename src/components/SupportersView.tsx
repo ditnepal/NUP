@@ -188,7 +188,7 @@ export const SupportersView = ({ supporters, onRefresh, user }: { supporters: Su
               </tr>
             </thead>
             <tbody className="text-sm">
-              {filteredSupporters.map((supporter) => (
+              {filteredSupporters?.map((supporter) => (
                 <tr key={supporter.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="py-3">
                     <div className="font-semibold text-slate-800">{supporter.fullName}</div>
@@ -461,7 +461,7 @@ export const SupportersView = ({ supporters, onRefresh, user }: { supporters: Su
                   <div className="pt-4 border-t border-slate-100">
                     <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Recent Interactions</p>
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                      {viewingSupporter.interactions.map((interaction) => (
+                      {viewingSupporter.interactions?.map((interaction) => (
                         <div key={interaction.id} className="p-2 bg-slate-50 rounded-lg text-xs">
                           <div className="flex justify-between font-semibold text-slate-700">
                             <span>{interaction.type}</span>

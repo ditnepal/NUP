@@ -163,19 +163,25 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
 
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
+    const parseNumber = (val: any) => {
+      if (val === null || val === undefined || val === '') return null;
+      const parsed = parseFloat(val as string);
+      return isNaN(parsed) ? null : parsed;
+    };
+
     const data = {
       name: formData.get('name') as string,
       type: formData.get('type') as string,
       address: formData.get('address') as string,
       contactNumber: formData.get('contactNumber') as string || null,
       email: formData.get('email') as string || null,
-      latitude: formData.get('latitude') ? parseFloat(formData.get('latitude') as string) : null,
-      longitude: formData.get('longitude') ? parseFloat(formData.get('longitude') as string) : null,
+      latitude: parseNumber(formData.get('latitude')),
+      longitude: parseNumber(formData.get('longitude')),
       description: formData.get('description') as string || null,
       province: formData.get('province') as string || null,
       district: formData.get('district') as string || null,
       locality: formData.get('locality') as string || null,
-      ward: formData.get('ward') ? parseInt(formData.get('ward') as string) : null,
+      ward: parseNumber(formData.get('ward')),
       municipality: formData.get('municipality') as string || null,
       isActive: formData.get('isActive') === 'on',
       isPublic: formData.get('isPublic') === 'on',
@@ -428,20 +434,20 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
         </div>
         {isExpanded && hasChildren && (
           <div className="border-l-2 border-slate-100 ml-3 pl-1">
-            {unit.children.map((child: any) => renderUnit(child, depth + 1))}
+            {unit.children?.map((child: any) => renderUnit(child, depth + 1))}
           </div>
         )}
       </div>
     );
   };
 
-  if (loading && units.length === 0) return (
+  if (loading && (!units || units.length === 0)) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <Loader2 className="animate-spin text-blue-600" size={32} />
     </div>
   );
 
-  const rootUnits = units.filter(u => !u.parentId);
+  const rootUnits = units?.filter(u => !u.parentId) || [];
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-8">
@@ -506,7 +512,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Units</span>
                 <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><GitGraph size={16} /></div>
               </div>
-              <div className="text-3xl font-black text-slate-800">{units.length}</div>
+              <div className="text-3xl font-black text-slate-800">{units?.length || 0}</div>
               <div className="text-[10px] text-slate-400 mt-1">Active structural nodes</div>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
@@ -514,7 +520,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Root Entities</span>
                 <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><Building2 size={16} /></div>
               </div>
-              <div className="text-3xl font-black text-slate-800">{rootUnits.length}</div>
+              <div className="text-3xl font-black text-slate-800">{rootUnits?.length || 0}</div>
               <div className="text-[10px] text-slate-400 mt-1">Top-level organizations</div>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
@@ -523,7 +529,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                 <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><MapPin size={16} /></div>
               </div>
               <div className="text-3xl font-black text-slate-800">
-                {units.reduce((acc, u) => acc + (u.offices?.length || 0), 0)}
+                {units?.reduce((acc, u) => acc + (u.offices?.length || 0), 0) || 0}
               </div>
               <div className="text-[10px] text-slate-400 mt-1">Geographic contact points</div>
             </div>
@@ -533,7 +539,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                 <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><Users size={16} /></div>
               </div>
               <div className="text-3xl font-black text-slate-800">
-                {units.reduce((acc, u) => acc + (u.users?.length || 0), 0)}
+                {units?.reduce((acc, u) => acc + (u.users?.length || 0), 0) || 0}
               </div>
               <div className="text-[10px] text-slate-400 mt-1">Assigned administrators</div>
             </div>
@@ -543,7 +549,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                 <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircle2 size={16} /></div>
               </div>
               <div className="text-3xl font-black text-slate-800">
-                {units.filter(u => (u.offices?.length || 0) > 0 && (u.users?.length || 0) > 0).length}
+                {units?.filter(u => (u.offices?.length || 0) > 0 && (u.users?.length || 0) > 0).length || 0}
               </div>
               <div className="text-[10px] text-slate-400 mt-1">Units with office & users</div>
             </div>
@@ -584,8 +590,8 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
             </div>
             <div className="p-4 overflow-x-auto">
               <div className="min-w-[500px]">
-                {rootUnits.length > 0 ? (
-                  rootUnits.map(unit => renderUnit(unit))
+                {rootUnits?.length > 0 ? (
+                  rootUnits?.map(unit => renderUnit(unit))
                 ) : (
                   <div className="py-20 text-center space-y-4">
                     <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
@@ -621,7 +627,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">HQ Coverage</div>
                 <div className="text-3xl font-black text-slate-800">
-                  {allOffices.filter(o => o.type === 'HEADQUARTERS').length}
+                  {allOffices?.filter(o => o.type === 'HEADQUARTERS').length || 0}
                 </div>
               </div>
             </div>
@@ -632,7 +638,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Regional Presence</div>
                 <div className="text-3xl font-black text-slate-800">
-                  {allOffices.filter(o => o.type === 'REGIONAL').length}
+                  {allOffices?.filter(o => o.type === 'REGIONAL').length || 0}
                 </div>
               </div>
             </div>
@@ -643,7 +649,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Points</div>
                 <div className="text-3xl font-black text-slate-800">
-                  {allOffices.filter(o => o.type === 'CONTACT_POINT').length}
+                  {allOffices?.filter(o => o.type === 'CONTACT_POINT').length || 0}
                 </div>
               </div>
             </div>
@@ -654,7 +660,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Setup Needed</div>
                 <div className="text-3xl font-black text-slate-800">
-                  {allOffices.filter(o => !o.isActive).length}
+                  {allOffices?.filter(o => !o.isActive).length || 0}
                 </div>
               </div>
             </div>
@@ -668,10 +674,10 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               </div>
               <div className="flex gap-2">
                 <div className="px-4 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-black border border-blue-100">
-                  Total: {allOffices.length}
+                  Total: {allOffices?.length || 0}
                 </div>
                 <div className="px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black border border-emerald-100">
-                  Active: {allOffices.filter(o => o.isActive).length}
+                  Active: {allOffices?.filter(o => o.isActive).length || 0}
                 </div>
               </div>
             </div>
@@ -697,8 +703,8 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                         </div>
                       </td>
                     </tr>
-                  ) : allOffices.length > 0 ? (
-                    allOffices.map(office => (
+                  ) : allOffices?.length > 0 ? (
+                    allOffices?.map(office => (
                       <tr key={office.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="px-8 py-5">
                           <div className="font-bold text-slate-800">{office.name}</div>
@@ -979,9 +985,9 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                       <Loader2 className="animate-spin text-indigo-600" size={32} />
                       <p className="text-sm text-slate-500 font-bold">Loading governance structure...</p>
                     </div>
-                  ) : committees.length > 0 ? (
+                  ) : committees?.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {committees.map(committee => (
+                      {committees?.map(committee => (
                         <div key={committee.id} className="bg-white border border-slate-200 rounded-3xl p-6 hover:border-indigo-200 transition-all shadow-sm hover:shadow-md group">
                           <div className="flex items-center justify-between mb-6">
                             <div className="space-y-1">
@@ -1014,7 +1020,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                           <div className="space-y-3">
                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Office Bearers</div>
                             {committee.bearers && committee.bearers.length > 0 ? (
-                              committee.bearers.map(bearer => (
+                              committee.bearers?.map(bearer => (
                                 <div key={bearer.id} className="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100 rounded-2xl hover:bg-white hover:border-indigo-100 transition-all group/bearer">
                                   <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 font-black border border-slate-100 shadow-sm">
@@ -1176,7 +1182,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                           name="latitude" 
                           type="number" 
                           step="any" 
-                          defaultValue={editingOffice?.latitude || ''} 
+                          defaultValue={editingOffice?.latitude ?? ''} 
                           placeholder="e.g. 27.7172"
                           className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm" 
                         />
@@ -1187,9 +1193,65 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                           name="longitude" 
                           type="number" 
                           step="any" 
-                          defaultValue={editingOffice?.longitude || ''} 
+                          defaultValue={editingOffice?.longitude ?? ''} 
                           placeholder="e.g. 85.3240"
                           className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Province</label>
+                        <input 
+                          name="province" 
+                          defaultValue={editingOffice?.province || ''} 
+                          placeholder="e.g. Bagmati"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-700" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">District</label>
+                        <input 
+                          name="district" 
+                          defaultValue={editingOffice?.district || ''} 
+                          placeholder="e.g. Kathmandu"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-700" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Municipality</label>
+                        <input 
+                          name="municipality" 
+                          defaultValue={editingOffice?.municipality || ''} 
+                          placeholder="e.g. Kathmandu Metropolitan"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-700" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Locality</label>
+                        <input 
+                          name="locality" 
+                          defaultValue={editingOffice?.locality || ''} 
+                          placeholder="e.g. New Baneshwor"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-700" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Ward No.</label>
+                        <input 
+                          name="ward" 
+                          type="number"
+                          defaultValue={editingOffice?.ward ?? ''} 
+                          placeholder="e.g. 1"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-700" 
+                        />
+                      </div>
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Description</label>
+                        <textarea 
+                          name="description" 
+                          defaultValue={editingOffice?.description || ''} 
+                          placeholder="Additional details about the office location..."
+                          rows={2}
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-700" 
                         />
                       </div>
                     </div>
@@ -1236,9 +1298,9 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
 
                     {loadingOffices ? (
                       <div className="flex justify-center py-12"><Loader2 className="animate-spin text-blue-600" size={32} /></div>
-                    ) : offices.length > 0 ? (
+                    ) : offices?.length > 0 ? (
                       <div className="grid grid-cols-1 gap-4">
-                        {offices.map(office => (
+                        {offices?.map(office => (
                           <div key={office.id} className="border border-slate-200 rounded-2xl p-4 hover:border-blue-200 transition-colors bg-white shadow-sm">
                             <div className="flex justify-between items-start">
                               <div className="flex gap-3">
@@ -1340,8 +1402,8 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                     >
                       <option value="">Select a user to assign...</option>
                       {allUsers
-                        .filter(u => u.orgUnitId !== selectedUnitForUserScope?.id)
-                        .map(u => (
+                        ?.filter(u => u.orgUnitId !== selectedUnitForUserScope?.id)
+                        ?.map(u => (
                           <option key={u.id} value={u.id}>
                             {u.displayName} ({u.email}) — {u.orgUnit?.name || 'Global Access'}
                           </option>
@@ -1368,7 +1430,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                   <div className="flex items-center justify-between px-2">
                     <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">Scoped Administrators</h4>
                     <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full border border-slate-200">
-                      {unitUsers.length} Active
+                      {unitUsers?.length || 0} Active
                     </span>
                   </div>
                   
@@ -1377,9 +1439,9 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                       <Loader2 className="animate-spin text-blue-600" size={32} />
                       <p className="text-sm text-slate-500 font-bold">Refreshing scoped users...</p>
                     </div>
-                  ) : unitUsers.length > 0 ? (
+                  ) : unitUsers?.length > 0 ? (
                     <div className="grid grid-cols-1 gap-3">
-                      {unitUsers.map(u => (
+                      {unitUsers?.map(u => (
                         <div key={u.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-200 transition-all shadow-sm group">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center text-slate-600 font-black text-lg border border-slate-200 shadow-sm">

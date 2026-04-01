@@ -131,7 +131,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, user,
             Speakers
           </h3>
           <div className="space-y-4">
-            {event.speakers.map((speaker: any) => (
+            {event.speakers?.map((speaker: any) => (
               <div key={speaker.id} className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-100 rounded-full overflow-hidden">
                   {speaker.photoUrl ? (
@@ -157,7 +157,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, user,
             Agenda
           </h3>
           <div className="space-y-6 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-            {event.agenda.map((item: any) => (
+            {event.agenda?.map((item: any) => (
               <div key={item.id} className="relative pl-6">
                 <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-white border-2 border-emerald-500" />
                 <p className="text-[10px] font-bold text-emerald-600 uppercase">

@@ -20,7 +20,7 @@ export const RegistrationTable: React.FC<RegistrationTableProps> = ({ registrati
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
-          {registrations.map((reg) => (
+          {registrations?.map((reg) => (
             <tr key={reg.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-6 py-4">
                 <div className="font-medium text-slate-900">{reg.fullName}</div>

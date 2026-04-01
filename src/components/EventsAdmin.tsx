@@ -135,10 +135,10 @@ export const EventsAdmin: React.FC<EventsAdminProps> = ({ user }) => {
               <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-slate-900">Registrations</h2>
                 <span className="text-sm text-slate-500 font-medium">
-                  {selectedEvent.registrations.length} Total
+                  {selectedEvent.registrations?.length || 0} Total
                 </span>
               </div>
-              <RegistrationTable registrations={selectedEvent.registrations} onMarkAttendance={markAttendance} />
+              <RegistrationTable registrations={selectedEvent.registrations || []} onMarkAttendance={markAttendance} />
             </div>
           </div>
 
@@ -149,7 +149,7 @@ export const EventsAdmin: React.FC<EventsAdminProps> = ({ user }) => {
                 Speakers
               </h3>
               <div className="space-y-4">
-                {selectedEvent.speakers.map((speaker) => (
+                {selectedEvent.speakers?.map((speaker) => (
                   <div key={speaker.id} className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-slate-100 rounded-full overflow-hidden">
                       {speaker.photoUrl ? (
@@ -178,7 +178,7 @@ export const EventsAdmin: React.FC<EventsAdminProps> = ({ user }) => {
                 Agenda
               </h3>
               <div className="space-y-6 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                {selectedEvent.agenda.map((item) => (
+                {selectedEvent.agenda?.map((item) => (
                   <div key={item.id} className="relative pl-6">
                     <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-white border-2 border-emerald-500" />
                     <p className="text-[10px] font-bold text-emerald-600 uppercase">
@@ -215,7 +215,7 @@ export const EventsAdmin: React.FC<EventsAdminProps> = ({ user }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map((event) => (
+        {events?.map((event) => (
           <EventCard key={event.id} event={event} onClick={() => fetchEventDetails(event.id)} />
         ))}
       </div>
