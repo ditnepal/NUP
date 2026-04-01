@@ -182,7 +182,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
     <div className="space-y-12">
       {/* Hero Section */}
       <section className="relative py-20 md:py-32 overflow-hidden bg-slate-900 text-white rounded-3xl">
-        <div className="px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-8 relative z-10">
           <div className="max-w-3xl">
             <span className="inline-block px-4 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest mb-8">
               Official Portal
@@ -442,7 +442,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
 
           {/* Action Blocks */}
           <section className="py-24 px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden">
                 <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-3xl flex items-center justify-center mb-8 border border-emerald-500/20">
                   <Heart size={32} />
@@ -475,12 +476,14 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 <button onClick={onGrievanceClick} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 transition-all">Submit Issue <ChevronRight size={18} /></button>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
         </>
       )}
 
       {/* Latest News & Notices */}
-      <section id="news" className="py-24 bg-slate-50 px-8">
+      <section className="py-24 bg-slate-50 px-8">
+        <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             
             {/* News */}
@@ -670,7 +673,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               </div>
             )}
           </div>
-        </section>
+        </div>
+      </section>
 
       {/* Post Detail Modal */}
       {selectedPost && (

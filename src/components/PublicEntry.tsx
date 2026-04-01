@@ -41,7 +41,7 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
     <div className="bg-white">
       {/* Hero Section */}
       <section className="relative py-20 md:py-32 overflow-hidden bg-slate-50 rounded-3xl">
-        <div className="px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-8 relative z-10">
           <div className="max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -115,7 +115,7 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
 
       {/* System Pulse / Live Stats */}
       <section className="py-12 bg-slate-900 border-y border-white/5 overflow-hidden rounded-3xl">
-        <div className="px-8">
+        <div className="max-w-7xl mx-auto px-8">
           <div className="flex flex-wrap justify-between items-center gap-8">
             <div className="flex items-center gap-4">
               <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
@@ -140,12 +140,13 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
 
       {/* Journey Selection */}
       <section className="py-24">
-        <div className="text-center mb-16 px-8">
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4">Choose Your Journey</h2>
-          <p className="text-slate-500 max-w-2xl mx-auto">Select the path that best fits your goals. Whether you want to lead, support, or seek help, we have a dedicated flow for you.</p>
-        </div>
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4">Choose Your Journey</h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">Select the path that best fits your goals. Whether you want to lead, support, or seek help, we have a dedicated flow for you.</p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Membership Journey */}
           <div className="bg-white p-8 rounded-3xl border-2 border-slate-100 hover:border-emerald-500 transition-all group cursor-pointer shadow-sm hover:shadow-2xl" onClick={() => setCurrentView('membership-public')}>
             <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -254,11 +255,12 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Social & Community Section */}
       <section className="py-24 bg-slate-50 border-y border-slate-100 rounded-3xl">
-        <div className="px-8 text-center">
+        <div className="max-w-7xl mx-auto px-8 text-center">
           <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-4">Join the Conversation</h2>
           <p className="text-slate-500 max-w-2xl mx-auto mb-12">Connect with us on social media to stay updated with real-time news, live events, and community discussions.</p>
           
@@ -289,7 +291,7 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
       {/* Verification Guidance */}
       {!user && (
         <section className="py-20 bg-slate-900 text-white rounded-3xl mb-12">
-          <div className="px-8">
+          <div className="max-w-7xl mx-auto px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <div>
                 <h2 className="text-4xl font-black mb-6 leading-tight uppercase tracking-tight">Secure Your Identity</h2>

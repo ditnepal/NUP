@@ -18,6 +18,7 @@ interface PublicLayoutProps {
   onNewsClick?: () => void;
   onLoginClick?: () => void;
   onLogout?: () => void;
+  fullWidth?: boolean;
 }
 
 export const PublicLayout: React.FC<PublicLayoutProps> = ({
@@ -35,7 +36,8 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
   onHomeClick,
   onNewsClick,
   onLoginClick,
-  onLogout
+  onLogout,
+  fullWidth = false
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [systemConfig, setSystemConfig] = useState<Record<string, string>>({

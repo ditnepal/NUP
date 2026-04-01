@@ -75,7 +75,7 @@ export async function createApp() {
   const app = express();
 
   // Trust the proxy (needed for rate limiting behind nginx)
-  app.set('trust proxy', true);
+  app.set('trust proxy', 1);
 
   // Middleware
   app.use(cors());
