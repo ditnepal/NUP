@@ -161,7 +161,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
     }
   };
 
-  const filteredGrievances = grievances.filter(g => {
+  const filteredGrievances = (grievances || []).filter(g => {
     if (activeFilter === 'mine') return g.reporter.id === user.id;
     return true;
   });
@@ -469,10 +469,10 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Open" value={grievances.filter(g => g.status === 'OPEN').length} icon={AlertCircle} color="text-blue-600" bg="bg-blue-50" />
-        <StatCard label="In Progress" value={grievances.filter(g => ['ASSIGNED', 'IN_PROGRESS'].includes(g.status)).length} icon={Clock} color="text-yellow-600" bg="bg-yellow-50" />
-        <StatCard label="Escalated" value={grievances.filter(g => g.status === 'ESCALATED').length} icon={ShieldAlert} color="text-red-600" bg="bg-red-50" />
-        <StatCard label="Resolved" value={grievances.filter(g => g.status === 'RESOLVED').length} icon={CheckCircle2} color="text-emerald-600" bg="bg-emerald-50" />
+        <StatCard label="Open" value={(grievances || []).filter(g => g.status === 'OPEN').length} icon={AlertCircle} color="text-blue-600" bg="bg-blue-50" />
+        <StatCard label="In Progress" value={(grievances || []).filter(g => ['ASSIGNED', 'IN_PROGRESS'].includes(g.status)).length} icon={Clock} color="text-yellow-600" bg="bg-yellow-50" />
+        <StatCard label="Escalated" value={(grievances || []).filter(g => g.status === 'ESCALATED').length} icon={ShieldAlert} color="text-red-600" bg="bg-red-50" />
+        <StatCard label="Resolved" value={(grievances || []).filter(g => g.status === 'RESOLVED').length} icon={CheckCircle2} color="text-emerald-600" bg="bg-emerald-50" />
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

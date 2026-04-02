@@ -151,7 +151,7 @@ export const FundraiserAdmin: React.FC<FundraiserAdminProps> = ({ user }) => {
                 <StatCard label="Verified Raised" value={`NPR ${(analytics.totalRaised || 0).toLocaleString()}`} icon={DollarSign} color="text-emerald-600" bg="bg-emerald-50" />
                 <StatCard label="Pending Donations" value={`NPR ${(analytics.pendingDonationsAmount || 0).toLocaleString()}`} icon={RefreshCw} color="text-amber-600" bg="bg-amber-50" />
                 <StatCard label="Total Donors" value={analytics.donorCount || 0} icon={Users} color="text-blue-600" bg="bg-blue-50" />
-                <StatCard label="Active Campaigns" value={analytics.campaigns?.filter(c => c.status === 'ACTIVE').length || 0} icon={TrendingUp} color="text-purple-600" bg="bg-purple-50" />
+                <StatCard label="Active Campaigns" value={(analytics.campaigns || []).filter((c: any) => c.status === 'ACTIVE').length || 0} icon={TrendingUp} color="text-purple-600" bg="bg-purple-50" />
                 <StatCard label="Total Campaigns" value={analytics.campaigns?.length || 0} icon={PieChart} color="text-indigo-600" bg="bg-indigo-50" />
               </div>
 

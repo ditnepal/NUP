@@ -206,7 +206,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
     }
   };
 
-  const filteredItems = (activeTab === 'pages' ? pages : activeTab === 'posts' ? posts : sections).filter(item => {
+  const filteredItems = ((activeTab === 'pages' ? pages : activeTab === 'posts' ? posts : sections) || []).filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (item.slug && item.slug.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = activeTab === 'sections' ? true : (statusFilter === 'ALL' || item.status === statusFilter);

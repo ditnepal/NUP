@@ -142,7 +142,7 @@ export const VolunteerAdmin: React.FC = () => {
     }
   };
 
-  const filteredVolunteers = volunteers.filter(v => 
+  const filteredVolunteers = (volunteers || []).filter(v => 
     v.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     v.skills.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (v.email && v.email.toLowerCase().includes(searchTerm.toLowerCase()))

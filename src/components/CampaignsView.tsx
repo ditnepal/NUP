@@ -33,7 +33,7 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const filteredCampaigns = useMemo(() => {
-    return campaigns.filter(c => {
+    return (campaigns || []).filter(c => {
       const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                            (c.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       const matchesStatus = phaseFilter === 'all' || c.status === phaseFilter;
@@ -81,7 +81,7 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
           <div>
             <p className="text-sm font-medium text-slate-500">Active</p>
             <p className="text-2xl font-bold text-slate-800">
-              {campaigns.filter(c => c.status === 'ACTIVE').length}
+              {(campaigns || []).filter(c => c.status === 'ACTIVE').length}
             </p>
           </div>
         </Card>
@@ -92,7 +92,7 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
           <div>
             <p className="text-sm font-medium text-slate-500">Planned</p>
             <p className="text-2xl font-bold text-slate-800">
-              {campaigns.filter(c => c.status === 'PLANNED').length}
+              {(campaigns || []).filter(c => c.status === 'PLANNED').length}
             </p>
           </div>
         </Card>
@@ -103,7 +103,7 @@ export const CampaignsView = ({ campaigns }: { campaigns: Campaign[] }) => {
           <div>
             <p className="text-sm font-medium text-slate-500">Completed</p>
             <p className="text-2xl font-bold text-slate-800">
-              {campaigns.filter(c => c.status === 'COMPLETED').length}
+              {(campaigns || []).filter(c => c.status === 'COMPLETED').length}
             </p>
           </div>
         </Card>

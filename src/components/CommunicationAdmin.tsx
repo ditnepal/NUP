@@ -83,7 +83,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
         // Calculate routing summary
         const summary: Record<string, { default?: string; backup?: string }> = {};
         (['SMS', 'EMAIL', 'WHATSAPP', 'PUSH'] as const).forEach(channel => {
-          const channelProviders = currentProviders.filter(p => p.channel === channel && p.isActive);
+          const channelProviders = (currentProviders || []).filter(p => p.channel === channel && p.isActive);
           summary[channel] = {
             default: channelProviders.find(p => p.isDefault)?.name,
             backup: channelProviders.find(p => p.isBackup)?.name
@@ -150,7 +150,7 @@ export const CommunicationAdmin: React.FC<Props> = ({ user }) => {
     if (!deleteTarget) return;
     try {
       if (activeTab === 'providers') {
-        const updatedProviders = providers.filter(p => p.id !== deleteTarget);
+        const updatedProviders = (providers || []).filter(p => p.id !== deleteTarget);
         await api.post('/system-config', {
           configs: [
             { 

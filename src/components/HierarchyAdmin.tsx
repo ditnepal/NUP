@@ -627,7 +627,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">HQ Coverage</div>
                 <div className="text-3xl font-black text-slate-800">
-                  {allOffices?.filter(o => o.type === 'HEADQUARTERS').length || 0}
+                  {(allOffices || []).filter(o => o.type === 'HEADQUARTERS').length || 0}
                 </div>
               </div>
             </div>
@@ -638,7 +638,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Regional Presence</div>
                 <div className="text-3xl font-black text-slate-800">
-                  {allOffices?.filter(o => o.type === 'REGIONAL').length || 0}
+                  {(allOffices || []).filter(o => o.type === 'REGIONAL').length || 0}
                 </div>
               </div>
             </div>
@@ -649,7 +649,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Points</div>
                 <div className="text-3xl font-black text-slate-800">
-                  {allOffices?.filter(o => o.type === 'CONTACT_POINT').length || 0}
+                  {(allOffices || []).filter(o => o.type === 'CONTACT_POINT').length || 0}
                 </div>
               </div>
             </div>
@@ -660,7 +660,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Setup Needed</div>
                 <div className="text-3xl font-black text-slate-800">
-                  {allOffices?.filter(o => !o.isActive).length || 0}
+                  {(allOffices || []).filter(o => !o.isActive).length || 0}
                 </div>
               </div>
             </div>
@@ -677,7 +677,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                   Total: {allOffices?.length || 0}
                 </div>
                 <div className="px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black border border-emerald-100">
-                  Active: {allOffices?.filter(o => o.isActive).length || 0}
+                  Active: {(allOffices || []).filter(o => o.isActive).length || 0}
                 </div>
               </div>
             </div>

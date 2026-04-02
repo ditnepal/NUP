@@ -37,7 +37,7 @@ export const SupportersView = ({ supporters, onRefresh, user }: { supporters: Su
   const [error, setError] = useState<string | null>(null);
 
   const filteredSupporters = useMemo(() => {
-    return supporters.filter(s => {
+    return (supporters || []).filter(s => {
       const matchesSearch = s.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                            s.phoneNumber.includes(searchTerm);
       const matchesLevel = levelFilter === 'all' || s.supportLevel === levelFilter;
@@ -144,8 +144,8 @@ export const SupportersView = ({ supporters, onRefresh, user }: { supporters: Su
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Contacts" value={supporters.length} icon={HeartHandshake} color="text-emerald-600" bg="bg-emerald-50" />
-        <StatCard label="Strong Supporters" value={supporters.filter(s => s.supportLevel === 'strong').length} icon={UserPlus} color="text-blue-600" bg="bg-blue-50" />
+        <StatCard label="Total Contacts" value={(supporters || []).length} icon={HeartHandshake} color="text-emerald-600" bg="bg-emerald-50" />
+        <StatCard label="Strong Supporters" value={(supporters || []).filter(s => s.supportLevel === 'strong').length} icon={UserPlus} color="text-blue-600" bg="bg-blue-50" />
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">

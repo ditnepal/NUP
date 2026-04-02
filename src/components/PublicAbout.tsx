@@ -84,7 +84,7 @@ const PublicAbout: React.FC<PublicAboutProps> = ({ onBack }) => {
     }
   };
 
-  const filteredOffices = offices.filter(o => 
+  const filteredOffices = (offices || []).filter(o => 
     o.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     o.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
     o.orgUnit.name.toLowerCase().includes(searchQuery.toLowerCase())

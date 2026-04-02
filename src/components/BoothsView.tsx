@@ -53,7 +53,7 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
   }, []);
 
   const filteredBooths = useMemo(() => {
-    return booths.filter(b => {
+    return (booths || []).filter(b => {
       const matchesSearch = b.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                            b.localLevel.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || b.status === statusFilter;
@@ -172,7 +172,7 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
           <div>
             <p className="text-sm font-medium text-slate-500">Ready Booths</p>
             <p className="text-2xl font-bold text-slate-800">
-              {booths.filter(b => b.status === 'READY').length}
+              {(booths || []).filter(b => b.status === 'READY').length}
             </p>
           </div>
         </Card>
@@ -183,7 +183,7 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
           <div>
             <p className="text-sm font-medium text-slate-500">Needs Attention</p>
             <p className="text-2xl font-bold text-slate-800">
-              {booths.filter(b => b.status === 'NEEDS_ATTENTION').length}
+              {(booths || []).filter(b => b.status === 'NEEDS_ATTENTION').length}
             </p>
           </div>
         </Card>
@@ -194,7 +194,7 @@ export const BoothsView = ({ booths, onRefresh, user }: { booths: Booth[], onRef
           <div>
             <p className="text-sm font-medium text-slate-500">Critical Booths</p>
             <p className="text-2xl font-bold text-slate-800">
-              {booths.filter(b => b.status === 'CRITICAL').length}
+              {(booths || []).filter(b => b.status === 'CRITICAL').length}
             </p>
           </div>
         </Card>

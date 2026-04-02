@@ -57,7 +57,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ user }) => {
     }
   };
 
-  const filteredDocuments = documents.filter(doc => 
+  const filteredDocuments = (documents || []).filter(doc => 
     (selectedCategory === 'ALL' || doc.category === selectedCategory) &&
     (doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
      doc.category.toLowerCase().includes(searchQuery.toLowerCase()) ||

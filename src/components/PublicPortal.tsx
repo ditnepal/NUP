@@ -281,7 +281,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({
                 onClick={onJoinClick}
                 className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
               >
-                Join Movement
+                Access Workspace
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
               <button 

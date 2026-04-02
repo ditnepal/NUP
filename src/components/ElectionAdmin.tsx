@@ -1847,7 +1847,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                       className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <option value="">N/A</option>
-                      {booths?.filter(b => !incidentForm.pollingStationId || b.pollingStationId === incidentForm.pollingStationId).map(b => (
+                      {(booths || []).filter(b => !incidentForm.pollingStationId || b.pollingStationId === incidentForm.pollingStationId).map(b => (
                         <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
                     </select>

@@ -255,7 +255,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
             <ClipboardList size={20} />
             <span className="text-xs font-bold uppercase tracking-wider">Active Surveys</span>
           </div>
-          <p className="text-3xl font-bold">{surveys.filter(s => s.status === 'ACTIVE').length}</p>
+          <p className="text-3xl font-bold">{(surveys || []).filter(s => s.status === 'ACTIVE').length}</p>
           <p className="text-sm text-gray-500">Live data collection</p>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2">
@@ -271,7 +271,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
             <Vote size={20} />
             <span className="text-xs font-bold uppercase tracking-wider">Active Polls</span>
           </div>
-          <p className="text-3xl font-bold">{polls.filter(p => p.status === 'ACTIVE').length}</p>
+          <p className="text-3xl font-bold">{(polls || []).filter(p => p.status === 'ACTIVE').length}</p>
           <p className="text-sm text-gray-500">Quick community feedback</p>
         </div>
       </div>

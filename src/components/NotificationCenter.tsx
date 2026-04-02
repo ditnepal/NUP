@@ -37,13 +37,13 @@ export const NotificationCenter: React.FC = () => {
   const deleteNotification = async (id: string) => {
     try {
       await api.delete(`/notifications/${id}`);
-      setNotifications(notifications.filter(n => n.id !== id));
+      setNotifications((notifications || []).filter(n => n.id !== id));
     } catch (error) {
       console.error('Error deleting notification:', error);
     }
   };
 
-  const unreadCount = notifications.filter(n => n.status === 'UNREAD').length;
+  const unreadCount = (notifications || []).filter(n => n.status === 'UNREAD').length;
 
   return (
     <div className="relative">

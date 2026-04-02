@@ -27,16 +27,14 @@ interface PublicEntryProps {
   user: UserProfile | null;
   systemConfig: Record<string, string>;
   setCurrentView: (view: any) => void;
-  onLoginClick: () => void;
-  onRegisterClick: () => void;
+  onAccessClick: () => void;
 }
 
 export const PublicEntry: React.FC<PublicEntryProps> = ({ 
   user, 
   systemConfig,
   setCurrentView, 
-  onLoginClick, 
-  onRegisterClick 
+  onAccessClick
 }) => {
   const [latestNews, setLatestNews] = React.useState<any[]>([]);
   const [loadingNews, setLoadingNews] = React.useState(true);
@@ -87,34 +85,14 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                {user ? (
-                  <button 
-                    onClick={() => setCurrentView('dashboard')}
-                    className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
-                  >
-                    <LayoutDashboard size={18} />
-                    Access Dashboard
-                    <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                  </button>
-                ) : (
-                  <>
-                    <button 
-                      onClick={onRegisterClick}
-                      className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
-                    >
-                      <UserPlus size={18} />
-                      Join Movement
-                      <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                    <button 
-                      onClick={onLoginClick}
-                      className="bg-white/5 backdrop-blur-md text-white border border-white/10 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"
-                    >
-                      <LogIn size={18} />
-                      Sign In
-                    </button>
-                  </>
-                )}
+                <button 
+                  onClick={user ? () => setCurrentView('dashboard') : onAccessClick}
+                  className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
+                >
+                  {user ? <LayoutDashboard size={18} /> : <LogIn size={18} />}
+                  {user ? 'Access Dashboard' : 'Access Digital Workspace'}
+                  <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
             </motion.div>
 
@@ -178,41 +156,7 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
       {/* Quick Action Hub - NEW IA Structure */}
       <section className="relative z-20 -mt-12 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Access Account Group */}
-            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col gap-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                  <UserCheck size={20} />
-                </div>
-                <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Access Account</h3>
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                <button 
-                  onClick={user ? () => setCurrentView('dashboard') : onLoginClick}
-                  className="flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <LogIn size={18} className="text-blue-600" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">
-                      {user ? 'Go to Dashboard' : 'Sign In to Portal'}
-                    </span>
-                  </div>
-                  <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-                </button>
-                <button 
-                  onClick={() => setCurrentView('applicant-status')}
-                  className="flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <Activity size={18} className="text-blue-600" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Check Application Status</span>
-                  </div>
-                  <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-                </button>
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Take Action Group */}
             <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col gap-4">
               <div className="flex items-center gap-3 mb-2">
@@ -223,10 +167,10 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { id: 'membership-public', label: 'Join Us', icon: UserPlus },
                   { id: 'volunteer-enrollment', label: 'Volunteer', icon: Heart },
                   { id: 'donations', label: 'Donate', icon: Zap },
                   { id: 'grievances', label: 'Help Desk', icon: ShieldAlert },
+                  { id: 'public-campaigns', label: 'Campaigns', icon: Megaphone },
                 ].map(action => (
                   <button 
                     key={action.id}
@@ -411,20 +355,19 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { id: 'membership-public', title: 'Membership', desc: 'Become an official part of our organization with full voting rights.', icon: UserCheck, color: 'emerald' },
               { id: 'volunteer-enrollment', title: 'Volunteer', desc: 'Contribute your skills and time to our local campaigns.', icon: Heart, color: 'rose' },
               { id: 'donations', title: 'Support', desc: 'Fuel our mission through secure financial contributions.', icon: Zap, color: 'amber' },
               { id: 'grievances', title: 'Grievance', desc: 'Report community issues or seek assistance from our legal team.', icon: ShieldAlert, color: 'slate' },
-              { id: 'applicant-status', title: 'Track Status', desc: 'Monitor the progress of your applications in real-time.', icon: Activity, color: 'blue' },
+              { id: 'public-campaigns', title: 'Campaigns', desc: 'Discover and participate in our active public campaigns.', icon: Megaphone, color: 'blue' },
               { id: 'public-documents', title: 'Documents', desc: 'Access official policy papers, manifestos, and reports.', icon: Shield, color: 'indigo' },
               { id: 'public-about', title: 'About Us', desc: 'Learn about our history, values, and organizational structure.', icon: Globe, color: 'emerald' },
               { id: 'public-candidates', title: 'Candidates', desc: 'Meet the leaders representing our party in your area.', icon: UserCheck, color: 'blue' },
               { id: 'public-portal', title: 'Newsroom', desc: 'Stay updated with the latest official announcements.', icon: Megaphone, color: 'emerald' }
             ].map((journey) => (
               <div 
-                key={journey.id} 
+                key={journey.title} 
                 className="bg-white p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group cursor-pointer shadow-sm hover:shadow-2xl relative overflow-hidden" 
                 onClick={() => setCurrentView(journey.id)}
               >

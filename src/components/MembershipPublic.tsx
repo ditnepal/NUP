@@ -12,10 +12,11 @@ interface MembershipPublicProps {
   onBack?: () => void;
   onLoginClick?: () => void;
   onRegisterClick?: () => void;
+  user?: any;
 }
 
-const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick, onBack, onLoginClick, onRegisterClick }) => {
-  const [mode, setMode] = useState<'FORM' | 'VIDEO' | 'ASSISTED' | null>(null);
+const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick, onBack, onLoginClick, onRegisterClick, user }) => {
+  const [mode, setMode] = useState<'FORM' | 'VIDEO' | 'ASSISTED' | null>(user ? 'FORM' : null);
   const [showGuestModes, setShowGuestModes] = useState(false);
   const [surveys, setSurveys] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);

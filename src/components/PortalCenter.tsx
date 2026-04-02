@@ -53,7 +53,7 @@ export const PortalCenter: React.FC<PortalCenterProps> = ({ user, setCurrentView
     }
   };
 
-  const filteredRegisteredUsers = users.filter(u => 
+  const filteredRegisteredUsers = (users || []).filter(u => 
     u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );

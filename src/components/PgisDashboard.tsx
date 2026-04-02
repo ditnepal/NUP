@@ -329,7 +329,7 @@ ${overview.hotspots?.slice(0, 3).map((spot: any) => `- ${spot.name}: ${spot.tota
                 <AlertTriangle size={20} />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Critical Issues</span>
               </div>
-              <p className="text-4xl font-bold">{reports.filter(r => r.priority === 'CRITICAL').length}</p>
+              <p className="text-4xl font-bold">{(reports || []).filter(r => r.priority === 'CRITICAL').length}</p>
               <div className="flex items-center gap-1 text-xs text-red-600 font-bold">
                 <Zap size={14} />
                 <span>Immediate action required</span>

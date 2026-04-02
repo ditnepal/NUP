@@ -42,6 +42,7 @@ import { PortalCenter } from './components/PortalCenter';
 import { UserProfileDashboard } from './components/UserProfileDashboard';
 import { EventDetailView } from './components/EventDetailView';
 import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
+import { PublicIdentityHub } from './components/PublicIdentityHub';
 import { NoticePopup } from './components/NoticePopup';
 import { SystemSettings } from './components/SystemSettings';
 import { Toaster } from 'sonner';
@@ -51,7 +52,7 @@ import { usePermissions } from './hooks/usePermissions';
 import { ROLE_PERMISSIONS } from './lib/permissions';
 import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings, User, Zap } from 'lucide-react';
 
-type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'volunteer-hub' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'donate' | 'public' | 'public-portal' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment' | 'public-about';
+type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'volunteer-hub' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'donate' | 'public' | 'public-portal' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment' | 'public-about' | 'public-identity-hub';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -59,6 +60,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<View>(
     window.location.search.includes('view=public') ? 'public' : 'dashboard'
   );
+  const [publicIntent, setPublicIntent] = useState<View | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [initialTrackingCode, setInitialTrackingCode] = useState<string>('');
   const [initialMobile, setInitialMobile] = useState<string>('');
@@ -173,7 +175,19 @@ export default function App() {
 
   const handleLoginSuccess = (userData: UserProfile) => {
     setUser(userData);
-    setCurrentView('dashboard');
+    
+    // Route based on preserved intent, otherwise default to dashboard
+    if (publicIntent === 'volunteer-enrollment') {
+      setCurrentView('volunteer-hub');
+    } else if (publicIntent === 'grievances') {
+      setCurrentView('grievances');
+    } else if (publicIntent === 'membership-public') {
+      setCurrentView('membership');
+    } else {
+      setCurrentView('dashboard');
+    }
+    setPublicIntent(null);
+    
     fetchData(userData);
   };
 
@@ -202,7 +216,7 @@ export default function App() {
       onBack={onBack || (() => setCurrentView('public'))}
       onPortalClick={() => {
         if (!user) {
-          setCurrentView('public-auth');
+          setCurrentView('public-identity-hub');
         } else {
           setCurrentView('dashboard');
         }
@@ -213,14 +227,14 @@ export default function App() {
       onStatusClick={() => {
         setInitialTrackingCode('');
         setInitialMobile('');
-        setCurrentView('applicant-status');
+        setCurrentView('public-identity-hub');
       }}
       onCandidatesClick={() => setCurrentView('public-candidates')}
       onCampaignsClick={() => setCurrentView('public-campaigns')}
       onAboutClick={() => setCurrentView('public-about')}
       onHomeClick={() => setCurrentView('public')}
       onNewsClick={() => setCurrentView('public-portal')}
-      onLoginClick={() => setCurrentView('public-auth')}
+      onLoginClick={() => setCurrentView('public-identity-hub')}
       onLogout={handleLogout}
     >
       {fullWidth ? children : (
@@ -237,13 +251,8 @@ export default function App() {
         user={user}
         systemConfig={systemConfig}
         setCurrentView={setCurrentView}
-        onLoginClick={() => {
-          setInitialIsRegistering(false);
-          setCurrentView('public-auth');
-        }}
-        onRegisterClick={() => {
-          setInitialIsRegistering(true);
-          setCurrentView('public-auth');
+        onAccessClick={() => {
+          setCurrentView('public-identity-hub');
         }}
       />,
       undefined,
@@ -259,7 +268,7 @@ export default function App() {
           onBack={() => setCurrentView('public')}
           onPortalClick={() => {
             if (!user) {
-              setCurrentView('public-auth'); // This will trigger Login if user is null
+              setCurrentView('public-identity-hub');
             } else {
               setCurrentView('dashboard');
             }
@@ -268,13 +277,7 @@ export default function App() {
           onTrainingClick={() => setCurrentView('training')}
           onJoinClick={() => setCurrentView('membership-public')}
           onDonateClick={() => setCurrentView('donations')}
-          onGrievanceClick={() => {
-            if (!user) {
-              setCurrentView('public-auth');
-            } else {
-              setCurrentView('grievances');
-            }
-          }}
+          onGrievanceClick={() => setCurrentView('grievances')}
           onCandidatesClick={() => setCurrentView('public-candidates')}
           onCampaignsClick={() => setCurrentView('public-campaigns')}
           onAboutClick={() => setCurrentView('public-about')}
@@ -282,7 +285,7 @@ export default function App() {
           onStatusClick={() => {
             setInitialTrackingCode('');
             setInitialMobile('');
-            setCurrentView('applicant-status');
+            setCurrentView('public-identity-hub');
           }}
         />
         {user && (
@@ -301,6 +304,27 @@ export default function App() {
   }
 
   if (!user) {
+    if (currentView === 'public-identity-hub') {
+      return (
+        <PublicIdentityHub 
+          onRegisterClick={() => {
+            setInitialIsRegistering(true);
+            setCurrentView('public-auth');
+          }}
+          onLoginClick={() => {
+            setInitialIsRegistering(false);
+            setCurrentView('public-auth');
+          }}
+          onStatusClick={() => {
+            setInitialTrackingCode('');
+            setInitialMobile('');
+            setCurrentView('applicant-status');
+          }}
+          onBack={() => setCurrentView('public')}
+        />
+      );
+    }
+
     if (currentView === 'applicant-status') {
       return renderPublicLayout(
         <ApplicantStatusPortal 
@@ -314,23 +338,26 @@ export default function App() {
       );
     }
 
-    if (currentView === 'membership-public') {
-      return renderPublicLayout(
-        <MembershipPublic 
-          onBack={() => setCurrentView('public')}
-          onStatusClick={(code, mobile) => {
-            setInitialTrackingCode(code || '');
-            setInitialMobile(mobile || '');
-            setCurrentView('applicant-status');
-          }} 
-          onLoginClick={() => {
-            setInitialIsRegistering(false);
-            setCurrentView('public-auth');
-          }}
+    if (['membership-public', 'volunteer-enrollment', 'grievances'].includes(currentView)) {
+      // Render the new unified identity hub instead
+      return (
+        <PublicIdentityHub 
           onRegisterClick={() => {
+            setPublicIntent(currentView);
             setInitialIsRegistering(true);
             setCurrentView('public-auth');
           }}
+          onLoginClick={() => {
+            setPublicIntent(currentView);
+            setInitialIsRegistering(false);
+            setCurrentView('public-auth');
+          }}
+          onStatusClick={() => {
+            setInitialTrackingCode('');
+            setInitialMobile('');
+            setCurrentView('applicant-status');
+          }}
+          onBack={() => setCurrentView('public')}
         />
       );
     }
@@ -564,11 +591,14 @@ export default function App() {
           />
         )}
         {currentView === 'membership-public' && (
-          <MembershipPublic onStatusClick={(code, mobile) => {
-            setInitialTrackingCode(code || '');
-            setInitialMobile(mobile || '');
-            setCurrentView('applicant-status');
-          }} />
+          <MembershipPublic 
+            user={user}
+            onStatusClick={(code, mobile) => {
+              setInitialTrackingCode(code || '');
+              setInitialMobile(mobile || '');
+              setCurrentView('applicant-status');
+            }} 
+          />
         )}
         {currentView === 'cms' && <CmsAdmin user={user} />}
         {currentView === 'documents' && <DocumentsView user={user} />}

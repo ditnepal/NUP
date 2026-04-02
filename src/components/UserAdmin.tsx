@@ -231,7 +231,7 @@ export const UserAdmin: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = (users || []).filter(user => {
     const matchesSearch = user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'ALL' || user.role === filterRole;
@@ -245,10 +245,10 @@ export const UserAdmin: React.FC = () => {
   });
 
   const stats = {
-    total: users.length,
-    active: users.filter(u => u.isActive).length,
-    admin: users.filter(u => ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(u.role)).length,
-    public: users.filter(u => ['PUBLIC', 'MEMBER', 'APPLICANT_MEMBER'].includes(u.role)).length,
+    total: (users || []).length,
+    active: (users || []).filter(u => u.isActive).length,
+    admin: (users || []).filter(u => ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(u.role)).length,
+    public: (users || []).filter(u => ['PUBLIC', 'MEMBER', 'APPLICANT_MEMBER'].includes(u.role)).length,
     tabTotal: filteredUsers.length,
     tabActive: filteredUsers.filter(u => u.isActive).length
   };

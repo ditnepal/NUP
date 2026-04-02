@@ -46,7 +46,7 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user, onBack }) 
 
   const categories = ['All', ...new Set(programs?.map(p => p.category) || [])];
 
-  const filteredPrograms = programs.filter(p => {
+  const filteredPrograms = (programs || []).filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          p.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'All' || p.category === filterCategory;
