@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Plus, Search, Edit2, Trash2, Eye, FileText, Globe, CheckCircle, Clock, AlertCircle, X, Save, Filter, User, Calendar, ShieldAlert } from 'lucide-react';
-import { format } from 'date-fns';
+import { safeFormat } from '../lib/date';
 import { toast } from 'sonner';
 
 import { usePermissions } from '../hooks/usePermissions';
@@ -362,7 +362,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                   <td className="px-6 py-4">
                     <div className="text-xs text-gray-500 flex items-center gap-1">
                       <Calendar size={12} />
-                      {format(new Date(item.updatedAt), 'MMM d, yyyy')}
+                      {safeFormat(item.updatedAt, 'MMM d, yyyy')}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right space-x-1 whitespace-nowrap">

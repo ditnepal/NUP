@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, AppEvent } from '../types';
 import { api } from '../lib/api';
-import { format } from 'date-fns';
+import { safeFormat } from '../lib/date';
 import { motion } from 'motion/react';
 import { 
   User, 
@@ -263,7 +263,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
                       <ArrowUpRight size={14} className="text-slate-500 group-hover:text-white transition-colors" />
                     </div>
                     <p className="font-bold text-sm text-slate-200 line-clamp-1">{action.title}</p>
-                    <p className="text-[10px] text-slate-500 mt-1">{format(new Date(action.date), 'MMM d, h:mm a')}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">{safeFormat(action.date, 'MMM d, h:mm a')}</p>
                   </button>
                 )) : (
                   <div className="text-center py-8 opacity-50">
@@ -543,7 +543,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
                             <p className="text-xs text-slate-500 uppercase tracking-widest font-black">{item.type} • {item.status}</p>
                           </div>
                         </div>
-                        <span className="text-xs font-bold text-slate-400">{format(new Date(item.date), 'MMM d')}</span>
+                        <span className="text-xs font-bold text-slate-400">{safeFormat(item.date, 'MMM d')}</span>
                       </div>
                     ))}
                   </div>
@@ -611,7 +611,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
                       {item.type}
                     </span>
                     <h4 className="font-bold text-slate-800 text-lg group-hover:text-emerald-600 transition-colors line-clamp-2 leading-tight">{item.title}</h4>
-                    <p className="text-xs text-slate-500 font-medium">{format(new Date(item.publishedAt || item.createdAt), 'MMMM d, yyyy')}</p>
+                    <p className="text-xs text-slate-500 font-medium">{safeFormat(item.publishedAt || item.createdAt, 'MMMM d, yyyy')}</p>
                   </div>
                 </div>
               )) : (
@@ -643,8 +643,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ user, setCurrentVi
               {events?.length > 0 ? events?.map((event, i) => (
                 <div key={i} className="p-4 rounded-3xl hover:bg-slate-50 transition-all flex items-center gap-4 group">
                   <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex flex-col items-center justify-center text-center shrink-0 group-hover:scale-110 transition-transform">
-                    <span className="text-[10px] font-black uppercase leading-none">{format(new Date(event.eventDate), 'MMM')}</span>
-                    <span className="text-xl font-black leading-none">{format(new Date(event.eventDate), 'd')}</span>
+                    <span className="text-[10px] font-black uppercase leading-none">{safeFormat(event.eventDate, 'MMM')}</span>
+                    <span className="text-xl font-black leading-none">{safeFormat(event.eventDate, 'd')}</span>
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-bold text-slate-800 truncate">{event.title}</h4>

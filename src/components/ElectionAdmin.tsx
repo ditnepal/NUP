@@ -565,38 +565,38 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
     );
   }
 
-  const filteredCandidates = candidates.filter(c => 
+  const filteredCandidates = (candidates || []).filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.constituency?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredConstituencies = constituencies.filter(c =>
+  const filteredConstituencies = (constituencies || []).filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.district.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredPollingStations = pollingStations.filter(s =>
+  const filteredPollingStations = (pollingStations || []).filter(s =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredCycles = cycles.filter(c =>
+  const filteredCycles = (cycles || []).filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.year.toString().includes(searchQuery) ||
     c.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredIncidents = incidents.filter(i =>
+  const filteredIncidents = (incidents || []).filter(i =>
     i.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
     i.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     i.pollingStation?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredResults = results.filter(r =>
-    r.candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredResults = (results || []).filter(r =>
+    r.candidate?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.constituency?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -685,7 +685,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
             <div>
               <p className="text-sm text-slate-500">Booths Ready</p>
               <p className="text-2xl font-bold text-slate-900">
-                {readiness.filter(r => r.status === 'READY').length} / {readiness.length}
+                {(readiness || []).filter(r => r.status === 'READY').length} / {(readiness || []).length}
               </p>
             </div>
           </div>
@@ -698,7 +698,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
             <div>
               <p className="text-sm text-slate-500">Results Verified</p>
               <p className="text-2xl font-bold text-slate-900">
-                {results.filter(r => r.verifiedAt).length}
+                {(results || []).filter(r => r.verifiedAt).length}
               </p>
             </div>
           </div>

@@ -82,8 +82,8 @@ export async function createApp() {
   const app = express();
 
   // Trust the proxy (needed for rate limiting behind nginx)
-  // Set to true to trust all proxies, or 1 to trust the first proxy
-  app.set('trust proxy', true);
+  // Set to 1 to trust the first proxy (Cloud Run/Nginx)
+  app.set('trust proxy', 1);
 
   // Middleware - CORS MUST BE FIRST
   app.use(cors());

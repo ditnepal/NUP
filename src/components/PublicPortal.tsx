@@ -27,7 +27,8 @@ import {
   Instagram, 
   Youtube,
   Zap,
-  ShieldAlert
+  ShieldAlert,
+  ArrowLeft
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { UserProfile } from '../types';
@@ -47,9 +48,24 @@ interface PublicPortalProps {
   onCampaignsClick?: () => void;
   onAboutClick?: () => void;
   onHomeClick?: () => void;
+  onBack?: () => void;
 }
 
-export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick, onDocumentsClick, onTrainingClick, onJoinClick, onStatusClick, onDonateClick, onGrievanceClick, onCandidatesClick, onCampaignsClick, onAboutClick, onHomeClick }) => {
+export const PublicPortal: React.FC<PublicPortalProps> = ({ 
+  user, 
+  onPortalClick, 
+  onDocumentsClick, 
+  onTrainingClick, 
+  onJoinClick, 
+  onStatusClick, 
+  onDonateClick, 
+  onGrievanceClick, 
+  onCandidatesClick, 
+  onCampaignsClick, 
+  onAboutClick, 
+  onHomeClick,
+  onBack
+}) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -209,7 +225,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <section className="relative py-24 md:py-36 overflow-hidden bg-slate-950 text-white rounded-[3rem] mx-4 md:mx-0">
+      <section className="relative py-16 md:py-24 overflow-hidden bg-slate-950 text-white rounded-[3rem] mx-4 md:mx-0">
         {/* Background Patterns */}
         <div className="absolute inset-0 z-0 opacity-30">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#10b981_0%,transparent_50%)]"></div>
@@ -217,11 +233,20 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
         </div>
 
         <div className="max-w-7xl mx-auto px-8 relative z-10">
-          <div className="max-w-4xl">
+          <div className="max-w-3xl">
+            {onBack && (
+              <button 
+                onClick={onBack}
+                className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors text-[10px] font-black uppercase tracking-widest mb-6 group"
+              >
+                <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                Return to Home
+              </button>
+            )}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-10"
+              className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-8"
             >
               <Globe size={14} />
               Official Intelligence Hub
@@ -231,7 +256,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-6xl md:text-8xl font-black mb-10 leading-[0.85] tracking-tighter uppercase"
+              className="text-5xl md:text-7xl font-black mb-8 leading-[0.85] tracking-tighter uppercase"
             >
               System <br />
               <span className="text-emerald-500">Transparency.</span>
@@ -241,7 +266,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-xl md:text-2xl text-slate-400 mb-12 max-w-2xl leading-tight font-medium tracking-tight"
+              className="text-lg md:text-xl text-slate-400 mb-10 max-w-xl leading-tight font-medium tracking-tight"
             >
               Access real-time updates, official notices, and community initiatives. Our platform ensures every citizen stays informed and empowered.
             </motion.p>
@@ -250,18 +275,18 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-5"
+              className="flex flex-col sm:flex-row gap-4"
             >
               <button 
                 onClick={onJoinClick}
-                className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
+                className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
               >
                 Join Movement
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
               <button 
                 onClick={onAboutClick}
-                className="bg-white/5 backdrop-blur-md text-white border border-white/10 px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                className="bg-white/5 backdrop-blur-md text-white border border-white/10 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"
               >
                 Learn More
               </button>
@@ -270,277 +295,219 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
         </div>
       </section>
 
-      {/* Dynamic Sections or Baseline Fallback */}
-      {sections.length > 0 ? (
-        sections?.map((section) => {
-          let content: any = {};
-          try {
-            if (section.content) {
-              content = JSON.parse(section.content);
-            }
-          } catch (e) {
-            // If JSON parsing fails, try to provide a minimal fallback to prevent crash
-            // and log a more helpful message for developers
-            console.warn(`[PublicPortal] Invalid JSON in section "${section.title}" (ID: ${section.id}). Content:`, section.content);
-            content = { headline: section.title, subheadline: 'Content configuration error' };
+      {/* Quick Access Grid - System Gateway Feel */}
+      <section className="px-4 md:px-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Account & Status */}
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                <User size={20} />
+              </div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Account Services</h3>
+            </div>
+            <div className="space-y-2">
+              <button 
+                onClick={onPortalClick}
+                className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-all group"
+              >
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Member Dashboard</span>
+                <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+              </button>
+              <button 
+                onClick={onStatusClick}
+                className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-all group"
+              >
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Track Application</span>
+                <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+              </button>
+            </div>
+          </div>
+
+          {/* Core Actions */}
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                <Zap size={20} />
+              </div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Take Action</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={onJoinClick} className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-all group gap-2">
+                <Users size={18} className="text-emerald-600" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">Join</span>
+              </button>
+              <button onClick={() => setIsVolunteerModalOpen(true)} className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-all group gap-2">
+                <Heart size={18} className="text-emerald-600" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">Volunteer</span>
+              </button>
+              <button onClick={onDonateClick} className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-all group gap-2">
+                <Zap size={18} className="text-emerald-600" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">Donate</span>
+              </button>
+              <button onClick={onGrievanceClick} className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-all group gap-2">
+                <ShieldAlert size={18} className="text-emerald-600" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">Help</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Information */}
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                <FileText size={20} />
+              </div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Information</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={onDocumentsClick} className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-all group gap-2">
+                <Download size={18} className="text-amber-600" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">Manifesto</span>
+              </button>
+              <button onClick={onCandidatesClick} className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-all group gap-2">
+                <User size={18} className="text-amber-600" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">Candidates</span>
+              </button>
+              <button onClick={onTrainingClick} className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-all group gap-2">
+                <GraduationCap size={18} className="text-amber-600" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">Training</span>
+              </button>
+              <button onClick={onAboutClick} className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-all group gap-2">
+                <Globe size={18} className="text-amber-600" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">About</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Dynamic Sections */}
+      {sections?.map((section) => {
+        let content: any = {};
+        try {
+          if (section.content) {
+            content = JSON.parse(section.content);
           }
+        } catch (e) {
+          console.warn(`[PublicPortal] Invalid JSON in section "${section.title}"`, section.content);
+          content = { headline: section.title, subheadline: 'Content configuration error' };
+        }
 
-          switch (section.type) {
-            case 'HERO':
-              const headlineColor = content.headline_color || "#DC143C";
-              const subheadlineColor = content.subheadline_color || "#006400";
-              const ctaBgColor = content.cta_bg_color || "#FFD700";
-              const ctaTextColor = content.cta_text_color || "#000000";
-
-              return (
-                <section 
-                  key={section.id} 
-                  className="relative py-24 md:py-32 overflow-hidden"
-                  style={{ backgroundColor: content.bg_color || "#F8FAFC" }}
-                >
-                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="max-w-4xl">
-                      {content.badge && (
-                        <span 
-                          className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-8"
-                          style={{ 
-                            backgroundColor: `${headlineColor}15`,
-                            color: headlineColor 
-                          }}
-                        >
-                          {content.badge}
-                        </span>
-                      )}
-                      
-                      <h1 
-                        className="text-6xl md:text-8xl font-black leading-[0.85] mb-8 tracking-tighter"
-                        style={{ color: headlineColor }}
+        switch (section.type) {
+          case 'HERO':
+            return (
+              <section key={section.id} className="relative py-20 md:py-24 overflow-hidden rounded-[3rem]" style={{ backgroundColor: content.bg_color || "#F8FAFC" }}>
+                <div className="max-w-7xl mx-auto px-8 relative z-10">
+                  <div className="max-w-4xl">
+                    {content.badge && (
+                      <span className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-8" style={{ backgroundColor: `${content.headline_color || "#10b981"}15`, color: content.headline_color || "#10b981" }}>
+                        {content.badge}
+                      </span>
+                    )}
+                    <h2 className="text-4xl md:text-6xl font-black leading-[0.85] mb-8 tracking-tighter uppercase" style={{ color: content.headline_color || "#0f172a" }}>
+                      {content.headline || section.title}
+                    </h2>
+                    <p className="text-lg md:text-xl mb-10 leading-tight max-w-2xl font-medium tracking-tight" style={{ color: content.subheadline_color || "#64748b" }}>
+                      {content.subheadline}
+                    </p>
+                    {content.ctaText && (
+                      <button 
+                        onClick={() => content.ctaLink?.startsWith('http') ? window.open(content.ctaLink, '_blank') : onJoinClick?.()} 
+                        className="px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl flex items-center justify-center gap-3 group"
+                        style={{ backgroundColor: content.cta_bg_color || "#10b981", color: content.cta_text_color || "#ffffff" }}
                       >
-                        {content.headline || section.title}
-                      </h1>
-                      
-                      <p 
-                        className="text-xl md:text-2xl mb-12 leading-relaxed max-w-2xl font-medium"
-                        style={{ color: subheadlineColor }}
-                      >
-                        {content.subheadline}
-                      </p>
-                      
-                      <div className="flex flex-col sm:flex-row gap-5">
-                        {content.ctaText && (
-                          <button 
-                            onClick={() => content.ctaLink?.startsWith('http') ? window.open(content.ctaLink, '_blank') : onJoinClick?.()} 
-                            className="px-10 py-5 rounded-2xl text-xl font-black transition-all hover:scale-105 active:scale-95 shadow-2xl flex items-center justify-center gap-3 group"
-                            style={{ 
-                              backgroundColor: ctaBgColor, 
-                              color: ctaTextColor,
-                              boxShadow: `0 20px 40px -10px ${ctaBgColor}40`
-                            }}
-                          >
-                            {content.ctaText} 
-                            <ChevronRight size={24} className="group-hover:translate-x-1 transition-transform" />
-                          </button>
-                        )}
-                        
-                        {content.secondaryCtaText && (
-                          <button 
-                            onClick={onStatusClick}
-                            className="bg-white/80 backdrop-blur-sm text-slate-800 border-2 border-slate-200 px-10 py-5 rounded-2xl text-xl font-bold hover:bg-white transition-all flex items-center justify-center gap-2 shadow-lg"
-                          >
-                            {content.secondaryCtaText}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Decorative background element */}
-                  <div 
-                    className="absolute top-0 right-0 w-1/2 h-full -skew-x-12 translate-x-1/4 z-0 hidden lg:block opacity-5"
-                    style={{ backgroundColor: headlineColor }}
-                  ></div>
-                </section>
-              );
-            case 'HIGHLIGHT':
-              return (
-                <section key={section.id} className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="mb-12">
-                    <h2 className="text-3xl font-black tracking-tight uppercase">{section.title}</h2>
-                    {content.description && <p className="text-slate-500 mt-2">{content.description}</p>}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {content.items?.map((item: any, idx: number) => (
-                      <div key={idx} className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-                        <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                        <p className="text-slate-500 mb-6">{item.description}</p>
-                        {item.linkText && (
-                          <a href={item.linkUrl || '#'} className="text-emerald-600 font-bold flex items-center gap-1 hover:gap-2 transition-all">
-                            {item.linkText} <ChevronRight size={16} />
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            case 'CTA':
-              return (
-                <section key={section.id} className="py-20 bg-emerald-600">
-                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h2 className="text-4xl font-black text-white mb-6">{content.headline || section.title}</h2>
-                    <p className="text-emerald-50 text-xl mb-10 max-w-2xl mx-auto">{content.subheadline}</p>
-                    <button 
-                      onClick={() => content.ctaLink?.startsWith('http') ? window.open(content.ctaLink, '_blank') : onJoinClick?.()}
-                      className="bg-white text-emerald-600 px-10 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-50 transition-all shadow-xl shadow-emerald-900/20"
-                    >
-                      {content.ctaText || 'Get Started'}
-                    </button>
-                  </div>
-                </section>
-              );
-            case 'CONTENT_BLOCK':
-              return (
-                <section key={section.id} className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    <div className={content.imageLeft ? 'order-last lg:order-first' : ''}>
-                      <h2 className="text-4xl font-black text-slate-900 mb-6 leading-tight">{content.headline || section.title}</h2>
-                      <div className="prose prose-slate max-w-none mb-8">
-                        <Markdown>{content.body || section.content}</Markdown>
-                      </div>
-                      {content.ctaText && (
-                        <button className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all">
-                          {content.ctaText}
-                        </button>
-                      )}
-                    </div>
-                    <div className="bg-slate-100 rounded-3xl aspect-video overflow-hidden">
-                      {content.imageUrl ? (
-                        <img src={content.imageUrl} alt={section.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-300">
-                          <Globe size={80} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </section>
-              );
-            case 'NOTICE_BANNER':
-              return (
-                <div key={section.id} className="bg-amber-50 border-y border-amber-100 py-3">
-                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center gap-3">
-                    <Megaphone size={18} className="text-amber-600" />
-                    <span className="text-sm font-bold text-amber-900">{content.text || section.title}</span>
-                    {content.linkText && (
-                      <a href={content.linkUrl || '#'} className="text-sm font-black text-amber-600 underline underline-offset-4">
-                        {content.linkText}
-                      </a>
+                        {content.ctaText} 
+                        <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                      </button>
                     )}
                   </div>
                 </div>
-              );
-            default:
-              return null;
-          }
-        })
-      ) : (
-        <>
-          {/* Hero Section */}
-          <section className="relative py-24 md:py-32 overflow-hidden bg-slate-900">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              <div className="max-w-3xl">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest mb-8 border border-emerald-500/20"
-                >
-                  <Globe size={12} />
-                  Official Public Portal
-                </motion.div>
-                <motion.h1 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-6xl md:text-8xl font-black text-white leading-[0.85] mb-8 tracking-tighter uppercase"
-                >
-                  Stay Informed. <br />
-                  <span className="text-emerald-500">Stay Connected.</span>
-                </motion.h1>
-                <motion.p 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-xl text-slate-400 mb-10 leading-relaxed max-w-xl font-medium"
-                >
-                  The official source for party news, policy updates, and community announcements. Real-time data from the heart of our movement.
-                </motion.p>
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex flex-col sm:flex-row gap-5"
-                >
-                  <button onClick={onJoinClick} className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-lg font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group">
-                    Join the Movement <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                  </button>
-                  <button onClick={onStatusClick} className="bg-white/10 backdrop-blur-sm text-white border border-white/20 px-10 py-5 rounded-2xl text-lg font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2">
-                    Check Status
-                  </button>
-                </motion.div>
-              </div>
-            </div>
-            
-            {/* Abstract Background Element */}
-            <div className="absolute top-0 right-0 w-1/3 h-full bg-emerald-600/5 -skew-x-12 translate-x-1/4 z-0 hidden lg:block"></div>
-          </section>
-
-          {/* Action Blocks */}
-          <section className="py-24">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[
-                { 
-                  title: 'Volunteer', 
-                  desc: 'Contribute your skills and time to our local campaigns and initiatives. Be the change.',
-                  icon: Heart,
-                  color: 'emerald',
-                  action: () => setIsVolunteerModalOpen(true),
-                  label: 'Apply Now'
-                },
-                { 
-                  title: 'Donate', 
-                  desc: 'Support our mission with a financial contribution. Every contribution fuels our progress.',
-                  icon: Zap,
-                  color: 'amber',
-                  action: onDonateClick,
-                  label: 'Contribute'
-                },
-                { 
-                  title: 'Complaints', 
-                  desc: 'Report issues in your local area or provide feedback to the party. We listen.',
-                  icon: MessageSquare,
-                  color: 'slate',
-                  action: onGrievanceClick,
-                  label: 'Submit Issue'
-                }
-              ].map((item, idx) => (
-                <div key={idx} className="bg-white p-10 rounded-[3rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden shadow-sm hover:shadow-2xl">
-                  <div className={`w-16 h-16 bg-${item.color}-50 text-${item.color}-600 rounded-3xl flex items-center justify-center mb-8 border border-${item.color}-100 group-hover:scale-110 transition-transform duration-500`}>
-                    <item.icon size={32} />
-                  </div>
-                  <h3 className="text-2xl font-black mb-4 text-slate-900 uppercase tracking-tight">{item.title}</h3>
-                  <p className="text-slate-500 mb-10 leading-relaxed font-medium">{item.desc}</p>
+              </section>
+            );
+          case 'HIGHLIGHT':
+            return (
+              <section key={section.id} className="py-20 max-w-7xl mx-auto px-8">
+                <div className="mb-12">
+                  <h2 className="text-3xl font-black tracking-tight uppercase text-slate-900">{section.title}</h2>
+                  {content.description && <p className="text-slate-500 mt-2 font-medium">{content.description}</p>}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {content.items?.map((item: any, idx: number) => (
+                    <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                      <h3 className="text-lg font-black mb-3 uppercase tracking-tight">{item.title}</h3>
+                      <p className="text-slate-500 mb-6 text-sm font-medium leading-relaxed">{item.description}</p>
+                      {item.linkText && (
+                        <button onClick={() => item.linkUrl?.startsWith('http') ? window.open(item.linkUrl, '_blank') : null} className="text-emerald-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:gap-2 transition-all">
+                          {item.linkText} <ChevronRight size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          case 'CTA':
+            return (
+              <section key={section.id} className="py-16 bg-emerald-600 rounded-[3rem] mx-4 md:mx-0">
+                <div className="max-w-7xl mx-auto px-8 text-center">
+                  <h2 className="text-3xl md:text-4xl font-black text-white mb-6 uppercase tracking-tight">{content.headline || section.title}</h2>
+                  <p className="text-emerald-50 text-lg mb-10 max-w-2xl mx-auto font-medium">{content.subheadline}</p>
                   <button 
-                    onClick={item.action}
-                    className="w-full bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all"
+                    onClick={() => content.ctaLink?.startsWith('http') ? window.open(content.ctaLink, '_blank') : onJoinClick?.()}
+                    className="bg-white text-emerald-600 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-xl shadow-emerald-900/20"
                   >
-                    {item.label} <ChevronRight size={18} />
+                    {content.ctaText || 'Get Started'}
                   </button>
                 </div>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+              </section>
+            );
+          case 'CONTENT_BLOCK':
+            return (
+              <section key={section.id} className="py-20 max-w-7xl mx-auto px-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                  <div className={content.imageLeft ? 'order-last lg:order-first' : ''}>
+                    <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-6 leading-tight uppercase tracking-tight">{content.headline || section.title}</h2>
+                    <div className="prose prose-slate max-w-none mb-8 text-slate-600 font-medium">
+                      <Markdown>{content.body || section.content}</Markdown>
+                    </div>
+                    {content.ctaText && (
+                      <button className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all">
+                        {content.ctaText}
+                      </button>
+                    )}
+                  </div>
+                  <div className="bg-slate-100 rounded-[2.5rem] aspect-video overflow-hidden border border-slate-100">
+                    {content.imageUrl ? (
+                      <img src={content.imageUrl} alt={section.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <Globe size={64} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            );
+          case 'NOTICE_BANNER':
+            return (
+              <div key={section.id} className="bg-amber-50 border-y border-amber-100 py-4">
+                <div className="max-w-7xl mx-auto px-8 flex items-center justify-center gap-3">
+                  <Megaphone size={18} className="text-amber-600" />
+                  <span className="text-[10px] font-black text-amber-900 uppercase tracking-widest">{content.text || section.title}</span>
+                  {content.linkText && (
+                    <a href={content.linkUrl || '#'} className="text-[10px] font-black text-amber-600 underline underline-offset-4 uppercase tracking-widest">
+                      {content.linkText}
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          default:
+            return null;
+        }
+      })}
+
 
       {/* Latest News & Notices */}
       <section className="py-32 bg-white px-8">
@@ -551,14 +518,17 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             <div>
               <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-16 gap-8">
                 <div>
-                  <h2 className="text-4xl font-black tracking-tight uppercase text-slate-900 mb-4">Latest News</h2>
-                  <p className="text-slate-500 font-medium">Official updates and policy announcements.</p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest mb-4">
+                    <Zap size={12} />
+                    Intelligence Feed
+                  </div>
+                  <h2 className="text-5xl font-black tracking-tighter uppercase text-slate-900 leading-[0.85]">Latest <br /><span className="text-emerald-600">News.</span></h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button 
                     onClick={() => setActiveCategory(null)}
-                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      activeCategory === null ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                      activeCategory === null ? 'bg-slate-900 text-white border-slate-900 shadow-xl' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-900'
                     }`}
                   >
                     All
@@ -567,8 +537,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                     <button 
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
-                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                        activeCategory === cat.id ? 'bg-emerald-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                        activeCategory === cat.id ? 'bg-emerald-600 text-white border-emerald-600 shadow-xl' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-600'
                       }`}
                     >
                       {cat.name}
@@ -576,25 +546,28 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   ))}
                 </div>
               </div>
-              <div className="grid gap-8">
+              <div className="grid gap-6">
                 {news?.map((item) => (
                   <div 
                     key={item.id} 
                     onClick={() => handlePostClick(item)}
-                    className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all p-8 flex flex-col sm:flex-row gap-8 cursor-pointer group"
+                    className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all p-8 flex flex-col sm:flex-row gap-8 cursor-pointer group relative"
                   >
-                    <div className="w-full sm:w-32 h-32 bg-slate-100 rounded-3xl flex-shrink-0 overflow-hidden border border-slate-100">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    <div className="w-full sm:w-40 h-40 bg-slate-100 rounded-3xl flex-shrink-0 overflow-hidden border border-slate-100 relative z-10">
                       {item.featuredImage ? (
-                        <img src={item.featuredImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                        <img src={item.featuredImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-300">
-                          <FileText size={32} />
+                          <FileText size={48} />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 relative z-10">
                       <div className="flex items-center gap-3 mb-4">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                          <Calendar size={12} />
                           {new Date(item.publishedAt || item.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                         </span>
                         {item.isPinned && (
@@ -603,12 +576,17 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                           </span>
                         )}
                       </div>
-                      <h3 className="text-xl font-black mb-4 text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors uppercase tracking-tight line-clamp-2">{item.title}</h3>
-                      {item.category && (
-                        <span className="inline-flex items-center gap-2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 uppercase tracking-widest">
-                          <Tag size={12} /> {item.category.name}
+                      <h3 className="text-2xl font-black mb-4 text-slate-900 leading-[1.1] group-hover:text-emerald-600 transition-colors uppercase tracking-tight line-clamp-2">{item.title}</h3>
+                      <div className="flex items-center justify-between mt-auto">
+                        {item.category && (
+                          <span className="inline-flex items-center gap-2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 uppercase tracking-widest">
+                            <Tag size={12} /> {item.category.name}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                          Read Full Story <ArrowRight size={14} />
                         </span>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -630,39 +608,49 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
             <div>
               <div className="flex justify-between items-end mb-16">
                 <div>
-                  <h2 className="text-4xl font-black tracking-tight uppercase text-slate-900 mb-4">Official Notices</h2>
-                  <p className="text-slate-500 font-medium">Critical alerts and public service announcements.</p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest mb-4">
+                    <ShieldAlert size={12} />
+                    Critical Alerts
+                  </div>
+                  <h2 className="text-5xl font-black tracking-tighter uppercase text-slate-900 leading-[0.85]">Official <br /><span className="text-amber-600">Notices.</span></h2>
                 </div>
               </div>
               <div className="grid gap-6">
-                {notices?.filter(n => !n.isPopup).map((notice) => (
-                  <div key={notice.id} className={`bg-white rounded-[2.5rem] border ${notice.isPinned ? 'border-emerald-500 shadow-emerald-50' : 'border-slate-100'} shadow-sm hover:shadow-xl transition-all p-10 group`}>
+                {(notices || [])?.filter(n => !n.isPopup).map((notice) => (
+                  <div key={notice.id} className={`bg-white rounded-[2.5rem] border ${notice.isPinned ? 'border-amber-500 shadow-amber-50' : 'border-slate-100'} shadow-sm hover:shadow-2xl transition-all p-10 group relative overflow-hidden`}>
+                    {notice.isPinned && <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />}
+                    
                     <div className="flex justify-between items-start mb-8">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100">
-                          <ShieldAlert size={24} />
+                        <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center border border-amber-100 shadow-inner">
+                          <Megaphone size={28} />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Official Notice</p>
+                          <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Public Announcement</p>
                           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Ref: {notice.id.substring(0, 8).toUpperCase()}</p>
                         </div>
                       </div>
                       {notice.isPinned && (
-                        <span className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest">
-                          Pinned
+                        <span className="px-3 py-1 bg-amber-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20">
+                          Priority
                         </span>
                       )}
                     </div>
-                    <h3 className="text-2xl font-black mb-6 text-slate-900 uppercase tracking-tight group-hover:text-emerald-600 transition-colors">{notice.title}</h3>
-                    <p className="text-slate-500 font-medium leading-relaxed mb-8 line-clamp-3">{notice.content}</p>
-                    {notice.externalUrl && (
-                      <a href={notice.externalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-slate-900 font-black text-[10px] uppercase tracking-[0.2em] hover:text-emerald-600 transition-colors">
-                        View Full Document <ExternalLink size={16} />
-                      </a>
-                    )}
+                    <h3 className="text-2xl font-black mb-6 text-slate-900 uppercase tracking-tight group-hover:text-amber-600 transition-colors leading-tight">{notice.title}</h3>
+                    <p className="text-slate-500 font-medium leading-relaxed mb-8 line-clamp-3 text-sm">{notice.content}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Issued: {new Date(notice.createdAt).toLocaleDateString()}
+                      </span>
+                      {notice.externalUrl && (
+                        <a href={notice.externalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-slate-900 font-black text-[10px] uppercase tracking-[0.2em] hover:text-amber-600 transition-colors">
+                          Download Document <Download size={16} />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 ))}
-                {notices.filter(n => !n.isPopup).length === 0 && !loading && (
+                {(notices || []).filter(n => !n.isPopup).length === 0 && !loading && (
                   <div className="py-24 text-center bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
                     <div className="w-20 h-20 bg-white text-slate-300 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
                       <Megaphone size={40} />
@@ -688,7 +676,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {events?.map((event) => (
+                {(events || [])?.map((event) => (
                   <div key={event.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
                     <h3 className="text-xl font-bold mb-2">{event.title}</h3>
                     <p className="text-slate-600 text-sm mb-4 line-clamp-2">{event.summary || event.description}</p>
@@ -697,7 +685,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                     </div>
                   </div>
                 ))}
-                {events.length === 0 && !loading && (
+                {(events || []).length === 0 && !loading && (
                   <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm col-span-full">
                     <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
                       <Calendar size={48} />
@@ -808,7 +796,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                     Related Feedback
                   </h3>
                   <div className="grid gap-6">
-                    {postSurveys?.map((survey) => (
+                  {(postSurveys || [])?.map((survey) => (
                       <div key={survey.id} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                         <h4 className="font-bold mb-2">{survey.title}</h4>
                         <p className="text-sm text-slate-600 mb-4">{survey.description}</p>
@@ -817,7 +805,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                         </button>
                       </div>
                     ))}
-                    {postPolls?.map((poll) => (
+                  {(postPolls || [])?.map((poll) => (
                       <div key={poll.id} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                         <h4 className="font-bold mb-4">{poll.title}</h4>
                         <div className="grid gap-2">

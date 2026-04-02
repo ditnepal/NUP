@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, MapPin, Calendar, ArrowRight } from 'lucide-react';
+import { UserCheck, MapPin, Calendar, ArrowRight, ArrowLeft } from 'lucide-react';
 import { api } from '../lib/api';
 
-export const PublicCandidatesView = () => {
+interface PublicCandidatesViewProps {
+  onBack?: () => void;
+}
+
+export const PublicCandidatesView: React.FC<PublicCandidatesViewProps> = ({ onBack }) => {
   const [candidates, setCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +32,15 @@ export const PublicCandidatesView = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#10b981_0%,transparent_50%)]"></div>
         </div>
         <div className="relative z-10 max-w-4xl">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors text-[10px] font-black uppercase tracking-widest mb-4 group"
+            >
+              <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+              Return to Portal
+            </button>
+          )}
           <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-10">
             <UserCheck size={14} />
             Leadership Corps

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../lib/api';
 import { Search, ChevronLeft, Clock, CheckCircle, XCircle, FileText, Phone, Hash, Calendar, MapPin } from 'lucide-react';
-import { format } from 'date-fns';
+import { safeFormat } from '../lib/date';
 
 interface ApplicantStatusPortalProps {
   onBack: () => void;
@@ -142,6 +142,15 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
           <div className="p-8 md:p-12">
             <div className="text-center mb-10">
+              {onBack && (
+                <button 
+                  onClick={onBack}
+                  className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors text-[10px] font-black uppercase tracking-widest mb-6 group"
+                >
+                  <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                  Return to Portal
+                </button>
+              )}
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-widest border border-emerald-100 mb-4">
                 <Search size={12} />
                 Tracking System
@@ -245,7 +254,7 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                       Submission Date
                     </p>
                     <p className="font-bold text-slate-700">
-                      {format(new Date(statusData.createdAt), 'MMMM d, yyyy')}
+                      {safeFormat(statusData.createdAt, 'MMMM d, yyyy')}
                     </p>
                   </div>
                   <div className="space-y-1">

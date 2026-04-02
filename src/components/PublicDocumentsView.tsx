@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Search, Loader2, Download, FileText, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, Loader2, Download, FileText, Calendar, ArrowLeft } from 'lucide-react';
+import { safeFormat } from '../lib/date';
 import { PartyDocument } from '../types';
 
-export const PublicDocumentsView: React.FC = () => {
+interface PublicDocumentsViewProps {
+  onBack?: () => void;
+}
+
+export const PublicDocumentsView: React.FC<PublicDocumentsViewProps> = ({ onBack }) => {
   const [documents, setDocuments] = useState<PartyDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +46,15 @@ export const PublicDocumentsView: React.FC = () => {
         
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-12">
           <div className="space-y-6 max-w-2xl">
+            {onBack && (
+              <button 
+                onClick={onBack}
+                className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors text-[10px] font-black uppercase tracking-widest mb-4 group"
+              >
+                <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                Return to Portal
+              </button>
+            )}
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">
               <FileText size={14} />
               Public Records Vault
@@ -128,7 +141,7 @@ export const PublicDocumentsView: React.FC = () => {
               <div className="flex items-center justify-between pt-8 border-t border-slate-50">
                 <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <Calendar size={16} />
-                  {format(new Date(doc.createdAt), 'MMM d, yyyy')}
+                  {safeFormat(doc.createdAt, 'MMM d, yyyy')}
                 </div>
                 <a
                   href={doc.fileUrl.startsWith('/') ? doc.fileUrl : `/${doc.fileUrl}`}

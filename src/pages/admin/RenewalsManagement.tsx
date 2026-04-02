@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Loader2, CheckCircle, XCircle, Clock, AlertCircle, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { safeFormat } from '../../lib/date';
 import { toast } from 'sonner';
 
 import { usePermissions } from '../../hooks/usePermissions';
@@ -90,7 +90,7 @@ export default function RenewalsManagement({ user }: RenewalsManagementProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {renewals.map((renewal) => (
+              {(renewals || []).map((renewal) => (
                 <tr key={renewal.id} className="hover:bg-slate-50 transition-colors">
                   <td className="p-4">
                     <div className="font-medium text-slate-900">{renewal.member.fullName}</div>
@@ -98,7 +98,7 @@ export default function RenewalsManagement({ user }: RenewalsManagementProps) {
                   </td>
                   <td className="p-4 text-sm text-slate-600">{renewal.member.membershipId || 'N/A'}</td>
                   <td className="p-4 text-sm text-slate-600">
-                    {renewal.member.expiryDate ? format(new Date(renewal.member.expiryDate), 'MMM d, yyyy') : 'N/A'}
+                    {renewal.member.expiryDate ? safeFormat(renewal.member.expiryDate, 'MMM d, yyyy') : 'N/A'}
                   </td>
                   <td className="p-4 text-sm font-bold text-slate-600 uppercase">
                     {renewal.paymentMethod || 'N/A'}
@@ -116,7 +116,7 @@ export default function RenewalsManagement({ user }: RenewalsManagementProps) {
                     </span>
                   </td>
                   <td className="p-4 text-sm text-slate-600">
-                    {format(new Date(renewal.createdAt), 'MMM d, yyyy')}
+                    {safeFormat(renewal.createdAt, 'MMM d, yyyy')}
                   </td>
                   <td className="p-4">
                     {renewal.status === 'PENDING' && can('MEMBERSHIP', 'UPDATE') && (
@@ -165,7 +165,7 @@ export default function RenewalsManagement({ user }: RenewalsManagementProps) {
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Current Expiry</label>
                   <div className="text-slate-900 font-medium">
-                    {selectedRenewal.member.expiryDate ? format(new Date(selectedRenewal.member.expiryDate), 'MMM d, yyyy') : 'N/A'}
+                    {selectedRenewal.member.expiryDate ? safeFormat(selectedRenewal.member.expiryDate, 'MMM d, yyyy') : 'N/A'}
                   </div>
                 </div>
                 <div>

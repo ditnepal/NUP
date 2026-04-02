@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Megaphone, Target, Users, ArrowRight } from 'lucide-react';
+import { Megaphone, Target, Users, ArrowRight, ArrowLeft } from 'lucide-react';
 import { api } from '../lib/api';
 
-export const PublicCampaignsView = () => {
+interface PublicCampaignsViewProps {
+  onBack?: () => void;
+}
+
+export const PublicCampaignsView: React.FC<PublicCampaignsViewProps> = ({ onBack }) => {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +32,15 @@ export const PublicCampaignsView = () => {
           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_100%_0%,#3b82f6_0%,transparent_50%)]"></div>
         </div>
         <div className="relative z-10 max-w-4xl">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-[10px] font-black uppercase tracking-widest mb-4 group"
+            >
+              <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+              Return to Portal
+            </button>
+          )}
           <div className="inline-flex items-center gap-3 px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-10">
             <Megaphone size={14} />
             Strategic Initiatives

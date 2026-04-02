@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Calendar, MapPin, Users, Clock, Loader2, ArrowLeft, UserPlus, CheckCircle2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { safeFormat } from '../lib/date';
 import { UserProfile } from '../types';
 import { toast } from 'sonner';
 
@@ -107,7 +107,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, user,
             <Calendar size={20} className="text-emerald-600" />
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase">Date & Time</p>
-              <p className="font-medium">{format(new Date(event.startDate), 'MMMM d, yyyy • h:mm a')}</p>
+              <p className="font-medium">{safeFormat(event.startDate, 'MMMM d, yyyy • h:mm a')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 text-slate-600">
@@ -161,7 +161,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, user,
               <div key={item.id} className="relative pl-6">
                 <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-white border-2 border-emerald-500" />
                 <p className="text-[10px] font-bold text-emerald-600 uppercase">
-                  {format(new Date(item.startTime), 'h:mm a')}
+                  {safeFormat(item.startTime, 'h:mm a')}
                 </p>
                 <p className="text-sm font-bold text-slate-900">{item.title}</p>
                 <p className="text-xs text-slate-500">{item.description}</p>

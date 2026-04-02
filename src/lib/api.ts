@@ -9,15 +9,18 @@ const API_URL = getApiUrl();
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const getAuthHeaders = (endpoint: string): Record<string, string> => {
+const getAuthHeaders = (endpoint: string, method: string = 'GET', isFormData: boolean = false): Record<string, string> => {
   const token = localStorage.getItem('token');
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+  };
+  
+  if (method !== 'GET' && method !== 'DELETE' && !isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
   
   // Only send token if it exists and is not a placeholder string
-  // AND if the endpoint is not explicitly public
-  const isPublic = endpoint.startsWith('/public') || endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register');
-  
-  if (token && token !== 'null' && token !== 'undefined' && token.length > 10 && !isPublic) {
+  if (token && token !== 'null' && token !== 'undefined' && token.length > 10) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
@@ -25,8 +28,10 @@ const getAuthHeaders = (endpoint: string): Record<string, string> => {
 };
 
 const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, backoff = 2000): Promise<Response> => {
+  const isPublic = url.includes('/public') || url.includes('/auth/login') || url.includes('/auth/register');
   console.log(`[API] Fetching: ${options.method || 'GET'} ${url}`, {
-    headers: options.headers ? Object.keys(options.headers) : []
+    headers: options.headers ? Object.keys(options.headers) : [],
+    isPublic
   });
   
   try {
@@ -53,6 +58,7 @@ const handleResponse = async (response: Response) => {
   if (!response.ok) {
     let errorMessage = 'API Error';
     let errorData = {};
+    let shouldClearSession = false;
     
     try {
       errorData = text ? JSON.parse(text) : {};
@@ -63,23 +69,42 @@ const handleResponse = async (response: Response) => {
       }
       
       // Handle Unauthorized error (Invalid token)
-      if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Missing or invalid token'))) {
-        console.warn('Unauthorized: Invalid token. Clearing session...');
-        localStorage.removeItem('token');
-        // Only redirect if not already on login page
-        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-          window.location.href = '/'; 
-        }
+      if (response.status === 401) {
+        shouldClearSession = true;
       }
     } catch (e) {
       // Handle non-JSON (HTML) responses from Proxy/Infrastructure
       if (text.includes('<html>')) {
-        errorMessage = `Infrastructure Error (${response.status}): The request was blocked before reaching the server. Check if the URL is correct and if you have the necessary permissions.`;
-        console.error(`[API 403 HTML] Full response:`, text);
+        const urlPath = new URL(response.url).pathname;
+        errorMessage = `Infrastructure Error (${response.status}): The request to ${urlPath} was blocked before reaching the server. This often happens if your session has expired or if you're trying to access a restricted resource. Please try logging out and logging back in.`;
+        console.error(`[API ${response.status} HTML] Full response for ${urlPath}:`, text);
+        
+        // If we get a 403 HTML response, it's almost certainly an infrastructure block
+        // due to a stale/invalid token being sent to a path the proxy protects.
+        if (response.status === 403 || response.status === 401) {
+          shouldClearSession = true;
+        }
       } else {
         errorMessage = `API Error: ${response.status} ${response.statusText}`;
       }
       console.error(`API Error (non-JSON) [${response.status}]:`, text.substring(0, 200));
+    }
+
+    if (shouldClearSession) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        console.warn(`Auth/Infrastructure Error (${response.status}) for ${response.url}: Clearing session...`);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // If we're not on a public page or login page, redirect to home
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/' && !window.location.pathname.includes('/public')) {
+          window.location.href = '/'; 
+        } else if (window.location.pathname === '/') {
+          // If we're at home, we still need to reload to clear the React 'user' state
+          window.location.reload();
+        }
+      }
     }
     
     const error: any = new Error(errorMessage);
@@ -99,7 +124,8 @@ const handleResponse = async (response: Response) => {
 export const api = {
   get: async (endpoint: string) => {
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
-      headers: getAuthHeaders(endpoint),
+      method: 'GET',
+      headers: getAuthHeaders(endpoint, 'GET'),
     });
     return handleResponse(response);
   },
@@ -107,10 +133,7 @@ export const api = {
   post: async (endpoint: string, data: any) => {
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(endpoint),
-      },
+      headers: getAuthHeaders(endpoint, 'POST'),
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -119,7 +142,7 @@ export const api = {
   postFormData: async (endpoint: string, formData: FormData) => {
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'POST',
-      headers: getAuthHeaders(endpoint),
+      headers: getAuthHeaders(endpoint, 'POST', true),
       body: formData,
     });
     return handleResponse(response);
@@ -128,10 +151,7 @@ export const api = {
   put: async (endpoint: string, data: any) => {
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(endpoint),
-      },
+      headers: getAuthHeaders(endpoint, 'PUT'),
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -140,10 +160,7 @@ export const api = {
   patch: async (endpoint: string, data: any) => {
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(endpoint),
-      },
+      headers: getAuthHeaders(endpoint, 'PATCH'),
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -152,10 +169,7 @@ export const api = {
   delete: async (endpoint: string, data?: any) => {
     const response = await fetchWithRetry(`${API_URL}${endpoint}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(endpoint),
-      },
+      headers: getAuthHeaders(endpoint, 'DELETE'),
       body: data ? JSON.stringify(data) : undefined,
     });
     return handleResponse(response);

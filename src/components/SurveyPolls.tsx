@@ -77,11 +77,11 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
       const pData = await api.get('/surveys/polls');
       
       if (can('SURVEYS', 'CREATE') || can('SURVEYS', 'UPDATE')) {
-        setSurveys(sData);
-        setPolls(pData);
+        setSurveys(Array.isArray(sData) ? sData : []);
+        setPolls(Array.isArray(pData) ? pData : []);
       } else {
-        setSurveys(sData.filter((s: any) => s.status === 'ACTIVE'));
-        setPolls(pData.filter((p: any) => p.status === 'ACTIVE'));
+        setSurveys(Array.isArray(sData) ? sData.filter((s: any) => s.status === 'ACTIVE') : []);
+        setPolls(Array.isArray(pData) ? pData.filter((p: any) => p.status === 'ACTIVE') : []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -263,7 +263,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
             <Users size={20} />
             <span className="text-xs font-bold uppercase tracking-wider">Total Responses</span>
           </div>
-          <p className="text-3xl font-bold">{surveys.reduce((acc, s) => acc + s._count.responses, 0)}</p>
+          <p className="text-3xl font-bold">{(surveys || []).reduce((acc, s) => acc + (s._count?.responses || 0), 0)}</p>
           <p className="text-sm text-gray-500">Across all surveys</p>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2">
@@ -369,7 +369,9 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
               </div>
               <div className="space-y-4">
                 {p.options?.map((o) => {
-                  const percentage = p._count.votes > 0 ? (o._count.votes / p._count.votes) * 100 : 0;
+                  const votes = p._count?.votes || 0;
+                  const optVotes = o._count?.votes || 0;
+                  const percentage = votes > 0 ? (optVotes / votes) * 100 : 0;
                   return (
                     <div key={o.id} className="space-y-2">
                       <button 

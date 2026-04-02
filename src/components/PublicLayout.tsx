@@ -18,7 +18,11 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  Youtube
+  Youtube,
+  LayoutDashboard,
+  LogIn,
+  UserPlus,
+  ShieldAlert
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -37,6 +41,7 @@ interface PublicLayoutProps {
   onHomeClick?: () => void;
   onNewsClick?: () => void;
   onLoginClick?: () => void;
+  onGrievanceClick?: () => void;
   onLogout?: () => void;
   fullWidth?: boolean;
 }
@@ -56,6 +61,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
   onHomeClick,
   onNewsClick,
   onLoginClick,
+  onGrievanceClick,
   onLogout,
   fullWidth = false
 }) => {
@@ -86,16 +92,6 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             <div className="flex items-center gap-6">
-              {onBack && (
-                <button 
-                  onClick={onBack}
-                  className="p-2.5 hover:bg-slate-100 rounded-2xl text-slate-500 transition-all flex items-center gap-2 group border border-transparent hover:border-slate-200"
-                  title="Go Back"
-                >
-                  <X size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Return</span>
-                </button>
-              )}
               <button onClick={onHomeClick} className="flex items-center gap-3 group transition-all">
                 <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition-transform">
                   <Globe size={22} className="text-white" />
@@ -199,52 +195,93 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
               </button>
             </div>
 
-            <div className="flex flex-col gap-2 mb-12">
-              {[
-                { label: 'About Us', onClick: onAboutClick, icon: Globe },
-                { label: 'Latest News', onClick: onNewsClick, icon: Megaphone },
-                { label: 'Our Candidates', onClick: onCandidatesClick, icon: UserCheck },
-                { label: 'Campaigns', onClick: onCampaignsClick, icon: Zap },
-                { label: 'Manifesto & Docs', onClick: onDocumentsClick, icon: Shield },
-                { label: 'Training Portal', onClick: onTrainingClick, icon: GraduationCap },
-                { label: 'Check Status', onClick: onStatusClick, icon: Activity },
-              ].map((item) => (
-                <button 
-                  key={item.label}
-                  onClick={() => { item.onClick?.(); setIsMenuOpen(false); }} 
-                  className="flex items-center gap-4 p-5 text-lg font-black text-slate-800 hover:bg-emerald-50 rounded-2xl transition-all border border-transparent hover:border-emerald-100 group"
-                >
-                  <div className="w-10 h-10 bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-600 rounded-xl flex items-center justify-center transition-colors">
-                    <item.icon size={20} />
-                  </div>
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-auto pt-8 border-t border-slate-100">
-              {user ? (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 overflow-hidden">
-                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} alt="Avatar" referrerPolicy="no-referrer" />
-                    </div>
-                    <div>
-                      <p className="font-black text-slate-900 uppercase tracking-tight">{user.displayName}</p>
-                      <p className="text-xs text-slate-500">{user.email}</p>
-                    </div>
-                  </div>
+            <div className="flex flex-col gap-2 mb-8">
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {user ? (
                   <button 
                     onClick={() => { onPortalClick?.(); setIsMenuOpen(false); }}
-                    className="bg-slate-900 text-white w-full py-5 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-slate-900/20"
+                    className="col-span-2 flex items-center justify-between p-5 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-600/20 group"
                   >
-                    Go to Dashboard
+                    <div className="flex items-center gap-3">
+                      <LayoutDashboard size={20} />
+                      <span className="text-xs font-black uppercase tracking-widest">Dashboard</span>
+                    </div>
+                    <ChevronRight size={18} />
                   </button>
+                ) : (
+                  <>
+                    <button 
+                      onClick={() => { (onLoginClick || onPortalClick)?.(); setIsMenuOpen(false); }}
+                      className="flex flex-col items-center justify-center p-4 bg-slate-100 text-slate-900 rounded-2xl gap-2 border border-slate-200"
+                    >
+                      <LogIn size={20} />
+                      <span className="text-[9px] font-black uppercase tracking-widest">Log In</span>
+                    </button>
+                    <button 
+                      onClick={() => { onJoinClick?.(); setIsMenuOpen(false); }}
+                      className="flex flex-col items-center justify-center p-4 bg-emerald-600 text-white rounded-2xl gap-2 shadow-lg shadow-emerald-600/20"
+                    >
+                      <UserPlus size={20} />
+                      <span className="text-[9px] font-black uppercase tracking-widest">Join Us</span>
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-2">Information</h3>
+                  <div className="grid grid-cols-1 gap-1">
+                    {[
+                      { label: 'About Us', onClick: onAboutClick, icon: Globe },
+                      { label: 'Latest News', onClick: onNewsClick, icon: Megaphone },
+                      { label: 'Our Candidates', onClick: onCandidatesClick, icon: UserCheck },
+                      { label: 'Manifesto & Docs', onClick: onDocumentsClick, icon: Shield },
+                    ].map((item) => (
+                      <button 
+                        key={item.label}
+                        onClick={() => { item.onClick?.(); setIsMenuOpen(false); }} 
+                        className="flex items-center gap-4 p-4 text-sm font-black text-slate-800 hover:bg-emerald-50 rounded-2xl transition-all group"
+                      >
+                        <item.icon size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <button onClick={() => { (onLoginClick || onPortalClick)?.(); setIsMenuOpen(false); }} className="w-full py-5 bg-slate-100 text-slate-900 rounded-2xl text-sm font-black uppercase tracking-widest border border-slate-200">Log In</button>
-                  <button onClick={() => { onJoinClick?.(); setIsMenuOpen(false); }} className="w-full py-5 bg-emerald-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-emerald-600/20">Join the Movement</button>
+
+                <div>
+                  <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-2">Services</h3>
+                  <div className="grid grid-cols-1 gap-1">
+                    {[
+                      { label: 'Check Status', onClick: onStatusClick, icon: Activity },
+                      { label: 'Training Portal', onClick: onTrainingClick, icon: GraduationCap },
+                      { label: 'Help & Support', onClick: onGrievanceClick, icon: ShieldAlert },
+                    ].map((item) => (
+                      <button 
+                        key={item.label}
+                        onClick={() => { item.onClick?.(); setIsMenuOpen(false); }} 
+                        className="flex items-center gap-4 p-4 text-sm font-black text-slate-800 hover:bg-blue-50 rounded-2xl transition-all group"
+                      >
+                        <item.icon size={18} className="text-slate-400 group-hover:text-blue-600" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-auto pt-6 border-t border-slate-100">
+              {user && (
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 overflow-hidden">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} alt="Avatar" referrerPolicy="no-referrer" />
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="font-black text-slate-900 uppercase tracking-tight text-xs truncate">{user.displayName}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                  </div>
                 </div>
               )}
             </div>

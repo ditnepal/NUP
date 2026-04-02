@@ -8,9 +8,10 @@ import { usePermissions } from '../hooks/usePermissions';
 
 interface TrainingPortalProps {
   user?: UserProfile | null;
+  onBack?: () => void;
 }
 
-export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
+export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user, onBack }) => {
   const { can } = usePermissions(user || null);
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,6 +215,15 @@ export const TrainingPortal: React.FC<TrainingPortalProps> = ({ user }) => {
   return (
     <div className="p-4 md:p-12 w-full max-w-7xl mx-auto space-y-16">
       <div className="text-center space-y-6 mb-20">
+        {onBack && !selectedProgram && !selectedCourse && (
+          <button 
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors text-[10px] font-black uppercase tracking-widest mb-4 group"
+          >
+            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+            Return to Portal
+          </button>
+        )}
         <motion.div 
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

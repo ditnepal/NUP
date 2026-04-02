@@ -58,39 +58,39 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
   return (
     <div className="bg-white">
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-slate-950">
+      <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-slate-950">
         {/* Background Patterns */}
         <div className="absolute inset-0 z-0 opacity-20">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#10b981_0%,transparent_50%)]"></div>
           <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_20%,#059669_0%,transparent_40%)]"></div>
         </div>
         
-        <div className="max-w-7xl mx-auto px-8 relative z-10 w-full py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="max-w-7xl mx-auto px-8 relative z-10 w-full py-12 md:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-10">
+              <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-8">
                 <Globe size={14} />
                 Official Civic Operating System
               </div>
               
-              <h1 className="text-7xl md:text-9xl font-black text-white leading-[0.85] mb-10 tracking-tighter uppercase">
+              <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.85] mb-8 tracking-tighter uppercase">
                 Power to <br />
                 <span className="text-emerald-500">the People.</span>
               </h1>
               
-              <p className="text-xl md:text-2xl text-slate-400 mb-12 leading-tight max-w-xl font-medium tracking-tight">
+              <p className="text-lg md:text-xl text-slate-400 mb-10 leading-tight max-w-xl font-medium tracking-tight">
                 A transparent, secure, and decentralized platform designed to empower every citizen and build a prosperous future together.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-5">
+              <div className="flex flex-col sm:flex-row gap-4">
                 {user ? (
                   <button 
                     onClick={() => setCurrentView('dashboard')}
-                    className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
+                    className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
                   >
                     <LayoutDashboard size={18} />
                     Access Dashboard
@@ -100,7 +100,7 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
                   <>
                     <button 
                       onClick={onRegisterClick}
-                      className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
+                      className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
                     >
                       <UserPlus size={18} />
                       Join Movement
@@ -108,7 +108,7 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
                     </button>
                     <button 
                       onClick={onLoginClick}
-                      className="bg-white/5 backdrop-blur-md text-white border border-white/10 px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                      className="bg-white/5 backdrop-blur-md text-white border border-white/10 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"
                     >
                       <LogIn size={18} />
                       Sign In
@@ -124,14 +124,14 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
               transition={{ duration: 1, delay: 0.2 }}
               className="hidden lg:block relative"
             >
-              <div className="relative z-10 bg-white/5 backdrop-blur-2xl border border-white/10 p-10 rounded-[3rem] shadow-2xl">
-                <div className="flex items-center justify-between mb-10">
+              <div className="relative z-10 bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[3rem] shadow-2xl">
+                <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
                       <Shield size={20} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-white font-black text-sm uppercase tracking-tight">Secure Portal</p>
+                      <p className="text-white font-black text-xs uppercase tracking-tight">Secure Portal</p>
                       <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest">Encrypted Session</p>
                     </div>
                   </div>
@@ -140,65 +140,156 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {[
                     { label: 'Transparency Score', value: '99.8%', icon: Shield, color: 'text-emerald-500' },
                     { label: 'Active Initiatives', value: '1,240', icon: Zap, color: 'text-amber-500' },
                     { label: 'Citizen Engagement', value: 'High', icon: Activity, color: 'text-blue-500' }
                   ].map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5">
+                    <div key={idx} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                       <div className="flex items-center gap-4">
-                        <item.icon size={20} className={item.color} />
-                        <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{item.label}</span>
+                        <item.icon size={18} className={item.color} />
+                        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
                       </div>
-                      <span className="text-white font-black text-lg">{item.value}</span>
+                      <span className="text-white font-black text-base">{item.value}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-10 pt-10 border-t border-white/10 flex justify-between items-center">
+                <div className="mt-8 pt-8 border-t border-white/10 flex justify-between items-center">
                   <div className="flex -space-x-3">
                     {[1,2,3,4].map(i => (
-                      <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden">
+                      <div key={i} className="w-8 h-8 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden">
                         <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="User" referrerPolicy="no-referrer" />
                       </div>
                     ))}
-                    <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-emerald-600 flex items-center justify-center text-[10px] font-black text-white">
+                    <div className="w-8 h-8 rounded-full border-2 border-slate-900 bg-emerald-600 flex items-center justify-center text-[9px] font-black text-white">
                       +12K
                     </div>
                   </div>
-                  <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Verified Citizens</span>
+                  <span className="text-slate-500 text-[9px] font-black uppercase tracking-widest">Verified Citizens</span>
                 </div>
               </div>
-              
-              {/* Floating accents */}
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"></div>
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-700"></div>
             </motion.div>
           </div>
         </div>
       </section>
 
+      {/* Quick Action Hub - NEW IA Structure */}
+      <section className="relative z-20 -mt-12 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Access Account Group */}
+            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col gap-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                  <UserCheck size={20} />
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Access Account</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                <button 
+                  onClick={user ? () => setCurrentView('dashboard') : onLoginClick}
+                  className="flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <LogIn size={18} className="text-blue-600" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">
+                      {user ? 'Go to Dashboard' : 'Sign In to Portal'}
+                    </span>
+                  </div>
+                  <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                </button>
+                <button 
+                  onClick={() => setCurrentView('applicant-status')}
+                  className="flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Activity size={18} className="text-blue-600" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Check Application Status</span>
+                  </div>
+                  <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                </button>
+              </div>
+            </div>
+
+            {/* Take Action Group */}
+            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col gap-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                  <Zap size={20} />
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Take Action</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'membership-public', label: 'Join Us', icon: UserPlus },
+                  { id: 'volunteer-enrollment', label: 'Volunteer', icon: Heart },
+                  { id: 'donations', label: 'Donate', icon: Zap },
+                  { id: 'grievances', label: 'Help Desk', icon: ShieldAlert },
+                ].map(action => (
+                  <button 
+                    key={action.id}
+                    onClick={() => setCurrentView(action.id)}
+                    className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-all group gap-2"
+                  >
+                    <action.icon size={18} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Learn Group */}
+            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col gap-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                  <Globe size={20} />
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Learn & Explore</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'public-portal', label: 'Newsroom', icon: Megaphone },
+                  { id: 'public-documents', label: 'Manifesto', icon: Shield },
+                  { id: 'public-candidates', label: 'Candidates', icon: UserCheck },
+                  { id: 'public-about', label: 'About', icon: Globe },
+                ].map(action => (
+                  <button 
+                    key={action.id}
+                    onClick={() => setCurrentView(action.id)}
+                    className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl transition-all group gap-2"
+                  >
+                    <action.icon size={18} className="text-amber-600 group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-700">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Latest News Preview */}
-      <section className="py-24 bg-white">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-8">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
             <div>
-              <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tight mb-4">Latest Updates</h2>
-              <p className="text-slate-500 max-w-xl font-medium">Stay informed with the most recent news, policy announcements, and official statements from the party leadership.</p>
+              <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-3">Latest Updates</h2>
+              <p className="text-slate-500 max-w-xl font-medium text-sm">Stay informed with official statements and policy announcements.</p>
             </div>
             <button 
               onClick={() => setCurrentView('public-portal')}
-              className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
             >
-              View Newsroom <ArrowRight size={16} />
+              View Newsroom <ArrowRight size={14} />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {loadingNews ? (
               [1, 2, 3].map(i => (
-                <div key={i} className="animate-pulse bg-slate-50 rounded-[2.5rem] h-80"></div>
+                <div key={i} className="animate-pulse bg-slate-50 rounded-[2rem] h-64"></div>
               ))
             ) : latestNews.length > 0 ? (
               latestNews.map((post) => (
@@ -207,43 +298,41 @@ export const PublicEntry: React.FC<PublicEntryProps> = ({
                   onClick={() => setCurrentView('public-portal')}
                   className="group cursor-pointer"
                 >
-                  <div className="bg-slate-100 rounded-[2.5rem] aspect-[4/3] mb-6 overflow-hidden relative">
+                  <div className="bg-slate-100 rounded-[2rem] aspect-[16/10] mb-4 overflow-hidden relative">
                     {post.featuredImage ? (
                       <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <Megaphone size={48} />
+                        <Megaphone size={32} />
                       </div>
                     )}
-                    <div className="absolute top-6 left-6">
-                      <span className="px-4 py-1.5 bg-white/90 backdrop-blur-md text-slate-900 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
+                    <div className="absolute top-4 left-4">
+                      <span className="px-3 py-1 bg-white/90 backdrop-blur-md text-slate-900 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm">
                         {post.category?.name || 'Update'}
                       </span>
                     </div>
                   </div>
-                  <div className="px-2">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">
-                      {new Date(post.publishedAt || post.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                  <div className="px-1">
+                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">
+                      {new Date(post.publishedAt || post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
-                    <h3 className="text-xl font-black text-slate-900 mb-4 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-2 uppercase tracking-tight">
+                    <h3 className="text-lg font-black text-slate-900 mb-2 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-2 uppercase tracking-tight">
                       {post.title}
                     </h3>
-                    <p className="text-slate-500 text-sm line-clamp-2 font-medium leading-relaxed">
-                      {post.summary || 'Read the full official statement and details regarding this latest development.'}
-                    </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="col-span-full py-20 text-center bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
-                <Megaphone size={48} className="mx-auto text-slate-300 mb-6" />
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">No Recent News</h3>
-                <p className="text-slate-500 mt-2">Official updates will appear here once published by the administration.</p>
+              <div className="col-span-full py-16 text-center bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-200">
+                <Megaphone size={40} className="mx-auto text-slate-300 mb-4" />
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">No Recent News</h3>
+                <p className="text-slate-500 mt-1 text-sm">Official updates will appear here once published.</p>
               </div>
             )}
           </div>
         </div>
       </section>
+
 
       {/* Manifesto Highlight */}
       <section className="py-24 bg-slate-950 text-white overflow-hidden relative rounded-[4rem] mx-4 md:mx-8">

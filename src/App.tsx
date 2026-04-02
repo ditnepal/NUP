@@ -45,12 +45,13 @@ import { ApplicantStatusPortal } from './components/ApplicantStatusPortal';
 import { NoticePopup } from './components/NoticePopup';
 import { SystemSettings } from './components/SystemSettings';
 import { Toaster } from 'sonner';
-import { UserProfile, Campaign, Supporter, Booth } from './types';
+import { UserProfile, Campaign, Supporter, Booth, AppModule, AppAction } from './types';
 import { api } from './lib/api';
 import { usePermissions } from './hooks/usePermissions';
-import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings, User } from 'lucide-react';
+import { ROLE_PERMISSIONS } from './lib/permissions';
+import { LayoutDashboard, Megaphone, Users, MapPin, LogOut, Globe, GitGraph, UserPlus, Heart, Layout, ExternalLink, MessageSquare, GraduationCap, Calendar, DollarSign, Vote, UserCheck, ShieldAlert, ClipboardList, Shield, Menu, X as CloseIcon, Award, FileText, Clock, Bell, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Target, ListTodo, Settings, User, Zap } from 'lucide-react';
 
-type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'donate' | 'public' | 'public-portal' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment' | 'public-about';
+type View = 'dashboard' | 'portal-center' | 'users' | 'campaigns' | 'supporters' | 'booths' | 'hierarchy' | 'membership' | 'renewals' | 'fundraiser' | 'volunteers' | 'volunteer-hub' | 'cms' | 'documents' | 'communication' | 'notices' | 'training' | 'events' | 'field-events' | 'finance' | 'election' | 'candidate-dashboard' | 'donations' | 'donate' | 'public' | 'public-portal' | 'membership-public' | 'grievances' | 'surveys' | 'pgis' | 'warroom' | 'profile' | 'member-dashboard' | 'applicant-dashboard' | 'event-detail' | 'public-documents' | 'applicant-status' | 'settings' | 'public-candidates' | 'public-campaigns' | 'public-auth' | 'volunteer-enrollment' | 'public-about';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -103,7 +104,7 @@ export default function App() {
           } else {
             setUser(userData);
             setCurrentView('dashboard');
-            fetchData();
+            fetchData(userData);
           }
         } catch (error) {
           localStorage.removeItem('token');
@@ -118,20 +119,53 @@ export default function App() {
     checkAuth();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (userOverride?: UserProfile | null) => {
+    const activeUser = userOverride || user;
+    if (!activeUser) return;
+    
     try {
-      // Stagger API calls to avoid hitting rate limits
-      const [campaignsData, supportersResponse, boothsData, summaryData] = await Promise.all([
-        api.get('/campaigns'),
-        api.get('/supporters'),
-        api.get('/booths'),
-        api.get('/dashboard/summary')
-      ]);
+      // Helper to check permission without relying on the hook's stale state
+      const hasPermission = (module: AppModule, action: AppAction): boolean => {
+        if (activeUser.role === 'ADMIN') return true;
+        const allowedActions = ROLE_PERMISSIONS[activeUser.role]?.[module] || [];
+        return allowedActions.includes(action);
+      };
+
+      // Only fetch data the user has permission to see
+      const promises: Promise<any>[] = [];
+      const keys: string[] = [];
+
+      if (hasPermission('FUNDRAISING', 'VIEW')) {
+        promises.push(api.get('/campaigns').catch(() => []));
+        keys.push('campaigns');
+      }
       
-      setCampaigns(campaignsData);
-      setSupporters(supportersResponse.data || []);
-      setBooths(boothsData);
-      setSummary(summaryData);
+      if (hasPermission('SUPPORTERS', 'VIEW')) {
+        promises.push(api.get('/supporters').catch(() => ({ data: [] })));
+        keys.push('supporters');
+      }
+      
+      if (hasPermission('BOOTHS', 'VIEW')) {
+        promises.push(api.get('/booths').catch(() => []));
+        keys.push('booths');
+      }
+      
+      if (hasPermission('DASHBOARD', 'VIEW')) {
+        promises.push(api.get('/dashboard/summary').catch(() => null));
+        keys.push('summary');
+      }
+
+      if (promises.length === 0) return;
+
+      const results = await Promise.all(promises);
+      
+      results.forEach((data, index) => {
+        const key = keys[index];
+        if (key === 'campaigns') setCampaigns(data);
+        if (key === 'supporters') setSupporters(data.data || []);
+        if (key === 'booths') setBooths(data);
+        if (key === 'summary') setSummary(data);
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -140,7 +174,7 @@ export default function App() {
   const handleLoginSuccess = (userData: UserProfile) => {
     setUser(userData);
     setCurrentView('dashboard');
-    fetchData();
+    fetchData(userData);
   };
 
   const handleLogout = () => {
@@ -168,7 +202,7 @@ export default function App() {
       onBack={onBack || (() => setCurrentView('public'))}
       onPortalClick={() => {
         if (!user) {
-          setCurrentView('dashboard');
+          setCurrentView('public-auth');
         } else {
           setCurrentView('dashboard');
         }
@@ -186,7 +220,7 @@ export default function App() {
       onAboutClick={() => setCurrentView('public-about')}
       onHomeClick={() => setCurrentView('public')}
       onNewsClick={() => setCurrentView('public-portal')}
-      onLoginClick={() => setCurrentView('dashboard')}
+      onLoginClick={() => setCurrentView('public-auth')}
       onLogout={handleLogout}
     >
       {fullWidth ? children : (
@@ -222,9 +256,10 @@ export default function App() {
       <div className="relative">
         <PublicPortal 
           user={user} 
+          onBack={() => setCurrentView('public')}
           onPortalClick={() => {
             if (!user) {
-              setCurrentView('dashboard'); // This will trigger Login if user is null
+              setCurrentView('public-auth'); // This will trigger Login if user is null
             } else {
               setCurrentView('dashboard');
             }
@@ -271,7 +306,7 @@ export default function App() {
         <ApplicantStatusPortal 
           onBack={() => setCurrentView('public')} 
           onLoginClick={() => {
-            setCurrentView('dashboard'); // Triggers login
+            setCurrentView('public-auth'); // Use public-auth for public entry
           }}
           initialTrackingCode={initialTrackingCode}
           initialMobile={initialMobile}
@@ -281,36 +316,47 @@ export default function App() {
 
     if (currentView === 'membership-public') {
       return renderPublicLayout(
-        <MembershipPublic onStatusClick={(code, mobile) => {
-          setInitialTrackingCode(code || '');
-          setInitialMobile(mobile || '');
-          setCurrentView('applicant-status');
-        }} />
+        <MembershipPublic 
+          onBack={() => setCurrentView('public')}
+          onStatusClick={(code, mobile) => {
+            setInitialTrackingCode(code || '');
+            setInitialMobile(mobile || '');
+            setCurrentView('applicant-status');
+          }} 
+          onLoginClick={() => {
+            setInitialIsRegistering(false);
+            setCurrentView('public-auth');
+          }}
+          onRegisterClick={() => {
+            setInitialIsRegistering(true);
+            setCurrentView('public-auth');
+          }}
+        />
       );
     }
 
     if (currentView === 'donations') {
-      return renderPublicLayout(<DonationPortal />);
+      return renderPublicLayout(<DonationPortal onBack={() => setCurrentView('public')} />);
     }
 
     if (currentView === 'public-documents') {
-      return renderPublicLayout(<PublicDocumentsView />);
+      return renderPublicLayout(<PublicDocumentsView onBack={() => setCurrentView('public')} />);
     }
 
     if (currentView === 'public-candidates') {
-      return renderPublicLayout(<PublicCandidatesView />);
+      return renderPublicLayout(<PublicCandidatesView onBack={() => setCurrentView('public')} />);
     }
 
     if (currentView === 'public-campaigns') {
-      return renderPublicLayout(<PublicCampaignsView />);
+      return renderPublicLayout(<PublicCampaignsView onBack={() => setCurrentView('public')} />);
     }
 
     if (currentView === 'training') {
-      return renderPublicLayout(<TrainingPortal user={user} />);
+      return renderPublicLayout(<TrainingPortal user={user} onBack={() => setCurrentView('public')} />);
     }
 
     if (currentView === 'public-about') {
-      return renderPublicLayout(<PublicAbout />);
+      return renderPublicLayout(<PublicAbout onBack={() => setCurrentView('public')} />);
     }
 
     if (currentView === 'public-auth') {
@@ -321,38 +367,48 @@ export default function App() {
           t={t} 
           isPublicMode={true}
           initialIsRegistering={initialIsRegistering}
+          variant="public"
         />
       );
     }
-    return <Login onLoginSuccess={handleLoginSuccess} onGoToPublic={() => setCurrentView('public')} t={t} />;
+    return <Login 
+      onLoginSuccess={handleLoginSuccess} 
+      onGoToPublic={() => setCurrentView('public')} 
+      t={t} 
+      isPublicMode={false}
+      initialIsRegistering={initialIsRegistering}
+      variant="admin"
+    />;
   }
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
+    { id: 'dashboard', label: ['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) ? 'Workspace Home' : 'Dashboard', icon: LayoutDashboard, show: true },
     { id: 'portal-center', label: 'Portal Center', icon: Globe, show: ['ADMIN', 'STAFF'].includes(user.role) },
     { id: 'users', label: 'System Users', icon: Users, show: ['ADMIN', 'STAFF'].includes(user.role) },
-    { id: 'profile', label: 'Admin Profile', icon: User, show: true },
+    { id: 'profile', label: user.role === 'ADMIN' || user.role === 'STAFF' ? 'Admin Profile' : 'My Profile', icon: User, show: true },
     { id: 'warroom', label: 'War Room', icon: ShieldAlert, show: can('WAR_ROOM', 'VIEW') && systemConfig['ENABLE_WAR_ROOM'] !== 'false' },
     { id: 'campaigns', label: 'Campaigns', icon: Megaphone, show: can('COMMUNICATION', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
     { id: 'supporters', label: 'Supporters', icon: Users, show: can('SUPPORTERS', 'VIEW') },
     { id: 'booths', label: 'Booths', icon: MapPin, show: can('BOOTHS', 'VIEW') },
     { id: 'hierarchy', label: 'Organization', icon: GitGraph, show: can('HIERARCHY', 'VIEW') },
-    { id: 'membership', label: 'Membership', icon: UserPlus, show: can('MEMBERSHIP', 'VIEW') && ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role) },
+    { id: 'membership', label: 'Membership', icon: UserPlus, show: true },
     { id: 'renewals', label: 'Renewals', icon: Clock, show: can('MEMBERSHIP', 'RENEW') },
     { id: 'fundraiser', label: 'Fundraiser', icon: Heart, show: can('FUNDRAISING', 'VIEW') },
-    { id: 'volunteers', label: 'Volunteers', icon: Heart, show: can('SUPPORTERS', 'VIEW') && ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'volunteers', label: 'Volunteers', icon: Heart, show: ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'volunteer-hub', label: 'Volunteer Hub', icon: Zap, show: ['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) },
+    { id: 'donations', label: 'Donation Portal', icon: Heart, show: true },
     { id: 'cms', label: 'CMS', icon: Layout, show: can('CMS', 'VIEW') },
     { id: 'documents', label: 'Documents', icon: FileText, show: can('CMS', 'VIEW') },
     { id: 'communication', label: 'Communication', icon: MessageSquare, show: can('COMMUNICATION', 'VIEW') && !['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) },
-    { id: 'notices', label: 'Notice & Popup', icon: Bell, show: can('NOTICE_POPUP', 'VIEW') },
-    { id: 'training', label: 'Training', icon: GraduationCap, show: can('TRAINING', 'VIEW') },
-    { id: 'events', label: 'App Announcements', icon: Bell, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
+    { id: 'notices', label: ['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) ? 'Official Notices' : 'Notice & Popup', icon: Bell, show: true },
+    { id: 'training', label: 'Training Portal', icon: GraduationCap, show: true },
+    { id: 'events', label: ['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) ? 'Announcements' : 'App Announcements', icon: Megaphone, show: true },
     { id: 'field-events', label: 'Field Events', icon: Calendar, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
     { id: 'finance', label: 'Finance', icon: DollarSign, show: can('FINANCE', 'VIEW') },
     { id: 'election', label: 'Election', icon: Vote, show: can('ELECTION', 'VIEW') },
     { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' || user.role === 'PUBLIC' },
-    { id: 'grievances', label: 'Grievances', icon: ShieldAlert, show: true },
-    { id: 'surveys', label: 'Surveys', icon: ClipboardList, show: can('SURVEYS', 'VIEW') || user.role === 'PUBLIC' || user.role === 'MEMBER' },
+    { id: 'grievances', label: 'Help Desk', icon: ShieldAlert, show: true },
+    { id: 'surveys', label: 'Surveys & Polls', icon: ClipboardList, show: true },
     { id: 'pgis', label: 'PGIS', icon: Shield, show: can('PGIS', 'VIEW') && systemConfig['ENABLE_PGIS'] !== 'false' },
     { id: 'settings', label: 'Settings', icon: Settings, show: user.role === 'ADMIN' },
   ];
@@ -419,20 +475,6 @@ export default function App() {
 
         <div className="p-4 border-t border-slate-100 space-y-1">
           <button 
-            onClick={() => setCurrentView('donations')}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
-          >
-            <Heart size={18} />
-            Donation Portal
-          </button>
-          <button 
-            onClick={() => setCurrentView('public')}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
-          >
-            <ExternalLink size={18} />
-            Public Portal
-          </button>
-          <button 
             onClick={toggleLanguage}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-slate-500 hover:bg-slate-50 transition-all"
           >
@@ -451,42 +493,47 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
-                Welcome, {user.displayName}
-              </h1>
-              {user.orgUnitName && (
-                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                  {user.orgUnitLevel}: {user.orgUnitName}
-                </span>
-              )}
+        {currentView !== 'dashboard' && 
+         currentView !== 'member-dashboard' && 
+         currentView !== 'applicant-dashboard' && 
+         !['membership', 'volunteer-hub', 'donations', 'notices', 'training', 'events', 'grievances', 'surveys', 'profile'].includes(currentView) && (
+          <header className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+                  Welcome, {user.displayName}
+                </h1>
+                {user.orgUnitName && (
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                    {user.orgUnitLevel}: {user.orgUnitName}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-500">
+                {user.role.replace('_', ' ').toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} | Political Party Organization System
+              </p>
             </div>
-            <p className="text-sm text-slate-500">
-              {user.role.replace('_', ' ').toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} | Political Party Organization System
-            </p>
-          </div>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <NotificationCenter />
-            <button 
-              onClick={() => setCurrentView('profile')}
-              className="flex items-center gap-3 sm:gap-4 hover:bg-slate-100 p-1 rounded-2xl transition-all"
-            >
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-800">{user.displayName}</p>
-                <p className="text-xs text-slate-500">{user.email}</p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-200 rounded-full border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
-                <img 
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
-                  alt="Avatar"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            </button>
-          </div>
-        </header>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <NotificationCenter />
+              <button 
+                onClick={() => setCurrentView('profile')}
+                className="flex items-center gap-3 sm:gap-4 hover:bg-slate-100 p-1 rounded-2xl transition-all"
+              >
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold text-slate-800">{user.displayName}</p>
+                  <p className="text-xs text-slate-500">{user.email}</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-200 rounded-full border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                  <img 
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
+                    alt="Avatar"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              </button>
+            </div>
+          </header>
+        )}
 
         {currentView === 'dashboard' && (
           ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(user.role) 
@@ -500,9 +547,16 @@ export default function App() {
         {currentView === 'supporters' && <SupportersView supporters={supporters} onRefresh={fetchData} user={user} />}
         {currentView === 'booths' && <BoothsView booths={booths} onRefresh={fetchData} user={user} />}
         {currentView === 'hierarchy' && <HierarchyAdmin user={user} />}
-        {currentView === 'membership' && <MembershipAdmin user={user} />}
+        {currentView === 'membership' && (
+          ['ADMIN', 'STAFF', 'FIELD_COORDINATOR'].includes(user.role)
+            ? <MembershipAdmin user={user} />
+            : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="membership" />
+        )}
         {currentView === 'renewals' && <RenewalsManagement user={user} />}
         {currentView === 'volunteers' && <VolunteerAdmin />}
+        {currentView === 'volunteer-hub' && (
+          <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="volunteer" />
+        )}
         {currentView === 'volunteer-enrollment' && (
           <VolunteerEnrollment 
             user={user} 

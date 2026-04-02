@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText, Download, Trash2 } from 'lucide-react';
 import { PartyDocument } from '../../types';
-import { format } from 'date-fns';
+import { safeFormat } from '../../lib/date';
 
 interface DocumentTableProps {
   documents: PartyDocument[];
@@ -53,7 +53,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onDelet
                 <p className="text-[10px] text-slate-400 uppercase">{doc.fileType.split('/')[1] || doc.fileType} • {formatSize(doc.size)}</p>
               </td>
               <td className="px-6 py-4 text-xs text-slate-500">
-                {format(new Date(doc.createdAt), 'MMM d, yyyy')}
+                {safeFormat(doc.createdAt, 'MMM d, yyyy')}
               </td>
               <td className="px-6 py-4 text-right">
                 <div className="flex justify-end gap-2">
