@@ -183,7 +183,7 @@ export const UserProfileDashboard: React.FC<UserProfileDashboardProps> = ({ user
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {stats.map((stat, i) => (
+            {stats?.map((stat, i) => (
               <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
                 <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-4`}>
                   <stat.icon size={24} />
@@ -230,7 +230,7 @@ export const UserProfileDashboard: React.FC<UserProfileDashboardProps> = ({ user
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Primary Responsibilities</label>
                   <ul className="mt-2 space-y-2">
-                    {['Strategic Planning', 'Field Coordination', 'Data Analysis'].map((item, i) => (
+                    {['Strategic Planning', 'Field Coordination', 'Data Analysis']?.map((item, i) => (
                       <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                         {item}

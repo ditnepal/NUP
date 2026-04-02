@@ -88,41 +88,49 @@ const PublicAbout: React.FC = () => {
   return (
     <div className="space-y-12">
       {/* Hero Header */}
-      <div className="bg-slate-900 text-white py-16 rounded-3xl">
-        <div className="text-center px-8">
+      <div className="bg-slate-950 text-white py-24 rounded-[3rem] relative overflow-hidden mx-4 md:mx-0">
+        <div className="absolute inset-0 z-0 opacity-20">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#3b82f6_0%,transparent_50%)]"></div>
+        </div>
+        <div className="text-center px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center"
+            className="text-center max-w-4xl mx-auto"
           >
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              About Our Organization
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-10">
+              <Info size={14} />
+              Organizational Blueprint
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9] mb-8">
+              Our <span className="text-blue-500">Mission.</span> <br />
+              Our <span className="text-blue-500">Structure.</span>
             </h1>
-            <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto">
-              Learn about our mission, our structure, and how we operate across the nation.
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-tight font-medium tracking-tight">
+              Discover the foundation of our movement, our national reach, and the decentralized architecture that powers our vision.
             </p>
           </motion.div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b sticky top-16 z-10 rounded-2xl">
-        <div className="px-8 flex space-x-8 overflow-x-auto">
+      <div className="bg-white border border-slate-100 sticky top-20 z-10 rounded-[2rem] shadow-sm mx-4 md:mx-0">
+        <div className="px-8 flex space-x-12 overflow-x-auto scrollbar-hide">
             {[
-              { id: 'about', label: 'About Us', icon: Info },
-              { id: 'org', label: 'Organization', icon: Users },
-              { id: 'offices', label: 'Office Locator', icon: MapPin },
+              { id: 'about', label: 'Mission & Vision', icon: Info },
+              { id: 'org', label: 'Hierarchy', icon: Users },
+              { id: 'offices', label: 'Office Network', icon: MapPin },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`flex items-center space-x-3 py-6 border-b-4 font-black text-[10px] uppercase tracking-[0.2em] whitespace-nowrap transition-all ${
                   activeTab === tab.id
                     ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon size={16} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -138,13 +146,13 @@ const PublicAbout: React.FC = () => {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100"
+                className="bg-white p-12 rounded-[3rem] shadow-sm border border-slate-100 hover:border-blue-500 transition-all group"
               >
-                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-6">
-                  <Target className="w-6 h-6" />
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-8 border border-blue-100 group-hover:scale-110 transition-transform duration-500">
+                  <Target size={32} />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">Our Mission</h2>
-                <p className="text-slate-600 leading-relaxed">
+                <h2 className="text-3xl font-black text-slate-900 mb-6 uppercase tracking-tight">Our Mission</h2>
+                <p className="text-slate-500 leading-relaxed font-medium text-lg">
                   To build a progressive, inclusive, and transparent political platform that empowers every citizen to participate in the democratic process. We strive to create sustainable solutions for national challenges through evidence-based policy and grassroots engagement.
                 </p>
               </motion.div>
@@ -153,13 +161,13 @@ const PublicAbout: React.FC = () => {
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100"
+                className="bg-white p-12 rounded-[3rem] shadow-sm border border-slate-100 hover:border-indigo-500 transition-all group"
               >
-                <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
-                  <Globe className="w-6 h-6" />
+                <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-8 border border-indigo-100 group-hover:scale-110 transition-transform duration-500">
+                  <Globe size={32} />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">Our Vision</h2>
-                <p className="text-slate-600 leading-relaxed">
+                <h2 className="text-3xl font-black text-slate-900 mb-6 uppercase tracking-tight">Our Vision</h2>
+                <p className="text-slate-500 leading-relaxed font-medium text-lg">
                   A nation where governance is truly by the people, for the people. We envision a future defined by social justice, economic prosperity, and environmental stewardship, supported by a technologically advanced and ethically grounded political organization.
                 </p>
               </motion.div>
@@ -170,26 +178,26 @@ const PublicAbout: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100"
+              className="bg-white p-12 rounded-[3rem] shadow-sm border border-slate-100"
             >
-              <div className="flex items-center space-x-4 mb-8">
-                <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
-                  <History className="w-5 h-5" />
+              <div className="flex items-center space-x-6 mb-12">
+                <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center border border-amber-100">
+                  <History size={28} />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900">Our Journey</h2>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Our Journey</h2>
               </div>
-              <div className="space-y-8 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+              <div className="space-y-12 relative before:absolute before:left-6 before:top-2 before:bottom-2 before:w-1 before:bg-slate-50">
                 {[
                   { year: '2020', title: 'Foundation', desc: 'The organization was founded by a group of passionate activists and policy experts.' },
                   { year: '2022', title: 'National Expansion', desc: 'Established presence in all provinces and major districts across the country.' },
                   { year: '2024', title: 'Digital Transformation', desc: 'Launched the first-of-its-kind digital operating system for political management.' },
                   { year: '2026', title: 'Present Day', desc: 'Leading the way in modern, transparent, and data-driven political engagement.' },
                 ].map((item, idx) => (
-                  <div key={idx} className="relative pl-10">
-                    <div className="absolute left-3 top-1.5 w-2.5 h-2.5 rounded-full bg-blue-600 ring-4 ring-white" />
-                    <span className="text-sm font-bold text-blue-600">{item.year}</span>
-                    <h3 className="text-lg font-semibold text-slate-900 mt-1">{item.title}</h3>
-                    <p className="text-slate-600 mt-1">{item.desc}</p>
+                  <div key={idx} className="relative pl-16 group">
+                    <div className="absolute left-4 top-2 w-5 h-5 rounded-full bg-white border-4 border-blue-600 group-hover:scale-125 transition-transform z-10" />
+                    <span className="text-xs font-black text-blue-600 uppercase tracking-widest">{item.year}</span>
+                    <h3 className="text-xl font-black text-slate-900 mt-2 uppercase tracking-tight">{item.title}</h3>
+                    <p className="text-slate-500 mt-2 font-medium leading-relaxed max-w-2xl">{item.desc}</p>
                   </div>
                 ))}
               </div>
@@ -210,36 +218,38 @@ const PublicAbout: React.FC = () => {
             </div>
 
             {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="flex justify-center py-24">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-6">
                 {hierarchy?.map((unit) => (
                   <motion.div
                     key={unit.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between group hover:border-blue-200 transition-all"
+                    className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex items-center justify-between group hover:border-blue-500 transition-all cursor-pointer"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                        <Building2 className="w-5 h-5" />
+                    <div className="flex items-center space-x-6">
+                      <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors border border-slate-100">
+                        <Building2 size={24} />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-slate-900">{unit.name}</h4>
-                        <div className="flex items-center space-x-3 mt-1">
-                          <span className="text-xs font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full uppercase tracking-wider">
+                        <h4 className="text-xl font-black text-slate-900 uppercase tracking-tight">{unit.name}</h4>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <span className="text-[10px] font-black px-3 py-1 bg-slate-100 text-slate-500 rounded-lg uppercase tracking-widest">
                             {unit.level}
                           </span>
-                          <span className="text-xs text-slate-400 flex items-center">
-                            <Users className="w-3 h-3 mr-1" />
+                          <span className="text-[10px] font-black text-slate-400 flex items-center uppercase tracking-widest">
+                            <Users size={14} className="mr-2" />
                             {unit._count.members} Members
                           </span>
                         </div>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-blue-400 transition-colors" />
+                    <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <ChevronRight size={20} />
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -250,78 +260,78 @@ const PublicAbout: React.FC = () => {
         {activeTab === 'offices' && (
           <div className="space-y-8">
             {/* Search and Filters */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center space-x-6">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search by name, address, or unit..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900"
+                  className="w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 text-slate-900 font-medium"
                 />
               </div>
               <button 
                 onClick={fetchOffices}
-                className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-4 bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-all border border-slate-100"
               >
-                <Globe className="w-5 h-5" />
+                <Globe size={20} />
               </button>
             </div>
 
             {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="flex justify-center py-24">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredOffices?.map((office) => (
                   <motion.div
                     key={office.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden hover:shadow-2xl transition-all group"
                   >
-                    <div className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-                          <MapPin className="w-5 h-5" />
+                    <div className="p-8">
+                      <div className="flex items-start justify-between mb-8">
+                        <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 group-hover:scale-110 transition-transform">
+                          <MapPin size={28} />
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded uppercase tracking-tighter">
+                        <span className="text-[10px] font-black px-3 py-1 bg-blue-100 text-blue-700 rounded-lg uppercase tracking-widest">
                           {office.type.replace('_', ' ')}
                         </span>
                       </div>
-                      <h4 className="text-lg font-bold text-slate-900 mb-1">{office.name}</h4>
-                      <p className="text-sm text-slate-500 mb-4 flex items-center">
-                        <Building2 className="w-3 h-3 mr-1" />
+                      <h4 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">{office.name}</h4>
+                      <p className="text-[10px] font-black text-slate-400 mb-8 flex items-center uppercase tracking-widest">
+                        <Building2 size={12} className="mr-2" />
                         {office.orgUnit.name}
                       </p>
                       
-                      <div className="space-y-3 pt-4 border-t border-slate-50">
-                        <div className="flex items-start space-x-3 text-sm text-slate-600">
-                          <MapPin className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-4 pt-6 border-t border-slate-50">
+                        <div className="flex items-start space-x-4 text-sm text-slate-500 font-medium">
+                          <MapPin size={18} className="text-slate-300 mt-0.5 flex-shrink-0" />
                           <span>{office.address}</span>
                         </div>
                         {office.contactNumber && (
-                          <div className="flex items-center space-x-3 text-sm text-slate-600">
-                            <Phone className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <div className="flex items-center space-x-4 text-sm text-slate-500 font-medium">
+                            <Phone size={18} className="text-slate-300 flex-shrink-0" />
                             <span>{office.contactNumber}</span>
                           </div>
                         )}
                         {office.email && (
-                          <div className="flex items-center space-x-3 text-sm text-slate-600">
-                            <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <div className="flex items-center space-x-4 text-sm text-slate-500 font-medium">
+                            <Mail size={18} className="text-slate-300 flex-shrink-0" />
                             <span>{office.email}</span>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="bg-slate-50 px-6 py-3 flex justify-between items-center">
-                      <button className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center">
-                        View on Map
-                        <ExternalLink className="w-3 h-3 ml-1" />
+                    <div className="bg-slate-50 px-8 py-5 flex justify-between items-center border-t border-slate-100">
+                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center uppercase tracking-widest">
+                        View Map
+                        <ExternalLink size={14} className="ml-2" />
                       </button>
-                      <button className="text-xs font-semibold text-slate-500 hover:text-slate-700">
+                      <button className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest">
                         Contact
                       </button>
                     </div>
@@ -344,15 +354,18 @@ const PublicAbout: React.FC = () => {
       </div>
 
       {/* Footer CTA */}
-      <div className="bg-white border border-slate-200 rounded-3xl py-12">
-        <div className="text-center px-8">
-          <h2 className="text-2xl font-bold text-slate-900">Want to visit us?</h2>
-          <p className="mt-2 text-slate-600">Our offices are open Sunday to Friday, 9:00 AM to 5:00 PM.</p>
-          <div className="mt-8 flex justify-center space-x-4">
-            <button className="px-6 py-3 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-colors">
+      <div className="bg-slate-950 text-white rounded-[3rem] py-20 relative overflow-hidden mx-4 md:mx-0">
+        <div className="absolute inset-0 z-0 opacity-10">
+          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_100%_100%,#3b82f6_0%,transparent_50%)]"></div>
+        </div>
+        <div className="text-center px-8 relative z-10">
+          <h2 className="text-4xl font-black text-white uppercase tracking-tight mb-4">Want to visit us?</h2>
+          <p className="text-slate-400 font-medium text-lg mb-12">Our offices are open Sunday to Friday, 9:00 AM to 5:00 PM.</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <button className="px-10 py-5 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20">
               Contact Central Office
             </button>
-            <button className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors">
+            <button className="px-10 py-5 bg-white/5 backdrop-blur-md text-white border border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all">
               Send an Inquiry
             </button>
           </div>

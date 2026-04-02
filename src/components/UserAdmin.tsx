@@ -53,7 +53,7 @@ const AccessPreviewPanel = ({ role, orgUnitId, units }: { role: UserRole, orgUni
           {role === 'ADMIN' ? (
             <span className="px-3 py-1 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">Full System Authority</span>
           ) : modules.length > 0 ? (
-            modules.map(m => (
+            modules?.map(m => (
               <span key={m} className="px-3 py-1 bg-white text-slate-600 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">{m}</span>
             ))
           ) : (
@@ -64,7 +64,7 @@ const AccessPreviewPanel = ({ role, orgUnitId, units }: { role: UserRole, orgUni
 
       {warnings.length > 0 && (
         <div className="space-y-2 pt-2">
-          {warnings.map((w, i) => (
+          {warnings?.map((w, i) => (
             <div key={i} className={`flex items-start gap-3 p-3.5 rounded-2xl text-[11px] font-bold border ${w.critical ? 'text-red-700 bg-red-50 border-red-100' : 'text-amber-700 bg-amber-50 border-amber-100'}`}>
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
               <p className="leading-relaxed">{w.text}</p>
@@ -315,7 +315,7 @@ export const UserAdmin: React.FC = () => {
           { label: 'Active Access', value: stats.tabActive, icon: ShieldCheck, color: 'emerald' },
           { label: 'Global Admins', value: stats.admin, icon: ShieldAlert, color: 'blue' },
           { label: 'Public/Members', value: stats.public, icon: UserPlus, color: 'amber' }
-        ].map((stat, i) => (
+        ]?.map((stat, i) => (
           <div key={i} className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex items-center gap-5">
             <div className={`p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600`}>
               <stat.icon size={24} />
@@ -367,7 +367,7 @@ export const UserAdmin: React.FC = () => {
               className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-xs uppercase tracking-widest text-slate-700 shadow-sm"
             >
               <option value="ALL">All Roles</option>
-              {roles.map(r => <option key={r} value={r}>{r}</option>)}
+              {roles?.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div className="flex-1 lg:w-40">
@@ -390,7 +390,7 @@ export const UserAdmin: React.FC = () => {
               className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-xs uppercase tracking-widest text-slate-700 shadow-sm"
             >
               <option value="ALL">All Units</option>
-              {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+              {units?.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
             </select>
           </div>
         </div>
@@ -418,7 +418,7 @@ export const UserAdmin: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-50">
-                  {filteredUsers.map(user => {
+                  {filteredUsers?.map(user => {
                     const isAdministrative = ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(user.role);
                     return (
                       <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -549,7 +549,7 @@ export const UserAdmin: React.FC = () => {
               <p className="text-sm text-slate-500 font-black uppercase tracking-widest">Synchronizing Directory...</p>
             </div>
           ) : filteredUsers.length > 0 ? (
-            filteredUsers.map(user => {
+            filteredUsers?.map(user => {
               const isAdministrative = ['ADMIN', 'STAFF', 'FIELD_COORDINATOR', 'BOOTH_COORDINATOR', 'FINANCE_OFFICER'].includes(user.role);
               return (
                 <motion.div 
@@ -707,7 +707,7 @@ export const UserAdmin: React.FC = () => {
                       onChange={(e) => setPreviewRole(e.target.value as UserRole)}
                       className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-xs uppercase tracking-widest text-slate-700 shadow-sm"
                     >
-                      {filteredRoles.map(r => <option key={r} value={r}>{r}</option>)}
+                      {filteredRoles?.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                 </div>
@@ -721,7 +721,7 @@ export const UserAdmin: React.FC = () => {
                     className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-xs uppercase tracking-widest text-slate-700 shadow-sm"
                   >
                     <option value="">Global System Authority (No specific unit)</option>
-                    {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    {units?.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
                 

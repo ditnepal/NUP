@@ -166,7 +166,7 @@ export const EventsAdmin: React.FC<EventsAdminProps> = ({ user }) => {
                     </div>
                   </div>
                 ))}
-                {selectedEvent.speakers.length === 0 && (
+                {selectedEvent.speakers?.length === 0 && (
                   <p className="text-xs text-slate-400 italic">No speakers listed.</p>
                 )}
               </div>
@@ -188,7 +188,7 @@ export const EventsAdmin: React.FC<EventsAdminProps> = ({ user }) => {
                     <p className="text-xs text-slate-500">{item.description}</p>
                   </div>
                 ))}
-                {selectedEvent.agenda.length === 0 && (
+                {selectedEvent.agenda?.length === 0 && (
                   <p className="text-xs text-slate-400 italic pl-6">No agenda items.</p>
                 )}
               </div>

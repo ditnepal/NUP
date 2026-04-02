@@ -37,6 +37,7 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ logs, title = "Operation
   };
 
   const formatObjectDetails = (obj: any) => {
+    if (!obj) return 'No details available';
     return Object.entries(obj)
       .filter(([_, v]) => v !== null && v !== undefined && v !== '')
       .map(([k, v]) => {

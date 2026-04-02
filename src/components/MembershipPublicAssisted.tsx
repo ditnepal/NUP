@@ -127,7 +127,7 @@ const MembershipPublicAssisted: React.FC<{ onBack: () => void; onSuccess?: (code
       </div>
       <select {...register('orgUnitId')} className="p-3 border rounded-lg" required>
         <option value="">Select Organization Unit</option>
-        {units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.level})</option>)}
+        {units?.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.level})</option>)}
       </select>
       <select {...register('identityDocumentType')} className="p-3 border rounded-lg" required>
         <option value="">Select Identity Document Type</option>

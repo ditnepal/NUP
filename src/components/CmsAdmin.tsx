@@ -562,7 +562,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                           className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                         >
                           <option value="">No Category</option>
-                          {categories?.filter(c => c.type === 'POST').map(cat => (
+                          {categories?.filter(c => c.type === 'POST')?.map(cat => (
                             <option key={cat.id} value={cat.id}>{cat.name}</option>
                           ))}
                         </select>

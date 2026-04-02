@@ -166,7 +166,7 @@ const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (tracking
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Organization Unit</label>
             <select {...register('orgUnitId')} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all" required>
               <option value="">Select Unit</option>
-              {units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.level})</option>)}
+              {units?.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.level})</option>)}
             </select>
           </div>
           <div className="space-y-1">

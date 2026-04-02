@@ -783,7 +783,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   Recent Incidents
                 </h3>
                 <div className="space-y-3">
-                  {incidents?.slice(0, 3).map(inc => (
+                  {incidents?.slice(0, 3)?.map(inc => (
                     <div key={inc.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex justify-between items-start mb-2">
                         <span className={`px-2 py-1 rounded-md text-xs font-bold ${
@@ -808,7 +808,7 @@ export function ElectionAdmin({ user, defaultTab = 'overview' }: { user: any, de
                   Top Results
                 </h3>
                 <div className="space-y-3">
-                  {results?.slice(0, 5).map(res => (
+                  {results?.slice(0, 5)?.map(res => (
                     <div key={res.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-all">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">

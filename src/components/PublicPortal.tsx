@@ -1,6 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Globe, Menu, X, ChevronRight, Megaphone, Users, Heart, MessageSquare, Download, FileText, User, ExternalLink, GraduationCap, Calendar, Tag, Loader2, Search, MapPin, Phone, Mail, ArrowRight, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { 
+  Globe, 
+  Menu, 
+  X, 
+  ChevronRight, 
+  Megaphone, 
+  Users, 
+  Heart, 
+  MessageSquare, 
+  Download, 
+  FileText, 
+  User, 
+  ExternalLink, 
+  GraduationCap, 
+  Calendar, 
+  Tag, 
+  Loader2, 
+  Search, 
+  MapPin, 
+  Phone, 
+  Mail, 
+  ArrowRight, 
+  Facebook, 
+  Twitter, 
+  Instagram, 
+  Youtube,
+  Zap,
+  ShieldAlert
+} from 'lucide-react';
 import { motion } from 'motion/react';
 import { UserProfile } from '../types';
 import Markdown from 'react-markdown';
@@ -181,39 +209,65 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden bg-slate-900 text-white rounded-3xl">
+      <section className="relative py-24 md:py-36 overflow-hidden bg-slate-950 text-white rounded-[3rem] mx-4 md:mx-0">
+        {/* Background Patterns */}
+        <div className="absolute inset-0 z-0 opacity-30">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#10b981_0%,transparent_50%)]"></div>
+          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_20%,#059669_0%,transparent_40%)]"></div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-8 relative z-10">
-          <div className="max-w-3xl">
-            <span className="inline-block px-4 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest mb-8">
-              Official Portal
-            </span>
-            <h1 className="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tight">
-              Building a <span className="text-emerald-400 italic">Prosperous</span> Nepal Together.
-            </h1>
-            <p className="text-xl text-slate-300 mb-12 max-w-2xl leading-relaxed">
-              Join the movement for change. Our portal provides the latest news, updates, and resources for our members and supporters.
-            </p>
-            <div className="flex flex-wrap gap-4">
+          <div className="max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mb-10"
+            >
+              <Globe size={14} />
+              Official Intelligence Hub
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-6xl md:text-8xl font-black mb-10 leading-[0.85] tracking-tighter uppercase"
+            >
+              System <br />
+              <span className="text-emerald-500">Transparency.</span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-xl md:text-2xl text-slate-400 mb-12 max-w-2xl leading-tight font-medium tracking-tight"
+            >
+              Access real-time updates, official notices, and community initiatives. Our platform ensures every citizen stays informed and empowered.
+            </motion.p>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-5"
+            >
               <button 
                 onClick={onJoinClick}
-                className="bg-emerald-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-900/20 flex items-center gap-3 group"
+                className="bg-emerald-600 text-white px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/20 flex items-center justify-center gap-3 group"
               >
-                Join the Movement
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                Join Movement
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
               <button 
                 onClick={onAboutClick}
-                className="bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-white/20 transition-all"
+                className="bg-white/5 backdrop-blur-md text-white border border-white/10 px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"
               >
                 Learn More
               </button>
-            </div>
+            </motion.div>
           </div>
         </div>
-        
-        {/* Background Decorative Elements */}
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-emerald-500/10 to-transparent pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none" />
       </section>
 
       {/* Dynamic Sections or Baseline Fallback */}
@@ -441,60 +495,70 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
           </section>
 
           {/* Action Blocks */}
-          <section className="py-24 px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden">
-                <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-3xl flex items-center justify-center mb-8 border border-emerald-500/20">
-                  <Heart size={32} />
+          <section className="py-24">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[
+                { 
+                  title: 'Volunteer', 
+                  desc: 'Contribute your skills and time to our local campaigns and initiatives. Be the change.',
+                  icon: Heart,
+                  color: 'emerald',
+                  action: () => setIsVolunteerModalOpen(true),
+                  label: 'Apply Now'
+                },
+                { 
+                  title: 'Donate', 
+                  desc: 'Support our mission with a financial contribution. Every contribution fuels our progress.',
+                  icon: Zap,
+                  color: 'amber',
+                  action: onDonateClick,
+                  label: 'Contribute'
+                },
+                { 
+                  title: 'Complaints', 
+                  desc: 'Report issues in your local area or provide feedback to the party. We listen.',
+                  icon: MessageSquare,
+                  color: 'slate',
+                  action: onGrievanceClick,
+                  label: 'Submit Issue'
+                }
+              ].map((item, idx) => (
+                <div key={idx} className="bg-white p-10 rounded-[3rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden shadow-sm hover:shadow-2xl">
+                  <div className={`w-16 h-16 bg-${item.color}-50 text-${item.color}-600 rounded-3xl flex items-center justify-center mb-8 border border-${item.color}-100 group-hover:scale-110 transition-transform duration-500`}>
+                    <item.icon size={32} />
+                  </div>
+                  <h3 className="text-2xl font-black mb-4 text-slate-900 uppercase tracking-tight">{item.title}</h3>
+                  <p className="text-slate-500 mb-10 leading-relaxed font-medium">{item.desc}</p>
+                  <button 
+                    onClick={item.action}
+                    className="w-full bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all"
+                  >
+                    {item.label} <ChevronRight size={18} />
+                  </button>
                 </div>
-                <h3 className="text-2xl font-black mb-4 text-slate-900 uppercase tracking-tight">Volunteer</h3>
-                <p className="text-slate-500 mb-8 leading-relaxed font-medium">Contribute your skills and time to our local campaigns and initiatives. Be the change.</p>
-                <button 
-                  onClick={() => setIsVolunteerModalOpen(true)}
-                  className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 transition-all"
-                >
-                  Apply Now <ChevronRight size={18} />
-                </button>
-              </div>
-
-              <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden">
-                <div className="w-16 h-16 bg-amber-500/10 text-amber-600 rounded-3xl flex items-center justify-center mb-8 border border-amber-500/20">
-                  <Megaphone size={32} />
-                </div>
-                <h3 className="text-2xl font-black mb-4 text-slate-900 uppercase tracking-tight">Donate</h3>
-                <p className="text-slate-500 mb-8 leading-relaxed font-medium">Support our mission with a financial contribution. Every contribution fuels our progress.</p>
-                <button onClick={onDonateClick} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 transition-all">Contribute <ChevronRight size={18} /></button>
-              </div>
-
-              <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 hover:border-emerald-500 transition-all group relative overflow-hidden">
-                <div className="w-16 h-16 bg-slate-200 text-slate-600 rounded-3xl flex items-center justify-center mb-8 border border-slate-300">
-                  <MessageSquare size={32} />
-                </div>
-                <h3 className="text-2xl font-black mb-4 text-slate-900 uppercase tracking-tight">Complaints</h3>
-                <p className="text-slate-500 mb-8 leading-relaxed font-medium">Report issues in your local area or provide feedback to the party. We listen.</p>
-                <button onClick={onGrievanceClick} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 transition-all">Submit Issue <ChevronRight size={18} /></button>
-              </div>
+              ))}
             </div>
-          </div>
-        </section>
+          </section>
         </>
       )}
 
       {/* Latest News & Notices */}
-      <section className="py-24 bg-slate-50 px-8">
+      <section className="py-32 bg-white px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
             
             {/* News */}
             <div>
-              <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-12 gap-6">
-                <h2 className="text-4xl font-black tracking-tight uppercase">Latest News</h2>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-16 gap-8">
+                <div>
+                  <h2 className="text-4xl font-black tracking-tight uppercase text-slate-900 mb-4">Latest News</h2>
+                  <p className="text-slate-500 font-medium">Official updates and policy announcements.</p>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <button 
                     onClick={() => setActiveCategory(null)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      activeCategory === null ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      activeCategory === null ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     All
@@ -503,8 +567,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                     <button 
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                        activeCategory === cat.id ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        activeCategory === cat.id ? 'bg-emerald-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
                       {cat.name}
@@ -517,45 +581,45 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
                   <div 
                     key={item.id} 
                     onClick={() => handlePostClick(item)}
-                    className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all p-8 flex gap-6 cursor-pointer group"
+                    className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all p-8 flex flex-col sm:flex-row gap-8 cursor-pointer group"
                   >
-                    <div className="w-24 h-24 bg-slate-200 rounded-2xl flex-shrink-0 overflow-hidden">
+                    <div className="w-full sm:w-32 h-32 bg-slate-100 rounded-3xl flex-shrink-0 overflow-hidden border border-slate-100">
                       {item.featuredImage ? (
-                        <img src={item.featuredImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform" referrerPolicy="no-referrer" />
+                        <img src={item.featuredImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400">
-                          <FileText size={24} />
+                        <div className="w-full h-full flex items-center justify-center text-slate-300">
+                          <FileText size={32} />
                         </div>
                       )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">
-                          {new Date(item.publishedAt || item.createdAt).toLocaleDateString()}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          {new Date(item.publishedAt || item.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                         </span>
                         {item.isPinned && (
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold uppercase tracking-wider">
+                          <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-[9px] font-black uppercase tracking-widest">
                             Pinned
                           </span>
                         )}
                       </div>
-                      <h3 className="text-lg font-bold mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors">{item.title}</h3>
+                      <h3 className="text-xl font-black mb-4 text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors uppercase tracking-tight line-clamp-2">{item.title}</h3>
                       {item.category && (
-                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                          {item.category.name}
+                        <span className="inline-flex items-center gap-2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 uppercase tracking-widest">
+                          <Tag size={12} /> {item.category.name}
                         </span>
                       )}
                     </div>
                   </div>
                 ))}
                 {news.length === 0 && !loading && (
-                  <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
-                    <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <FileText size={48} />
+                  <div className="py-24 text-center bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
+                    <div className="w-20 h-20 bg-white text-slate-300 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
+                      <FileText size={40} />
                     </div>
-                    <h3 className="text-2xl font-bold text-slate-900 mb-3">No News Available</h3>
-                    <p className="text-slate-500 text-lg max-w-md mx-auto">
-                      We are currently updating our news feed. Check back soon for the latest updates and announcements from {systemConfig['PARTY_NAME']}.
+                    <h3 className="text-xl font-black text-slate-900 mb-3 uppercase tracking-tight">No News Available</h3>
+                    <p className="text-slate-500 max-w-xs mx-auto font-medium">
+                      Official updates will appear here once published by the administration.
                     </p>
                   </div>
                 )}
@@ -564,34 +628,48 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ user, onPortalClick,
 
             {/* Notices */}
             <div>
-              <div className="flex justify-between items-end mb-12">
-                <h2 className="text-4xl font-black tracking-tight uppercase">Notices</h2>
+              <div className="flex justify-between items-end mb-16">
+                <div>
+                  <h2 className="text-4xl font-black tracking-tight uppercase text-slate-900 mb-4">Official Notices</h2>
+                  <p className="text-slate-500 font-medium">Critical alerts and public service announcements.</p>
+                </div>
               </div>
               <div className="grid gap-6">
                 {notices?.filter(n => !n.isPopup).map((notice) => (
-                  <div key={notice.id} className={`bg-white rounded-3xl border ${notice.isPinned ? 'border-emerald-200 shadow-emerald-50' : 'border-slate-100'} shadow-sm p-8`}>
-                    {notice.isPinned && (
-                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4">
-                        Pinned
-                      </span>
-                    )}
-                    <h3 className="text-xl font-bold mb-2">{notice.title}</h3>
-                    <p className="text-slate-600 text-sm mb-4">{notice.content}</p>
+                  <div key={notice.id} className={`bg-white rounded-[2.5rem] border ${notice.isPinned ? 'border-emerald-500 shadow-emerald-50' : 'border-slate-100'} shadow-sm hover:shadow-xl transition-all p-10 group`}>
+                    <div className="flex justify-between items-start mb-8">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100">
+                          <ShieldAlert size={24} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Official Notice</p>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Ref: {notice.id.substring(0, 8).toUpperCase()}</p>
+                        </div>
+                      </div>
+                      {notice.isPinned && (
+                        <span className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest">
+                          Pinned
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-2xl font-black mb-6 text-slate-900 uppercase tracking-tight group-hover:text-emerald-600 transition-colors">{notice.title}</h3>
+                    <p className="text-slate-500 font-medium leading-relaxed mb-8 line-clamp-3">{notice.content}</p>
                     {notice.externalUrl && (
-                      <a href={notice.externalUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">
-                        View Details <ExternalLink size={16} />
+                      <a href={notice.externalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-slate-900 font-black text-[10px] uppercase tracking-[0.2em] hover:text-emerald-600 transition-colors">
+                        View Full Document <ExternalLink size={16} />
                       </a>
                     )}
                   </div>
                 ))}
                 {notices.filter(n => !n.isPopup).length === 0 && !loading && (
-                  <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
-                    <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Megaphone size={48} />
+                  <div className="py-24 text-center bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
+                    <div className="w-20 h-20 bg-white text-slate-300 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
+                      <Megaphone size={40} />
                     </div>
-                    <h3 className="text-2xl font-bold text-slate-900 mb-3">No Active Notices</h3>
-                    <p className="text-slate-500 text-lg max-w-md mx-auto">
-                      There are currently no public notices or official announcements published at this time.
+                    <h3 className="text-xl font-black text-slate-900 mb-3 uppercase tracking-tight">No Active Notices</h3>
+                    <p className="text-slate-500 max-w-xs mx-auto font-medium">
+                      There are currently no public notices or official announcements.
                     </p>
                   </div>
                 )}

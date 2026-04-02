@@ -88,6 +88,7 @@ export async function createApp() {
   // Middleware - CORS MUST BE FIRST
   app.use(cors());
   app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   // Request logger for debugging
   app.use((req, res, next) => {
@@ -183,7 +184,12 @@ export async function createApp() {
 
   // Catch-all for API routes to return 404 JSON instead of HTML
   app.all('/api/*', (req, res) => {
-    res.status(404).json({ error: `API route not found: ${req.method} ${req.url}` });
+    console.warn(`[SERVER] API route not found: ${req.method} ${req.url}`);
+    res.status(404).json({ 
+      error: 'API route not found', 
+      method: req.method,
+      url: req.url 
+    });
   });
 
   // Global error handler

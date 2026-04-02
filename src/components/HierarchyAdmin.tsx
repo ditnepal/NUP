@@ -42,8 +42,8 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
   const isAdmin = user?.role === 'ADMIN';
 
   const getReadinessStatus = (unit: any) => {
-    const hasOffice = unit.offices && unit.offices.length > 0;
-    const hasUsers = unit.users && unit.users.length > 0;
+    const hasOffice = unit.offices && unit.offices?.length > 0;
+    const hasUsers = unit.users && unit.users?.length > 0;
     
     if (hasOffice && hasUsers) return { label: 'Operational', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: <CheckCircle2 size={12} /> };
     if (hasOffice || hasUsers) return { label: 'Partial Setup', color: 'bg-amber-50 text-amber-600 border-amber-100', icon: <AlertTriangle size={12} /> };
@@ -326,7 +326,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
 
   const renderUnit = (unit: any, depth = 0) => {
     const isExpanded = expanded[unit.id];
-    const hasChildren = unit.children && unit.children.length > 0;
+    const hasChildren = unit.children && unit.children?.length > 0;
 
     return (
       <div key={unit.id} className="ml-4">
@@ -368,18 +368,18 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
                   <p className="text-[11px] text-slate-500 mt-1 line-clamp-1 max-w-md">{unit.description}</p>
                 )}
                 <div className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-4">
-                  <span className={`flex items-center gap-1 font-bold ${unit.offices?.length > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
-                    <Building2 size={12} className={unit.offices?.length > 0 ? 'text-blue-400' : 'text-slate-300'} /> 
+                  <span className={`flex items-center gap-1 font-bold ${(unit.offices?.length || 0) > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
+                    <Building2 size={12} className={(unit.offices?.length || 0) > 0 ? 'text-blue-400' : 'text-slate-300'} /> 
                     {unit.offices?.length || 0} Offices
                   </span>
-                  <span className={`flex items-center gap-1 font-bold ${unit.users?.length > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
-                    <Users size={12} className={unit.users?.length > 0 ? 'text-indigo-400' : 'text-slate-300'} /> 
+                  <span className={`flex items-center gap-1 font-bold ${(unit.users?.length || 0) > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
+                    <Users size={12} className={(unit.users?.length || 0) > 0 ? 'text-indigo-400' : 'text-slate-300'} /> 
                     {unit.users?.length || 0} Scoped Users
                   </span>
-                  {unit.children?.length > 0 && (
+                  {(unit.children?.length || 0) > 0 && (
                     <span className="flex items-center gap-1 font-bold text-slate-400">
                       <GitGraph size={12} className="text-slate-300" /> 
-                      {unit.children.length} Sub-units
+                      {unit.children?.length || 0} Sub-units
                     </span>
                   )}
                 </div>
@@ -441,7 +441,7 @@ export const HierarchyAdmin: React.FC<HierarchyAdminProps> = ({ user }) => {
     );
   };
 
-  if (loading && (!units || units.length === 0)) return (
+  if (loading && (!units || units?.length === 0)) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <Loader2 className="animate-spin text-blue-600" size={32} />
     </div>

@@ -33,46 +33,51 @@ export const PublicDocumentsView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {/* Header Section */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 md:p-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-widest border border-emerald-100">
-              <FileText size={12} />
-              Public Records
+      <div className="bg-slate-950 text-white rounded-[3rem] p-12 md:p-20 relative overflow-hidden mx-4 md:mx-0">
+        <div className="absolute inset-0 z-0 opacity-20">
+          <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_100%_0%,#10b981_0%,transparent_50%)]"></div>
+        </div>
+        
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-12">
+          <div className="space-y-6 max-w-2xl">
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">
+              <FileText size={14} />
+              Public Records Vault
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tight">
-              Document Archive
+            <h1 className="text-5xl md:text-7xl font-black text-white uppercase tracking-tighter leading-[0.9]">
+              Document <br />
+              <span className="text-emerald-500">Archive.</span>
             </h1>
-            <p className="text-slate-500 max-w-xl">
+            <p className="text-xl text-slate-400 font-medium leading-tight tracking-tight">
               Access official party manifestos, policy papers, and public statements. 
               Transparency is the foundation of our democratic process.
             </p>
           </div>
           
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <div className="relative w-full lg:w-96">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
             <input
               type="text"
-              placeholder="Search documents..."
+              placeholder="Search archive..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:ring-0 transition-all text-sm font-medium"
+              className="w-full pl-16 pr-6 py-5 bg-white/5 backdrop-blur-md border border-white/10 rounded-[2rem] focus:border-emerald-500 focus:ring-0 transition-all text-sm font-medium text-white placeholder:text-slate-500"
             />
           </div>
         </div>
 
         {/* Category Filter */}
-        <div className="flex flex-wrap gap-2 mt-8 pt-8 border-t border-slate-100">
+        <div className="flex flex-wrap gap-3 mt-12 pt-12 border-t border-white/10 relative z-10">
           {['ALL', 'POLICY', 'MANIFESTO', 'FORMS', 'REPORTS', 'OTHER'].map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+              className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
                 selectedCategory === cat
-                  ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-                  : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                  ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/20'
+                  : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
               }`}
             >
               {cat}
@@ -83,55 +88,55 @@ export const PublicDocumentsView: React.FC = () => {
 
       {/* Results Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse" />
+            <div key={i} className="h-80 bg-slate-100 rounded-[3rem] animate-pulse" />
           ))}
         </div>
       ) : filteredDocuments.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-3xl border border-slate-200 shadow-sm">
-          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Search size={40} className="text-slate-300" />
+        <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-slate-200">
+          <div className="w-24 h-24 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
+            <Search size={48} className="text-slate-300" />
           </div>
-          <h3 className="text-2xl font-bold text-slate-900 mb-3">No Documents Found</h3>
-          <p className="text-slate-500 max-w-md mx-auto">
+          <h3 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tight">No Documents Found</h3>
+          <p className="text-slate-500 max-w-md mx-auto font-medium">
             We couldn't find any documents matching your current filters. 
             Try adjusting your search or selecting a different category.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredDocuments?.map((doc) => (
-            <div key={doc.id} className="group bg-white border border-slate-200 rounded-3xl p-6 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex flex-col">
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                  <FileText size={24} />
+            <div key={doc.id} className="group bg-white border border-slate-100 rounded-[3rem] p-10 hover:shadow-2xl transition-all flex flex-col shadow-sm">
+              <div className="flex items-start justify-between mb-10">
+                <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-3xl flex items-center justify-center group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors border border-slate-100">
+                  <FileText size={32} />
                 </div>
-                <span className="text-[10px] font-black px-2 py-1 bg-slate-100 text-slate-500 rounded-lg uppercase tracking-widest">
+                <span className="text-[10px] font-black px-4 py-1.5 bg-slate-100 text-slate-500 rounded-xl uppercase tracking-widest">
                   {doc.category || 'GENERAL'}
                 </span>
               </div>
               
-              <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-600 transition-colors">
+              <h3 className="text-2xl font-black text-slate-900 mb-4 group-hover:text-emerald-600 transition-colors uppercase tracking-tight leading-tight">
                 {doc.title}
               </h3>
               
-              <p className="text-slate-500 text-sm mb-6 flex-1 line-clamp-3">
+              <p className="text-slate-500 font-medium mb-10 flex-1 line-clamp-3 leading-relaxed">
                 {doc.description || 'Official party document for public review and reference.'}
               </p>
               
-              <div className="flex items-center justify-between pt-6 border-t border-slate-50">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                  <Calendar size={14} />
+              <div className="flex items-center justify-between pt-8 border-t border-slate-50">
+                <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <Calendar size={16} />
                   {format(new Date(doc.createdAt), 'MMM d, yyyy')}
                 </div>
                 <a
                   href={doc.fileUrl.startsWith('/') ? doc.fileUrl : `/${doc.fileUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-xs font-black text-emerald-600 uppercase tracking-widest hover:gap-3 transition-all"
+                  className="inline-flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:gap-4 transition-all"
                 >
-                  Download <Download size={14} />
+                  Download <Download size={16} />
                 </a>
               </div>
             </div>

@@ -169,56 +169,72 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
   if (user?.role === 'PUBLIC') {
     return (
       <PublicLayout user={user}>
-        <div className="p-4 md:p-8 w-full max-w-4xl mx-auto space-y-8">
-          <div className="text-center space-y-4 mb-12">
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <MessageSquare size={40} />
-            </div>
-            <h1 className="text-4xl font-black tracking-tight text-slate-900">Public Grievance Portal</h1>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-              Submit your complaints, issues, or suggestions directly to our team. We are committed to addressing your concerns promptly.
+        <div className="p-4 md:p-12 w-full max-w-5xl mx-auto space-y-12">
+          <div className="text-center space-y-6 mb-16">
+            <motion.div 
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4"
+            >
+              <MessageSquare size={14} />
+              Citizen Feedback
+            </motion.div>
+            <h1 className="text-6xl font-black tracking-tight text-slate-900 leading-tight">Public Grievance <span className="text-emerald-600">Portal</span></h1>
+            <p className="text-xl text-slate-500 max-w-3xl mx-auto leading-relaxed">
+              Submit your complaints, issues, or suggestions directly to our team. We are committed to addressing your concerns promptly and transparently.
             </p>
             <button 
               onClick={() => setShowNewModal(true)}
-              className="mt-6 inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1"
+              className="mt-8 inline-flex items-center justify-center gap-3 bg-emerald-600 text-white px-10 py-5 rounded-2xl text-xl font-bold hover:bg-emerald-700 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
             >
-              <Plus size={24} />
+              <Plus size={28} />
               Submit New Grievance
             </button>
           </div>
 
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900">Your Submissions</h2>
+          <div className="space-y-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Your Submissions</h2>
+              <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                {filteredGrievances.length} Total
+              </div>
+            </div>
             
             {loading ? (
-              <div className="py-12 text-center text-slate-500">Loading your grievances...</div>
+              <div className="py-20 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+              </div>
             ) : filteredGrievances.length === 0 ? (
-              <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
-                <ShieldAlert className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">No Submissions Yet</h3>
-                <p className="text-slate-500 mb-6">You haven't submitted any grievances. Click the button above to start.</p>
+              <div className="bg-white rounded-[3rem] border border-slate-200 p-20 text-center shadow-sm">
+                <ShieldAlert className="w-20 h-20 text-slate-200 mx-auto mb-6" />
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">No Submissions Yet</h3>
+                <p className="text-slate-500 text-lg mb-8 max-w-md mx-auto">You haven't submitted any grievances. Your voice matters — click the button above to start.</p>
               </div>
             ) : (
-              <div className="grid gap-4">
-                {filteredGrievances.map((g) => (
+              <div className="grid gap-6">
+                {filteredGrievances?.map((g) => (
                   <motion.div 
                     key={g.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => setSelectedGrievance(g)}
-                    className="bg-white rounded-2xl border border-slate-200 p-6 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all group"
+                    className="bg-white rounded-[2rem] border border-slate-200 p-8 cursor-pointer hover:border-emerald-500 hover:shadow-2xl transition-all group relative overflow-hidden"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6">
+                      <div className="flex items-center gap-4">
                         <GrievanceStatusBadge status={g.status} />
-                        <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{g.category.name}</span>
+                        <span className="text-xs font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-full uppercase tracking-widest border border-slate-100">{g.category.name}</span>
                       </div>
-                      <div className="text-sm text-slate-400 font-medium">
+                      <div className="text-sm text-slate-400 font-bold uppercase tracking-widest">
                         {new Date(g.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{g.title}</h3>
-                    <p className="text-slate-600 line-clamp-2">{g.description}</p>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors leading-tight">{g.title}</h3>
+                    <p className="text-slate-500 text-lg line-clamp-2 leading-relaxed opacity-80">{g.description}</p>
+                    
+                    <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                      <ArrowRight size={24} className="text-emerald-600" />
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -227,53 +243,56 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
 
           {/* New Grievance Modal */}
           {showNewModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
               <motion.div 
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl space-y-6"
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                className="bg-white rounded-[3rem] p-10 md:p-12 w-full max-w-2xl shadow-2xl space-y-10"
               >
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-slate-900">Submit Grievance</h2>
-                  <button onClick={() => setShowNewModal(false)} className="text-slate-400 hover:text-slate-900">
-                    <Plus size={24} className="rotate-45" />
+                  <div className="space-y-1">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Submit Grievance</h2>
+                    <p className="text-slate-500 font-medium">Please provide as much detail as possible.</p>
+                  </div>
+                  <button onClick={() => setShowNewModal(false)} className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-full transition-all">
+                    <Plus size={32} className="rotate-45" />
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Title</label>
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Grievance Title</label>
                     <input 
                       required
                       type="text" 
                       value={newGrievance.title}
                       onChange={e => setNewGrievance({...newGrievance, title: e.target.value})}
-                      placeholder="Brief summary of the issue"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                      placeholder="e.g., Issue with local infrastructure"
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-lg"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Category</label>
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Category</label>
                       <select 
                         required
                         value={newGrievance.categoryId}
                         onChange={e => setNewGrievance({...newGrievance, categoryId: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-lg appearance-none cursor-pointer"
                       >
                         <option value="">Select Category</option>
-                        {categories.map(c => (
+                        {categories?.map(c => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Priority</label>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Priority Level</label>
                       <select 
                         required
                         value={newGrievance.priority}
                         onChange={e => setNewGrievance({...newGrievance, priority: e.target.value as any})}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-lg appearance-none cursor-pointer"
                       >
                         <option value="LOW">Low</option>
                         <option value="MEDIUM">Medium</option>
@@ -282,29 +301,29 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                       </select>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Description</label>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Detailed Description</label>
                     <textarea 
                       required
-                      rows={4}
+                      rows={6}
                       value={newGrievance.description}
                       onChange={e => setNewGrievance({...newGrievance, description: e.target.value})}
-                      placeholder="Provide detailed information..."
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all resize-none"
+                      placeholder="Explain the situation in detail..."
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none text-lg"
                     />
                   </div>
                   
-                  <div className="pt-4 flex justify-end gap-3">
+                  <div className="pt-6 flex justify-end gap-6">
                     <button 
                       type="button"
                       onClick={() => setShowNewModal(false)}
-                      className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-colors"
+                      className="px-10 py-5 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors text-lg"
                     >
                       Cancel
                     </button>
                     <button 
                       type="submit"
-                      className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg"
+                      className="px-10 py-5 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 text-lg"
                     >
                       Submit Grievance
                     </button>
@@ -316,50 +335,58 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
 
           {/* View Grievance Modal */}
           {selectedGrievance && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
               <motion.div 
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                className="bg-white rounded-[3rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
               >
-                <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
+                <div className="p-10 border-b border-slate-100 flex justify-between items-start bg-slate-50">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
                       <GrievanceStatusBadge status={selectedGrievance.status} />
                       <GrievancePriorityBadge priority={selectedGrievance.priority} />
-                      <span className="text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200">{selectedGrievance.category.name}</span>
+                      <span className="text-xs font-black text-slate-400 bg-white px-4 py-1.5 rounded-full uppercase tracking-widest border border-slate-200">{selectedGrievance.category.name}</span>
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-900">{selectedGrievance.title}</h2>
-                    <p className="text-sm text-slate-500 mt-1">
-                      Submitted on {new Date(selectedGrievance.createdAt).toLocaleDateString()}
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">{selectedGrievance.title}</h2>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                      Submitted on {new Date(selectedGrievance.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   </div>
-                  <button onClick={() => setSelectedGrievance(null)} className="p-2 text-slate-400 hover:text-slate-900 bg-white rounded-full shadow-sm">
-                    <Plus size={24} className="rotate-45" />
+                  <button onClick={() => setSelectedGrievance(null)} className="p-3 text-slate-400 hover:text-slate-900 bg-white rounded-full shadow-sm transition-all">
+                    <Plus size={32} className="rotate-45" />
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                <div className="flex-1 overflow-y-auto p-10 space-y-12">
                   <div className="prose prose-slate max-w-none">
-                    <p className="text-slate-700 whitespace-pre-wrap text-lg">{selectedGrievance.description}</p>
+                    <p className="text-slate-700 whitespace-pre-wrap text-xl leading-relaxed opacity-90">{selectedGrievance.description}</p>
                   </div>
 
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-slate-900 text-lg border-b border-slate-100 pb-2">Updates & Responses</h3>
+                  <div className="space-y-8">
+                    <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
+                      <MessageSquare size={24} className="text-emerald-600" />
+                      <h3 className="font-black text-slate-900 text-xl tracking-tight">Updates & Responses</h3>
+                    </div>
                     
-                    {selectedGrievance.responses.filter(r => !r.isInternal).length === 0 ? (
-                      <div className="text-center py-8 text-slate-500 italic bg-slate-50 rounded-2xl">
+                    {selectedGrievance.responses?.filter(r => !r.isInternal).length === 0 ? (
+                      <div className="text-center py-16 text-slate-400 italic bg-slate-50 rounded-[2rem] border border-slate-100 border-dashed">
                         No responses yet. We will update you soon.
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        {selectedGrievance.responses.filter(r => !r.isInternal).map(response => (
-                          <div key={response.id} className={`p-4 rounded-2xl ${response.userId === user?.id ? 'bg-emerald-50 ml-8' : 'bg-slate-50 mr-8'}`}>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-sm text-slate-900">{response.user?.displayName || 'Unknown'}</span>
-                              <span className="text-xs text-slate-500">{new Date(response.createdAt).toLocaleString()}</span>
+                      <div className="space-y-6">
+                        {selectedGrievance.responses?.filter(r => !r.isInternal)?.map(response => (
+                          <div key={response.id} className={`p-8 rounded-[2rem] ${response.userId === user?.id ? 'bg-emerald-50 ml-12 border border-emerald-100' : 'bg-slate-50 mr-12 border border-slate-100'}`}>
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-slate-400 border border-slate-100">
+                                  <User size={16} />
+                                </div>
+                                <span className="font-black text-sm text-slate-900 uppercase tracking-widest">{response.user?.displayName || 'System'}</span>
+                              </div>
+                              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{new Date(response.createdAt).toLocaleString()}</span>
                             </div>
-                            <p className="text-slate-700 whitespace-pre-wrap">{response.content}</p>
+                            <p className="text-slate-700 whitespace-pre-wrap text-lg leading-relaxed">{response.content}</p>
                           </div>
                         ))}
                       </div>
@@ -367,21 +394,21 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                   </div>
                 </div>
 
-                <div className="p-6 border-t border-slate-100 bg-slate-50">
-                  <form onSubmit={handleResponseSubmit} className="space-y-4">
+                <div className="p-10 border-t border-slate-100 bg-slate-50">
+                  <form onSubmit={handleResponseSubmit} className="space-y-6">
                     <textarea 
                       required
                       value={responseContent}
                       onChange={e => setResponseContent(e.target.value)}
                       placeholder="Add a comment or provide more details..."
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all resize-none"
+                      className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none text-lg"
                       rows={3}
                     />
                     <div className="flex justify-end">
                       <button 
                         type="submit"
                         disabled={!responseContent.trim()}
-                        className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                        className="px-10 py-5 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-emerald-100 text-lg"
                       >
                         Send Message
                       </button>
@@ -500,7 +527,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                     </div>
                   </td>
                 </tr>
-              ) : filteredGrievances.map((g) => (
+              ) : filteredGrievances?.map((g) => (
                 <motion.tr 
                   key={g.id}
                   initial={{ opacity: 0 }}
@@ -581,7 +608,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 transition-all"
                   >
                     <option value="">Select Category</option>
-                    {categories.map(c => (
+                    {categories?.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
@@ -638,7 +665,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
             </div>
 
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {categories.map(c => (
+              {categories?.map(c => (
                 <div key={c.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
                   <span className="font-medium text-slate-700">{c.name}</span>
                   <span className="text-xs text-slate-400">{c._count?.grievances || 0} items</span>
@@ -739,7 +766,7 @@ export const GrievancePortal: React.FC<GrievancePortalProps> = ({ user }) => {
                           className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
                         >
                           <option value="">Select Assignee...</option>
-                          {staff.map(s => (
+                          {staff?.map(s => (
                             <option key={s.id} value={s.id}>{s.displayName}</option>
                           ))}
                         </select>

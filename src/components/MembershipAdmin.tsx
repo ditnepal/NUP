@@ -263,7 +263,7 @@ export const MembershipAdmin: React.FC<MembershipAdminProps> = ({ user }) => {
             { id: 'intake', label: 'Applications', icon: UserPlus, permission: { module: 'MEMBERSHIP', action: 'APPROVE' } },
             { id: 'members', label: 'Active Members', icon: ShieldAlert, permission: { module: 'MEMBERSHIP', action: 'VIEW' } },
             { id: 'renewals', label: 'Renewals', icon: RefreshCw, permission: { module: 'MEMBERSHIP', action: 'UPDATE' } },
-          ].filter(tab => can(tab.permission.module as any, tab.permission.action as any)).map((tab) => {
+          ].filter(tab => can(tab.permission.module as any, tab.permission.action as any))?.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
@@ -294,7 +294,7 @@ export const MembershipAdmin: React.FC<MembershipAdminProps> = ({ user }) => {
               className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Accessible Units</option>
-              {units.map((unit) => (
+              {units?.map((unit) => (
                 <option key={unit.id} value={unit.id}>
                   {unit.name} ({unit.level})
                 </option>
@@ -396,7 +396,7 @@ export const MembershipAdmin: React.FC<MembershipAdminProps> = ({ user }) => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-gray-900">Member Directory</h2>
             <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
-              {['ACTIVE', 'VERIFIED', 'REJECTED', 'SUSPENDED', 'TERMINATED'].map((status) => (
+              {['ACTIVE', 'VERIFIED', 'REJECTED', 'SUSPENDED', 'TERMINATED']?.map((status) => (
                 <button
                   key={status}
                   onClick={() => setFilter(status)}
@@ -456,7 +456,7 @@ export const MembershipAdmin: React.FC<MembershipAdminProps> = ({ user }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {renewals.map((renewal) => (
+                  {renewals?.map((renewal) => (
                     <tr key={renewal.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{renewal.member.fullName}</div>

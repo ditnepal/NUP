@@ -466,8 +466,8 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                     <button onClick={() => setActiveTab('transactions')} className="text-xs font-bold text-emerald-600 hover:underline">View All</button>
                   </div>
                   <div className="divide-y divide-gray-100">
-                    {analytics && analytics.recentDonations && analytics.recentDonations.length > 0 ? (
-                      (analytics.recentDonations || []).map((donation: any) => (
+                    {analytics?.recentDonations && analytics.recentDonations.length > 0 ? (
+                      (analytics.recentDonations || [])?.map((donation: any) => (
                         <div key={donation.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><Users size={20} /></div>
@@ -498,8 +498,8 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                     <h2 className="text-lg font-bold text-gray-900">Fundraiser Progress</h2>
                   </div>
                   <div className="p-6 space-y-6">
-                    {analytics && analytics.campaigns && analytics.campaigns.length > 0 ? (
-                      (analytics.campaigns || []).map((fundraiser) => (
+                    {analytics?.campaigns && analytics.campaigns.length > 0 ? (
+                      (analytics.campaigns || [])?.map((fundraiser) => (
                         <div key={fundraiser.id}>
                           <div className="flex justify-between text-sm mb-2">
                             <span className="font-bold text-gray-900">{fundraiser.title}</span>
@@ -593,7 +593,7 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {(integrations || []).map((integration) => (
+                  {(integrations || [])?.map((integration) => (
                     <div key={integration.id} className={`bg-white rounded-2xl border border-gray-200 p-6 shadow-sm relative overflow-hidden transition-all hover:shadow-md ${!integration.enabled ? 'opacity-75 grayscale-[0.5]' : ''}`}>
                       <div className="flex justify-between items-start mb-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${integration.enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
@@ -617,7 +617,7 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                       <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-2">{integration.provider} • {integration.region}</p>
                       
                       <div className="flex flex-wrap gap-1 mb-4">
-                        {integration.supportedModules.map(module => (
+                        {integration.supportedModules?.map(module => (
                           <span key={module} className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[9px] font-bold uppercase tracking-tighter">
                             {module}
                           </span>
@@ -722,7 +722,7 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                               Captured Provider Evidence
                             </h4>
                             <div className="space-y-2">
-                              {selectedTransaction.reconciliationNote.split('\n').filter(line => line.includes('Captured')).map((line, idx) => {
+                              {selectedTransaction.reconciliationNote.split('\n').filter(line => line.includes('Captured'))?.map((line, idx) => {
                                 try {
                                   const jsonPart = line.split(': ').slice(1).join(': ');
                                   const data = JSON.parse(jsonPart);
@@ -730,7 +730,7 @@ export const FinanceAdmin: React.FC<FinanceAdminProps> = ({ user }) => {
                                     <div key={idx} className="bg-white/50 rounded-lg p-3 text-[10px] font-mono border border-amber-200/50">
                                       <div className="text-amber-600 mb-2 opacity-70">{line.split(']')[0] + ']'}</div>
                                       <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                                        {Object.entries(data).map(([key, val]) => (
+                                        {Object.entries(data)?.map(([key, val]) => (
                                           <React.Fragment key={key}>
                                             <span className="text-gray-400">{key}:</span>
                                             <span className="text-gray-900 font-bold truncate">{String(val)}</span>

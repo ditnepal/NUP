@@ -748,7 +748,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
 
                   {q.type === 'MULTIPLE_CHOICE' && (
                     <div className="space-y-2">
-                      {q.options.map((opt: string, oIndex: number) => (
+                      {q.options?.map((opt: string, oIndex: number) => (
                         <label key={oIndex} className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
                           <input 
                             type="radio"
@@ -833,7 +833,7 @@ export const SurveyPolls: React.FC<{ user: any }> = ({ user }) => {
                   
                   {q.type === 'MULTIPLE_CHOICE' && (
                     <div className="space-y-3">
-                      {q.options.map((opt: string, oIndex: number) => {
+                      {q.options?.map((opt: string, oIndex: number) => {
                         const count = q.answers[opt] || 0;
                         const percentage = surveyAnalytics.totalResponses > 0 
                           ? (count / surveyAnalytics.totalResponses) * 100 
