@@ -171,7 +171,7 @@ const MembershipPublic: React.FC<MembershipPublicProps> = ({ onStatusClick, onBa
           {/* Surveys/Polls */}
         </div>
       )}
-      {mode === 'FORM' && <MembershipPublicForm onBack={() => setMode(null)} onSuccess={(code, mobile) => onStatusClick?.(code, mobile)} />}
+      {mode === 'FORM' && <MembershipPublicForm onBack={() => user && onBack ? onBack() : setMode(null)} onSuccess={(code, mobile) => onStatusClick?.(code, mobile)} user={user} />}
       {mode === 'VIDEO' && <MembershipPublicVideo onBack={() => setMode(null)} onSuccess={(code, mobile) => onStatusClick?.(code, mobile)} />}
       {mode === 'ASSISTED' && <MembershipPublicAssisted onBack={() => setMode(null)} onSuccess={(code, mobile) => onStatusClick?.(code, mobile)} />}
     </div>

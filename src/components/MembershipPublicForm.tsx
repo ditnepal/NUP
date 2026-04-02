@@ -4,8 +4,14 @@ import { api } from '../lib/api';
 import { PaymentMethodSelector } from './ui/PaymentMethodSelector';
 import { toast } from 'sonner';
 
-const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (trackingCode: string, mobile: string) => void }> = ({ onBack, onSuccess }) => {
-  const { register, handleSubmit, getValues, formState: { errors } } = useForm();
+const MembershipPublicForm: React.FC<{ onBack: () => void; onSuccess?: (trackingCode: string, mobile: string) => void; user?: any }> = ({ onBack, onSuccess, user }) => {
+  const { register, handleSubmit, getValues, formState: { errors } } = useForm<any>({
+    defaultValues: {
+      fullName: user?.displayName || '',
+      email: user?.email || '',
+      mobile: user?.phoneNumber || '',
+    }
+  });
   const [success, setSuccess] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<{ loginId: string; tempPassword: string } | null>(null);
   const [loading, setLoading] = useState(false);

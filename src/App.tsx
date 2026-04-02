@@ -593,10 +593,9 @@ export default function App() {
         {currentView === 'membership-public' && (
           <MembershipPublic 
             user={user}
+            onBack={() => setCurrentView('membership')}
             onStatusClick={(code, mobile) => {
-              setInitialTrackingCode(code || '');
-              setInitialMobile(mobile || '');
-              setCurrentView('applicant-status');
+              setCurrentView('membership');
             }} 
           />
         )}
