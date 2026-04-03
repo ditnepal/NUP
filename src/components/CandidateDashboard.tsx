@@ -31,14 +31,9 @@ export function CandidateDashboard() {
         const activeCycle = cycles.find((c: any) => c.status === 'ACTIVE') || cycles[0];
         const candidates = await api.get(`/election/candidates?cycleId=${activeCycle.id}`);
         if (candidates?.length > 0) {
-          // For now, we show the first one. In a real scenario, this would be filtered by user ID
-          const currentCandidate = candidates[0];
-          setCandidate(currentCandidate);
-          
-          const [resData] = await Promise.all([
-            api.get(`/election/results?cycleId=${activeCycle.id}&candidateId=${currentCandidate.id}`)
-          ]);
-          setResults(resData);
+          // NOTE: Blind candidate assignment (candidates[0]) was removed for security/truthfulness.
+          // Full candidate-user linkage is deferred to a later dedicated phase.
+          setCandidate(null);
         }
       }
     } catch (error) {
@@ -62,8 +57,20 @@ export function CandidateDashboard() {
         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-4">
           <User size={32} />
         </div>
-        <h2 className="text-xl font-bold text-slate-900">No Candidate Profile Found</h2>
-        <p className="text-slate-500 mt-2">You are not currently registered as a candidate for any active election cycle.</p>
+        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Candidate Workspace</h2>
+        <p className="text-slate-500 mt-3 max-w-md mx-auto leading-relaxed text-sm">
+          You are not currently assigned as an official candidate in the system. 
+          This workspace becomes available once your candidacy is approved and linked to your account by the party administration.
+        </p>
+        <div className="mt-8 p-6 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-xs inline-block text-left max-w-sm">
+          <p className="font-black mb-2 flex items-center gap-2 uppercase tracking-widest">
+            <AlertCircle size={14} />
+            Are you an approved candidate?
+          </p>
+          <p className="leading-relaxed opacity-80">
+            If you have been officially nominated but cannot see your dashboard, please contact your district or provincial administrator to link your profile to this account.
+          </p>
+        </div>
       </div>
     );
   }

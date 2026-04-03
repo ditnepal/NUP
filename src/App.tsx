@@ -437,7 +437,7 @@ export default function App() {
     { id: 'field-events', label: 'Field Events', icon: Calendar, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
     { id: 'finance', label: 'Finance', icon: DollarSign, show: can('FINANCE', 'VIEW') },
     { id: 'election', label: 'Election', icon: Vote, show: can('ELECTION', 'VIEW') && !['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) },
-    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' || user.role === 'PUBLIC' },
+    { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' },
     { id: 'grievances', label: 'Help Desk', icon: ShieldAlert, show: true },
     { id: 'surveys', label: 'Surveys & Polls', icon: ClipboardList, show: true },
     { id: 'pgis', label: 'PGIS', icon: Shield, show: can('PGIS', 'VIEW') && systemConfig['ENABLE_PGIS'] !== 'false' },

@@ -46,7 +46,15 @@ const pollSchema = z.object({
 router.get('/', authenticate, checkPermission('SURVEYS', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
-    const surveys = await surveyService.getSurveys(req.query.status as string, accessibleUnitIds);
+    
+    let audience: string | string[] | undefined = undefined;
+    if (req.user?.role === 'PUBLIC') {
+      audience = 'PUBLIC';
+    } else if (req.user?.role === 'MEMBER' || req.user?.role === 'APPLICANT_MEMBER') {
+      audience = ['PUBLIC', 'MEMBER'];
+    }
+
+    const surveys = await surveyService.getSurveys(req.query.status as string, accessibleUnitIds, audience);
     res.json(surveys);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -67,7 +75,15 @@ router.post('/', authenticate, checkPermission('SURVEYS', 'CREATE', (req) => req
 router.get('/polls', authenticate, checkPermission('SURVEYS', 'VIEW'), async (req: AuthRequest, res) => {
   try {
     const accessibleUnitIds = await permissionService.getAccessibleUnitIds(req.user!);
-    const polls = await surveyService.getPolls(accessibleUnitIds);
+    
+    let audience: string | string[] | undefined = undefined;
+    if (req.user?.role === 'PUBLIC') {
+      audience = 'PUBLIC';
+    } else if (req.user?.role === 'MEMBER' || req.user?.role === 'APPLICANT_MEMBER') {
+      audience = ['PUBLIC', 'MEMBER'];
+    }
+
+    const polls = await surveyService.getPolls(accessibleUnitIds, audience);
     res.json(polls);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

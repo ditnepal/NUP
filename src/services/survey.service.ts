@@ -24,10 +24,17 @@ export class SurveyService {
     });
   }
 
-  async getSurveys(status?: string, orgUnitIds?: string[] | null) {
+  async getSurveys(status?: string, orgUnitIds?: string[] | null, audience?: string | string[]) {
     const where: any = {};
     if (status) where.status = status;
     if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+    if (audience) {
+      if (Array.isArray(audience)) {
+        where.audience = { in: audience };
+      } else {
+        where.audience = audience;
+      }
+    }
 
     return prisma.survey.findMany({
       where,
@@ -133,9 +140,16 @@ export class SurveyService {
     });
   }
 
-  async getPolls(orgUnitIds?: string[] | null) {
+  async getPolls(orgUnitIds?: string[] | null, audience?: string | string[]) {
     const where: any = {};
     if (orgUnitIds) where.orgUnitId = { in: orgUnitIds };
+    if (audience) {
+      if (Array.isArray(audience)) {
+        where.audience = { in: audience };
+      } else {
+        where.audience = audience;
+      }
+    }
 
     return prisma.poll.findMany({
       where,

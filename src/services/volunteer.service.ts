@@ -15,6 +15,32 @@ export class VolunteerService extends BaseService {
     availability?: string;
     status?: string;
   }) {
+    // Check if a volunteer record already exists for this user to avoid unique constraint error
+    if (data.userId) {
+      const existing = await this.db.volunteer.findUnique({
+        where: { userId: data.userId }
+      });
+      
+      if (existing) {
+        const updated = await this.db.volunteer.update({
+          where: { id: existing.id },
+          data: {
+            ...data,
+            status: data.status || existing.status // Preserve existing status if not explicitly provided
+          }
+        });
+
+        await auditService.log({
+          action: 'VOLUNTEER_UPDATED',
+          entityType: 'Volunteer',
+          entityId: updated.id,
+          details: { fullName: data.fullName, note: 'Updated during re-registration' }
+        });
+
+        return updated;
+      }
+    }
+
     const volunteer = await this.db.volunteer.create({
       data: {
         ...data,
