@@ -303,6 +303,26 @@ export default function App() {
     );
   }
 
+  if (['public-documents', 'public-candidates', 'public-campaigns', 'public-about'].includes(currentView)) {
+    return renderPublicLayout(
+      <div className="relative">
+        {currentView === 'public-documents' && <PublicDocumentsView onBack={() => setCurrentView('public')} />}
+        {currentView === 'public-candidates' && <PublicCandidatesView onBack={() => setCurrentView('public')} />}
+        {currentView === 'public-campaigns' && <PublicCampaignsView onBack={() => setCurrentView('public')} />}
+        {currentView === 'public-about' && <PublicAbout onBack={() => setCurrentView('public')} />}
+        {user && (
+          <button 
+            onClick={() => setCurrentView('dashboard')}
+            className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-full shadow-2xl z-50 flex items-center gap-2 hover:scale-105 transition-all"
+          >
+            <LayoutDashboard size={20} />
+            Back to Dashboard
+          </button>
+        )}
+      </div>
+    );
+  }
+
   if (!user) {
     if (currentView === 'public-identity-hub') {
       return (
@@ -366,24 +386,8 @@ export default function App() {
       return renderPublicLayout(<DonationPortal onBack={() => setCurrentView('public')} />);
     }
 
-    if (currentView === 'public-documents') {
-      return renderPublicLayout(<PublicDocumentsView onBack={() => setCurrentView('public')} />);
-    }
-
-    if (currentView === 'public-candidates') {
-      return renderPublicLayout(<PublicCandidatesView onBack={() => setCurrentView('public')} />);
-    }
-
-    if (currentView === 'public-campaigns') {
-      return renderPublicLayout(<PublicCampaignsView onBack={() => setCurrentView('public')} />);
-    }
-
     if (currentView === 'training') {
       return renderPublicLayout(<TrainingPortal user={user} onBack={() => setCurrentView('public')} />);
-    }
-
-    if (currentView === 'public-about') {
-      return renderPublicLayout(<PublicAbout onBack={() => setCurrentView('public')} />);
     }
 
     if (currentView === 'public-auth') {
@@ -432,7 +436,7 @@ export default function App() {
     { id: 'events', label: ['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) ? 'Announcements' : 'App Announcements', icon: Megaphone, show: true },
     { id: 'field-events', label: 'Field Events', icon: Calendar, show: can('COMMUNICATION', 'CREATE') && ['ADMIN', 'STAFF'].includes(user.role) },
     { id: 'finance', label: 'Finance', icon: DollarSign, show: can('FINANCE', 'VIEW') },
-    { id: 'election', label: 'Election', icon: Vote, show: can('ELECTION', 'VIEW') },
+    { id: 'election', label: 'Election', icon: Vote, show: can('ELECTION', 'VIEW') && !['MEMBER', 'PUBLIC', 'APPLICANT_MEMBER'].includes(user.role) },
     { id: 'candidate-dashboard', label: 'Candidate', icon: UserCheck, show: can('ELECTION', 'VIEW') || user.role === 'MEMBER' || user.role === 'PUBLIC' },
     { id: 'grievances', label: 'Help Desk', icon: ShieldAlert, show: true },
     { id: 'surveys', label: 'Surveys & Polls', icon: ClipboardList, show: true },
@@ -624,9 +628,6 @@ export default function App() {
             : <CentralizedPublicDashboard user={user} setCurrentView={setCurrentView} onLogout={handleLogout} initialTab="donations" />
         )}
         {currentView === 'donate' && <DonationPortal />}
-        {currentView === 'public-documents' && <PublicDocumentsView />}
-        {currentView === 'public-candidates' && <PublicCandidatesView />}
-        {currentView === 'public-campaigns' && <PublicCampaignsView />}
         {currentView === 'finance' && <FinanceAdmin user={user} />}
         {currentView === 'fundraiser' && <FundraiserAdmin user={user} />}
         {currentView === 'election' && <ElectionAdmin user={user} key="election-admin" />}
