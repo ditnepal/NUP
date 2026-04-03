@@ -84,7 +84,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       {/* Hidden fixed-size card for export only - positioned off-screen but NOT invisible */}
       <div 
         className="fixed top-0 pointer-events-none" 
@@ -93,32 +93,32 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
         <MemberIdCard member={member} id="member-id-card-export-target" isExporting={true} />
       </div>
 
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 print:shadow-none print:border-none">
-        <div className="p-4 border-b border-slate-100 flex justify-between items-center print:hidden">
-          <h2 className="font-black text-slate-800 uppercase tracking-tight">Digital ID Card</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <X size={20} className="text-slate-400" />
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 print:shadow-none print:border-none">
+        <div className="p-4 border-b border-slate-100 flex justify-between items-center print:hidden bg-slate-50">
+          <h2 className="font-bold text-slate-900 text-sm">Digital ID Card</h2>
+          <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-900">
+            <X size={16} />
           </button>
         </div>
 
-        <div className="p-8">
-          <div className="mb-8 flex justify-center">
+        <div className="p-6">
+          <div className="mb-6 flex justify-center">
             <MemberIdCard member={member} id="member-id-card-modal" />
           </div>
 
           <div className="grid grid-cols-2 gap-3 print:hidden">
             <button 
               onClick={handleDownload}
-              className="flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+              className="flex items-center justify-center gap-2 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold text-xs hover:bg-slate-200 transition-all"
             >
-              <Download size={18} />
+              <Download size={14} />
               Download
             </button>
             <button 
               onClick={handlePrint}
-              className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
+              className="flex items-center justify-center gap-2 py-2 bg-slate-900 text-white rounded-lg font-bold text-xs hover:bg-emerald-600 transition-all shadow-sm"
             >
-              <Printer size={18} />
+              <Printer size={14} />
               Print Card
             </button>
           </div>

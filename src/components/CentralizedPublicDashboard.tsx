@@ -24,6 +24,7 @@ import {
   Zap,
   ArrowUpRight,
   ListTodo,
+  Lock,
   Shield,
   Layout,
   ExternalLink,
@@ -45,13 +46,16 @@ import {
   Send,
   X,
   Plus,
+  PlusCircle,
   ShieldCheck,
   MessageCircle,
+  MessageSquareText,
   History,
   IdCard,
   AlertCircle,
   LayoutDashboard,
   HandCoins,
+  Smartphone,
   UserCircle
 } from 'lucide-react';
 import MemberIdCard from './MemberIdCard';
@@ -341,92 +345,87 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
         </div>
       </div>
 
-      {/* Hero Section - Command Center Style */}
-      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 text-white p-8 md:p-12 shadow-2xl mb-8 border border-slate-800">
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-emerald-500/10 to-transparent pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-12">
-          <div className="space-y-6 max-w-2xl">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30">
+      {/* Hero Section - Operations Style */}
+      <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
+           <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 p-1 shadow-inner overflow-hidden shrink-0 hidden sm:block">
+            <img 
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
+              alt="Avatar"
+              className="w-full h-full rounded-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">
+                {user.displayName}
+              </h1>
+              <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${user.role === 'MEMBER' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                 {user.role.replace('_', ' ')}
               </span>
-              <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
-                <Clock size={12} /> Last Login: {safeFormat(new Date(), 'MMM d, h:mm a')}
-              </span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-none">
-              Welcome, <span className="text-emerald-400">{user.displayName?.split(' ')[0] || 'Citizen'}</span>
-            </h1>
-            <p className="text-slate-400 text-lg md:text-xl max-w-xl leading-relaxed font-medium">
-              Your centralized workspace for party engagement, community service, and official documentation.
+            <p className="text-slate-500 text-sm font-medium">
+              {user.orgUnitName ? `${user.orgUnitName} • ` : ''}ID: #{user.id.slice(-6).toUpperCase()}
             </p>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-4 min-w-[320px]">
-            {/* Dynamic Status Card */}
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-inner relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-emerald-500/10 transition-all" />
-              
-              <div className="flex items-center justify-between mb-6 relative z-10">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Account Status</span>
-                {user.role === 'MEMBER' ? (
-                  <span className="flex items-center gap-1 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-                    <CheckCircle2 size={14} /> Verified
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-amber-400 text-[10px] font-black uppercase tracking-widest">
-                    <AlertCircle size={14} /> {profile?.status || 'Pending'}
-                  </span>
-                )}
-              </div>
-              
-              <div className="space-y-4 relative z-10">
-                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row gap-3 min-w-[300px]">
+          {/* Dynamic Status Card */}
+          <div className="flex-1 bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Status</span>
+              {user.role === 'MEMBER' ? (
+                <span className="flex items-center gap-1 text-emerald-600 text-sm font-bold">
+                  <CheckCircle2 size={16} /> Verified
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-amber-600 text-sm font-bold">
+                  <AlertCircle size={16} /> {profile?.status || 'Pending'}
+                </span>
+              )}
+            </div>
+             <div className="w-1/2 max-w-[100px]">
+                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: user.role === 'MEMBER' ? '100%' : `${getProgress()}%` }}
                     className={`h-full rounded-full ${user.role === 'MEMBER' ? 'bg-emerald-500' : 'bg-amber-500'}`}
                   />
                 </div>
-                <p className="text-sm font-bold text-slate-300 leading-snug">
-                  {user.role === 'MEMBER' 
-                    ? 'Your membership is active and verified. You have full access to all services.' 
-                    : `Your application is ${getProgress()}% complete. Follow the next steps to verify.`}
-                </p>
-              </div>
-            </div>
-
-            {/* Primary Action Button */}
-            {user.role === 'PUBLIC' && (
-              <button 
-                onClick={() => setActiveTab('membership')}
-                className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 group"
-              >
-                Apply for Membership
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            )}
-            {user.role === 'APPLICANT_MEMBER' && (
-              <button 
-                onClick={() => setActiveTab('membership')}
-                className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 group"
-              >
-                Track Application
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            )}
-            {user.role === 'MEMBER' && (
-              <button 
-                onClick={() => setActiveTab('volunteer')}
-                className="w-full py-4 bg-white hover:bg-slate-100 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl flex items-center justify-center gap-2 group"
-              >
-                Find Volunteer Projects
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            )}
+                <p className="text-[10px] text-right mt-1 font-medium text-slate-500">{getProgress()}%</p>
+             </div>
           </div>
+
+          {/* Primary Action Button */}
+          {user.role === 'PUBLIC' && (
+            <button 
+              onClick={() => setActiveTab('membership')}
+              className="px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              Apply Now
+              <ArrowRight size={14} />
+            </button>
+          )}
+          {user.role === 'APPLICANT_MEMBER' && (
+            <button 
+              onClick={() => setActiveTab('membership')}
+              className="px-6 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              Track Status
+              <ArrowRight size={14} />
+            </button>
+          )}
+          {user.role === 'MEMBER' && (
+            <button 
+              onClick={() => setActiveTab('volunteer')}
+              className="px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              Find Projects
+              <ArrowRight size={14} />
+            </button>
+          )}
         </div>
       </motion.div>
 
@@ -434,111 +433,109 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
       {activeTab === 'overview' && (
         <>
           {/* Quick Actions Grid */}
-          <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+          <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {[
-              { id: 'membership', label: 'Membership', icon: UserPlus, color: 'bg-emerald-500', shadow: 'shadow-emerald-200', show: true },
-              { id: 'grievances', label: 'Help Desk', icon: ShieldAlert, color: 'bg-rose-500', shadow: 'shadow-rose-200', show: true },
-              { id: 'donations', label: 'Donate', icon: Heart, color: 'bg-pink-500', shadow: 'shadow-pink-200', show: true },
-              { id: 'volunteer', label: 'Volunteer', icon: Zap, color: 'bg-amber-500', shadow: 'shadow-amber-200', show: true }
+              { id: 'membership', label: 'Membership', icon: UserPlus, color: 'bg-emerald-500 text-white', hover: 'hover:bg-emerald-600', show: true },
+              { id: 'grievances', label: 'Help Desk', icon: ShieldAlert, color: 'bg-rose-50 text-rose-600', hover: 'hover:bg-rose-100', show: true },
+              { id: 'donations', label: 'Donate', icon: Heart, color: 'bg-pink-50 text-pink-600', hover: 'hover:bg-pink-100', show: true },
+              { id: 'volunteer', label: 'Volunteer', icon: Zap, color: 'bg-amber-50 text-amber-600', hover: 'hover:bg-amber-100', show: true }
             ].filter(a => a.show).map((action) => (
               <button
                 key={action.id}
                 onClick={() => setActiveTab(action.id as any)}
-                className="group relative p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm hover:shadow-2xl transition-all text-left overflow-hidden"
+                className={`group p-3 rounded-xl border border-slate-200 shadow-sm transition-all text-left flex items-center gap-3 ${action.color} ${action.hover}`}
               >
-                <div className={`absolute top-0 right-0 w-24 h-24 ${action.color} opacity-[0.03] rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500`} />
-                <div className={`w-14 h-14 ${action.color} text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg ${action.shadow} group-hover:scale-110 transition-transform`}>
-                  <action.icon size={28} />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-white/20`}>
+                  <action.icon size={16} />
                 </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Quick Access</p>
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{action.label}</h3>
+                <div>
+                  <h3 className="text-xs font-bold tracking-tight">{action.label}</h3>
+                </div>
               </button>
             ))}
           </motion.div>
 
       {/* Dashboard Widgets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Column: Status & Tasks */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6">
           {/* Membership Status Widget */}
-          <motion.div variants={itemVariants} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm group">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                <Award size={24} className="text-emerald-500" />
-                Membership Status
+          <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-[11px] font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+                <Award size={14} className="text-emerald-600" />
+                MEMBERSHIP STATUS
               </h3>
               <button 
                 onClick={() => setActiveTab('membership')}
-                className="text-xs font-black text-emerald-600 uppercase tracking-widest hover:underline"
+                className="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-emerald-600 transition-colors flex items-center gap-1"
               >
-                Manage Membership
+                Manage <ArrowRight size={10} />
               </button>
             </div>
-            <div className="p-8">
+            <div className="p-3">
               {user.role === 'MEMBER' ? (
-                <div className="flex flex-col md:flex-row gap-8 items-center">
-                  <div className="w-full md:w-1/2">
-                    <div className="scale-90 origin-left">
+                <div className="flex flex-col md:flex-row gap-3 items-center">
+                  <div className="w-full md:w-auto flex justify-center">
+                    <div className="scale-[0.65] origin-center md:origin-left -my-4">
                       {profile && <MemberIdCard member={profile} />}
                     </div>
                   </div>
-                  <div className="w-full md:w-1/2 space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Joined</p>
-                        <p className="text-sm font-black text-slate-900">{profile?.joinedAt ? safeFormat(profile.joinedAt, 'MMM yyyy') : 'N/A'}</p>
+                  <div className="flex-1 w-full space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Joined</p>
+                        <p className="text-[10px] font-bold text-slate-900">{profile?.joinedAt ? safeFormat(profile.joinedAt, 'MMM yyyy') : 'N/A'}</p>
                       </div>
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Expiry</p>
-                        <p className="text-sm font-black text-slate-900">{profile?.expiryDate ? safeFormat(profile.expiryDate, 'dd MMM yyyy') : 'N/A'}</p>
+                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Expiry</p>
+                        <p className="text-[10px] font-bold text-slate-900">{profile?.expiryDate ? safeFormat(profile.expiryDate, 'dd MMM yyyy') : 'N/A'}</p>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
                       <button 
                         onClick={() => setActiveTab('membership')}
-                        className="w-full py-3 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-1.5 bg-slate-100 text-slate-700 rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-1.5"
                       >
-                        View Digital ID <Download size={14} />
+                        <Download size={10} /> ID Card
                       </button>
                       <button 
                         onClick={() => { setActiveTab('membership'); setIsRenewing(true); }}
-                        className="w-full py-3 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-500 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-1.5 bg-emerald-50 text-emerald-700 rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-emerald-100 transition-all flex items-center justify-center gap-1.5 border border-emerald-200"
                       >
-                        Renew Membership <Clock size={14} />
+                        <Clock size={10} /> Renew
                       </button>
                     </div>
                   </div>
                 </div>
               ) : user.role === 'APPLICANT_MEMBER' ? (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between p-6 bg-amber-50 rounded-3xl border border-amber-100">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-amber-500 shadow-sm">
-                        <Clock size={24} />
-                      </div>
-                      <div>
-                        <p className="font-black text-slate-900 tracking-tight">Application Under Review</p>
-                        <p className="text-xs text-amber-700 font-bold">Estimated completion: 3-5 business days</p>
-                      </div>
+                <div className="flex items-center justify-between p-2.5 bg-amber-50 rounded-lg border border-amber-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center text-amber-500 shadow-sm shrink-0">
+                      <Clock size={14} />
                     </div>
-                    <button 
-                      onClick={() => setActiveTab('membership')}
-                      className="px-4 py-2 bg-white text-amber-600 rounded-xl font-black uppercase tracking-widest text-[10px] border border-amber-200 hover:bg-amber-50 transition-all"
-                    >
-                      Track
-                    </button>
+                    <div>
+                      <p className="font-bold text-slate-900 text-[11px]">Application Pending</p>
+                      <p className="text-[8px] text-amber-700 font-medium uppercase tracking-widest">Est. 3-5 business days</p>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <UserPlus size={32} className="text-slate-300" />
-                  </div>
-                  <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">Join the Movement</h4>
-                  <p className="text-slate-500 text-sm mb-6 max-w-xs mx-auto">Become an official member to unlock voting rights and exclusive party benefits.</p>
                   <button 
                     onClick={() => setActiveTab('membership')}
-                    className="px-8 py-3 bg-emerald-500 text-slate-900 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+                    className="px-2.5 py-1 bg-white text-amber-600 rounded-md font-bold text-[9px] uppercase tracking-widest border border-amber-200 hover:bg-amber-50 transition-all"
+                  >
+                    Track
+                  </button>
+                </div>
+              ) : (
+                <div className="p-3 text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm">
+                    <UserPlus size={14} className="text-slate-400" />
+                  </div>
+                  <h4 className="text-[11px] font-bold text-slate-900 mb-0.5">Join the Movement</h4>
+                  <p className="text-slate-500 text-[9px] mb-2 max-w-[200px] mx-auto">Become an official member to unlock voting rights and exclusive party benefits.</p>
+                  <button 
+                    onClick={() => setActiveTab('membership')}
+                    className="px-3 py-1.5 bg-slate-900 text-white rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all"
                   >
                     Start Application
                   </button>
@@ -548,55 +545,55 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           </motion.div>
 
           {/* Volunteer Hub Widget */}
-          <motion.div variants={itemVariants} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm group">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                <Zap size={24} className="text-indigo-500" />
-                Volunteer Hub
+          <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-[11px] font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+                <Zap size={14} className="text-indigo-600" />
+                VOLUNTEER HUB
               </h3>
               <button 
                 onClick={() => setActiveTab('volunteer')}
-                className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline"
+                className="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-600 transition-colors flex items-center gap-1"
               >
-                Volunteer Portal
+                Portal <ArrowRight size={10} />
               </button>
             </div>
-            <div className="p-8">
+            <div className="p-3">
               {volunteer && volunteer.status === 'APPROVED' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="p-6 bg-indigo-50 rounded-3xl border border-indigo-100">
-                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total Contribution</p>
-                      <p className="text-3xl font-black text-indigo-900">{volunteer.totalHours || 0} Hours</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
+                    <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-100 flex justify-between items-center">
+                      <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Hours</p>
+                      <p className="text-sm font-bold text-indigo-900">{volunteer.totalHours || 0}</p>
                     </div>
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Projects</p>
-                      <p className="text-3xl font-black text-slate-900">{volunteer.assignments?.length || 0}</p>
+                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Projects</p>
+                      <p className="text-sm font-bold text-slate-900">{volunteer.assignments?.length || 0}</p>
                     </div>
                   </div>
-                  <div className="p-8 bg-slate-900 rounded-[2rem] text-white flex flex-col justify-between">
+                  <div className="p-2.5 bg-slate-900 rounded-lg text-white flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Next Assignment</p>
-                      <p className="text-sm font-bold leading-snug">Check the portal for new community outreach projects in your district.</p>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Next Task</p>
+                      <p className="text-[9px] font-medium leading-tight text-slate-300">New community projects available in your district.</p>
                     </div>
                     <button 
                       onClick={() => setActiveTab('volunteer')}
-                      className="mt-6 w-full py-3 bg-indigo-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-400 transition-all"
+                      className="mt-2 w-full py-1 bg-indigo-500 text-white rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-indigo-400 transition-all"
                     >
-                      View Assignments
+                      View Tasks
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <Zap size={32} className="text-slate-300" />
+                <div className="p-3 text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm">
+                    <Zap size={14} className="text-slate-400" />
                   </div>
-                  <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">Serve your Community</h4>
-                  <p className="text-slate-500 text-sm mb-6 max-w-xs mx-auto">Join our volunteer network to make a direct impact on the ground.</p>
+                  <h4 className="text-[11px] font-bold text-slate-900 mb-0.5">Serve your Community</h4>
+                  <p className="text-slate-500 text-[9px] mb-2 max-w-[200px] mx-auto">Join our volunteer network to make a direct impact on the ground.</p>
                   <button 
                     onClick={() => setActiveTab('volunteer')}
-                    className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
+                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-indigo-500 transition-all"
                   >
                     Apply to Volunteer
                   </button>
@@ -606,57 +603,56 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           </motion.div>
 
           {/* Grievances Widget */}
-          <motion.div variants={itemVariants} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm group hover:shadow-2xl transition-all relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 rounded-full -mr-20 -mt-20 blur-3xl" />
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center relative z-10">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                <ShieldAlert size={24} className="text-rose-500" />
-                Grievances & Support
+          <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-[11px] font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+                <ShieldAlert size={14} className="text-rose-600" />
+                GRIEVANCES & SUPPORT
               </h3>
               <button 
                 onClick={() => setActiveTab('grievances')}
-                className="text-xs font-black text-rose-600 uppercase tracking-widest hover:underline"
+                className="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-rose-600 transition-colors flex items-center gap-1"
               >
-                View History
+                History <ArrowRight size={10} />
               </button>
             </div>
-            <div className="p-8 relative z-10">
+            <div className="p-3">
               {grievances.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-1.5">
                   {(grievances || []).slice(0, 2).map((g, i) => (
-                    <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-3xl border border-slate-100 hover:bg-white hover:shadow-md transition-all group/item">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">
-                          <ShieldAlert size={20} />
+                    <div key={i} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-white hover:shadow-sm transition-all group/item cursor-pointer" onClick={() => setActiveTab('grievances')}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-rose-500 shadow-sm shrink-0">
+                          <ShieldAlert size={12} />
                         </div>
-                        <div>
-                          <p className="font-black text-slate-900 tracking-tight text-sm uppercase">{g.title}</p>
-                          <div className="flex items-center gap-2 mt-1">
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 text-[10px] truncate max-w-[150px]">{g.title}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
                             <GrievanceStatusBadge status={g.status} />
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{safeFormat(g.createdAt, 'MMM d')}</span>
+                            <span className="text-[8px] font-medium text-slate-500">{safeFormat(g.createdAt, 'MMM d')}</span>
                           </div>
                         </div>
                       </div>
-                      <ChevronRight size={16} className="text-slate-300 group-hover/item:text-rose-500 transition-colors" />
+                      <ChevronRight size={12} className="text-slate-300 group-hover/item:text-rose-500 transition-colors shrink-0" />
                     </div>
                   ))}
                   <button 
                     onClick={() => { setActiveTab('grievances'); setShowNewGrievanceModal(true); }}
-                    className="w-full py-4 bg-rose-50 text-rose-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-2"
+                    className="w-full py-1.5 bg-rose-50 text-rose-700 rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-1.5 border border-rose-200 mt-1"
                   >
-                    Submit New Request <Plus size={14} />
+                    <Plus size={10} /> Submit New Request
                   </button>
                 </div>
               ) : (
-                <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <ShieldAlert size={32} className="text-slate-300" />
+                <div className="p-3 text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm">
+                    <ShieldAlert size={14} className="text-slate-400" />
                   </div>
-                  <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">Need Assistance?</h4>
-                  <p className="text-slate-500 text-sm mb-6 max-w-xs mx-auto">Our support team is here to help you with any issues or grievances.</p>
+                  <h4 className="text-[11px] font-bold text-slate-900 mb-0.5">Need Assistance?</h4>
+                  <p className="text-slate-500 text-[9px] mb-2 max-w-[200px] mx-auto">Our support team is here to help you with any issues or grievances.</p>
                   <button 
                     onClick={() => { setActiveTab('grievances'); setShowNewGrievanceModal(true); }}
-                    className="px-8 py-3 bg-rose-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-rose-700 transition-all shadow-lg shadow-rose-500/20"
+                    className="px-3 py-1.5 bg-rose-600 text-white rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-rose-700 transition-all"
                   >
                     Submit Grievance
                   </button>
@@ -667,181 +663,181 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
         </div>
 
         {/* Right Column: Profile & Engagement */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Profile Summary Widget */}
-          <motion.div variants={itemVariants} className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-emerald-500/20 transition-all" />
+          <motion.div variants={itemVariants} className="bg-slate-900 rounded-xl p-3.5 text-white shadow-sm relative overflow-hidden border border-slate-800">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full -mr-10 -mt-10 blur-2xl" />
             
-            <div className="flex flex-col items-center text-center space-y-6 relative z-10">
+            <div className="flex flex-col items-center text-center space-y-2 relative z-10">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full border-4 border-white/10 overflow-hidden shadow-2xl">
+                <div className="w-12 h-12 rounded-full border border-white/10 overflow-hidden shadow-sm bg-slate-800">
                   <img 
                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
                     alt="Profile" 
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full border-4 border-slate-900 flex items-center justify-center">
-                  <CheckCircle2 size={14} className="text-white" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                  <CheckCircle2 size={8} className="text-white" />
                 </div>
               </div>
               
               <div>
-                <h4 className="text-2xl font-black tracking-tight">{user.displayName}</h4>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">{user.role.replace('_', ' ')}</p>
+                <h4 className="text-[11px] font-black tracking-tight uppercase">{user.displayName}</h4>
+                <p className="text-slate-400 text-[7px] font-black uppercase tracking-widest mt-0.5">{user.role.replace('_', ' ')}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 w-full">
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">ID</p>
-                  <p className="text-xs font-black">#{user.id.slice(-6).toUpperCase()}</p>
+              <div className="grid grid-cols-2 gap-1.5 w-full">
+                <div className="p-1.5 bg-white/5 rounded border border-white/10">
+                  <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-0.5">ID TAG</p>
+                  <p className="text-[8px] font-black tracking-tight">#{user.id.slice(-6).toUpperCase()}</p>
                 </div>
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Verified</p>
-                  <p className="text-xs font-black text-emerald-400">YES</p>
+                <div className="p-1.5 bg-white/5 rounded border border-white/10">
+                  <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-0.5">STATUS</p>
+                  <p className="text-[8px] font-black text-emerald-400 tracking-tight uppercase">VERIFIED</p>
                 </div>
               </div>
 
               <button 
                 onClick={() => setActiveTab('profile')}
-                className="w-full py-3 bg-white text-slate-900 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-100 transition-all flex items-center justify-center gap-2"
+                className="w-full py-1.5 bg-white text-slate-900 rounded font-black text-[8px] uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5 shadow-sm"
               >
-                Edit Profile <Settings size={14} />
+                <Settings size={10} /> MANAGE PROFILE
               </button>
             </div>
           </motion.div>
 
           {/* Training Programs Widget */}
-          <motion.div variants={itemVariants} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm group">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                <GraduationCap size={24} className="text-blue-500" />
-                Training & Skills
+          <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-[10px] font-black text-slate-900 tracking-tight flex items-center gap-1.5 uppercase">
+                <GraduationCap size={12} className="text-blue-600" />
+                TRAINING & SKILLS
               </h3>
               <button 
                 onClick={() => setActiveTab('training')}
-                className="text-xs font-black text-blue-600 uppercase tracking-widest hover:underline"
+                className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-600 transition-colors flex items-center gap-1"
               >
-                View Catalog
+                CATALOG <ArrowRight size={10} />
               </button>
             </div>
-            <div className="p-8 space-y-4">
+            <div className="p-2.5 space-y-1.5">
               {programs.length > 0 ? (
                 (programs || []).slice(0, 2).map((p, i) => (
-                  <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:shadow-md transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-500 shadow-sm">
-                        <BookOpen size={18} />
+                  <div key={i} className="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:shadow-sm transition-all cursor-pointer" onClick={() => setActiveTab('training')}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-blue-500 shadow-sm shrink-0 border border-slate-100">
+                        <BookOpen size={10} />
                       </div>
-                      <div>
-                        <p className="font-black text-slate-900 tracking-tight text-sm">{p.name}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.category}</p>
+                      <div className="min-w-0">
+                        <p className="font-black text-slate-900 text-[9px] truncate max-w-[140px] uppercase tracking-tight">{p.name}</p>
+                        <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest truncate">{p.category}</p>
                       </div>
                     </div>
-                    <ChevronRight size={16} className="text-slate-300 group-hover/item:text-blue-500 transition-colors" />
+                    <ChevronRight size={10} className="text-slate-300 group-hover/item:text-blue-500 transition-colors shrink-0" />
                   </div>
                 ))
               ) : (
-                <p className="text-slate-500 text-xs italic text-center py-4">No new programs available.</p>
+                <p className="text-slate-500 text-[8px] italic text-center py-1.5 font-medium uppercase tracking-tight">No new programs available.</p>
               )}
               <button 
                 onClick={() => setActiveTab('training')}
-                className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-600 hover:text-white transition-all"
+                className="w-full py-1.5 bg-blue-50 text-blue-700 rounded font-black text-[8px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-1.5 border border-blue-100 mt-1 shadow-sm"
               >
-                Explore Training <ArrowUpRight size={14} />
+                EXPLORE TRAINING <ArrowUpRight size={10} />
               </button>
             </div>
           </motion.div>
 
           {/* Surveys & Polls Widget */}
-          <motion.div variants={itemVariants} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm group">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                <ListTodo size={24} className="text-indigo-500" />
-                Surveys & Polls
+          <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-[10px] font-black text-slate-900 tracking-tight flex items-center gap-1.5 uppercase">
+                <ListTodo size={12} className="text-indigo-600" />
+                SURVEYS & POLLS
               </h3>
               <button 
                 onClick={() => setActiveTab('surveys')}
-                className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline"
+                className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-600 transition-colors flex items-center gap-1"
               >
-                Participate
+                PARTICIPATE <ArrowRight size={10} />
               </button>
             </div>
-            <div className="p-8 space-y-4">
+            <div className="p-2.5 space-y-1.5">
               {surveys.length > 0 || polls.length > 0 ? (
                 <>
                   {(surveys || []).slice(0, 1).map((s, i) => (
-                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:shadow-md transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 shadow-sm">
-                          <ClipboardList size={18} />
+                    <div key={i} className="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between group/item hover:bg-white hover:shadow-sm transition-all cursor-pointer" onClick={() => setActiveTab('surveys')}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-indigo-500 shadow-sm shrink-0 border border-slate-100">
+                          <ClipboardList size={10} />
                         </div>
-                        <div>
-                          <p className="font-black text-slate-900 tracking-tight text-sm">{s.title}</p>
-                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Active Survey</p>
+                        <div className="min-w-0">
+                          <p className="font-black text-slate-900 text-[9px] truncate max-w-[140px] uppercase tracking-tight">{s.title}</p>
+                          <p className="text-[7px] font-black text-indigo-500 uppercase tracking-widest truncate">ACTIVE SURVEY</p>
                         </div>
                       </div>
-                      <ChevronRight size={16} className="text-slate-300 group-hover/item:text-indigo-500 transition-colors" />
+                      <ChevronRight size={10} className="text-slate-300 group-hover/item:text-indigo-500 transition-colors shrink-0" />
                     </div>
                   ))}
                 </>
               ) : (
-                <p className="text-slate-500 text-xs italic text-center py-4">No active surveys found.</p>
+                <p className="text-slate-500 text-[8px] italic text-center py-1.5 font-medium uppercase tracking-tight">No active surveys found.</p>
               )}
               <button 
                 onClick={() => setActiveTab('surveys')}
-                className="w-full py-3 bg-indigo-50 text-indigo-600 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 hover:text-white transition-all"
+                className="w-full py-1.5 bg-indigo-50 text-indigo-700 rounded font-black text-[8px] uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center justify-center gap-1.5 border border-indigo-200 mt-1 shadow-sm"
               >
-                Join Discussion <Vote size={14} />
+                <Vote size={10} /> JOIN DISCUSSION
               </button>
             </div>
           </motion.div>
 
           {/* Donor Impact Widget */}
-          <motion.div variants={itemVariants} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm group">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                <Heart size={24} className="text-emerald-500" />
-                Donor Impact
+          <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-[10px] font-black text-slate-900 tracking-tight flex items-center gap-1.5 uppercase">
+                <Heart size={12} className="text-emerald-600" />
+                DONOR IMPACT
               </h3>
               <button 
                 onClick={() => setActiveTab('donations')}
-                className="text-xs font-black text-emerald-600 uppercase tracking-widest hover:underline"
+                className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-emerald-600 transition-colors flex items-center gap-1"
               >
-                History
+                HISTORY <ArrowRight size={10} />
               </button>
             </div>
-            <div className="p-8">
+            <div className="p-2.5">
               {donations.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100 flex justify-between items-center">
+                <div className="space-y-1.5">
+                  <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
                     <div>
-                      <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Total Contribution</p>
-                      <p className="text-3xl font-black text-emerald-900">₹{(donations || []).reduce((acc, d) => acc + d.amount, 0).toLocaleString()}</p>
+                      <p className="text-[7px] font-black text-emerald-500 uppercase tracking-widest mb-0.5">TOTAL CONTRIBUTION</p>
+                      <p className="text-xs font-black text-emerald-900">₹{(donations || []).reduce((acc, d) => acc + d.amount, 0).toLocaleString()}</p>
                     </div>
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-500 shadow-sm">
-                      <TrendingUp size={24} />
+                    <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-emerald-500 shadow-sm shrink-0 border border-emerald-100">
+                      <TrendingUp size={12} />
                     </div>
                   </div>
                   <button 
                     onClick={() => setActiveTab('donations')}
-                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-1.5 bg-slate-900 text-white rounded font-black text-[8px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                   >
-                    Make a Donation <ArrowRight size={14} />
+                    MAKE A DONATION <ArrowRight size={10} />
                   </button>
                 </div>
               ) : (
-                <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <Heart size={32} className="text-slate-300" />
+                <div className="p-2.5 text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                  <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm border border-slate-100">
+                    <Heart size={12} className="text-slate-400" />
                   </div>
-                  <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">Support the Cause</h4>
-                  <p className="text-slate-500 text-sm mb-6 max-w-xs mx-auto">Your contributions fuel our community initiatives and outreach programs.</p>
+                  <h4 className="text-[9px] font-black text-slate-900 mb-0.5 uppercase tracking-tight">SUPPORT THE CAUSE</h4>
+                  <p className="text-slate-500 text-[8px] mb-2 max-w-[180px] mx-auto font-medium leading-tight">Your contributions fuel our community initiatives and outreach programs.</p>
                   <button 
                     onClick={() => setActiveTab('donations')}
-                    className="px-8 py-3 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20"
+                    className="px-2.5 py-1 bg-emerald-600 text-white rounded font-black text-[8px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-sm"
                   >
-                    Donate Now
+                    DONATE NOW
                   </button>
                 </div>
               )}
@@ -851,41 +847,41 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
       </div>
 
       {/* Activity & News Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
         {/* Activity Feed */}
-        <motion.div variants={itemVariants} className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <Activity size={24} className="text-emerald-500" />
-              Activity Feed
+        <motion.div variants={itemVariants} className="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <h3 className="text-[10px] font-black text-slate-900 tracking-tight flex items-center gap-1.5 uppercase">
+              <Activity size={14} className="text-emerald-600" />
+              ACTIVITY FEED
             </h3>
             <button 
               onClick={() => setActiveTab('notices')}
-              className="text-xs font-black text-emerald-600 uppercase tracking-widest hover:underline"
+              className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-emerald-600 transition-colors flex items-center gap-1"
             >
-              View Notices
+              NOTICES <ArrowRight size={10} />
             </button>
           </div>
-          <div className="p-8">
+          <div className="p-2.5">
             {summary?.actionQueue && summary.actionQueue.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-1.5">
                 {(summary?.actionQueue || []).map((item: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-3xl border border-slate-100 hover:bg-white hover:shadow-md transition-all group">
-                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 shadow-sm group-hover:text-emerald-600 transition-colors">
-                        {item.type === 'GRIEVANCE' ? <ShieldAlert size={24} className="text-rose-500" /> : 
-                         item.type === 'MEMBERSHIP' ? <Award size={24} className="text-emerald-500" /> : 
-                         item.type === 'DONATION' ? <Heart size={24} className="text-pink-500" /> :
-                         item.type === 'SURVEY' ? <ListTodo size={24} className="text-blue-500" /> :
-                         item.type === 'CAMPAIGN' ? <Megaphone size={24} className="text-indigo-500" /> :
-                         <FileText size={24} className="text-slate-500" />}
+                  <div key={i} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-white hover:shadow-sm transition-all group">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center text-slate-400 shadow-sm group-hover:text-emerald-600 transition-colors shrink-0 border border-slate-100">
+                        {item.type === 'GRIEVANCE' ? <ShieldAlert size={12} className="text-rose-500" /> : 
+                         item.type === 'MEMBERSHIP' ? <Award size={12} className="text-emerald-500" /> : 
+                         item.type === 'DONATION' ? <Heart size={12} className="text-pink-500" /> :
+                         item.type === 'SURVEY' ? <ListTodo size={12} className="text-blue-500" /> :
+                         item.type === 'CAMPAIGN' ? <Megaphone size={12} className="text-indigo-500" /> :
+                         <FileText size={12} className="text-slate-500" />}
                       </div>
-                      <div>
-                        <p className="font-black text-slate-900 tracking-tight">{item.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.type}</span>
-                          <div className="w-1 h-1 bg-slate-300 rounded-full" />
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${
+                      <div className="min-w-0">
+                        <p className="font-black text-slate-900 text-[10px] truncate uppercase tracking-tight">{item.title}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{item.type}</span>
+                          <div className="w-0.5 h-0.5 bg-slate-300 rounded-full" />
+                          <span className={`text-[7px] font-black uppercase tracking-widest ${
                             item.status === 'COMPLETED' || item.status === 'APPROVED' || item.status === 'ACTIVE' ? 'text-emerald-600' : 
                             item.status === 'PENDING' || item.status === 'VERIFIED' ? 'text-amber-600' : 
                             'text-slate-500'
@@ -893,35 +889,35 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400">{safeFormat(item.date || item.createdAt, 'MMM d')}</p>
+                    <div className="text-right shrink-0 ml-3">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{safeFormat(item.date || item.createdAt, 'MMM d')}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                  <ListTodo size={40} className="text-slate-200" />
+              <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm border border-slate-100">
+                  <ListTodo size={14} className="text-slate-300" />
                 </div>
-                <h4 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">No Activity Yet</h4>
-                <p className="text-slate-500 font-medium max-w-xs mx-auto">Start your journey by exploring the quick actions above!</p>
+                <h4 className="text-[10px] font-black text-slate-900 mb-0.5 uppercase tracking-tight">NO ACTIVITY YET</h4>
+                <p className="text-slate-500 text-[8px] max-w-[200px] mx-auto font-medium uppercase tracking-tight">Start your journey by exploring the quick actions above!</p>
               </div>
             )}
           </div>
         </motion.div>
-        <motion.div variants={itemVariants} className="space-y-8">
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                <Megaphone size={24} className="text-emerald-500" />
-                Latest News
+        <motion.div variants={itemVariants} className="space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-[10px] font-black text-slate-900 tracking-tight flex items-center gap-1.5 uppercase">
+                <Megaphone size={14} className="text-emerald-600" />
+                LATEST NEWS
               </h3>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-2.5 space-y-2">
               {news?.slice(0, 3).map((item, i) => (
-                <div key={i} className="group cursor-pointer flex gap-4">
-                  <div className="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden shrink-0 shadow-sm">
+                <div key={i} className="group cursor-pointer flex gap-2.5 items-center">
+                  <div className="w-10 h-10 bg-slate-100 rounded-md overflow-hidden shrink-0 shadow-sm border border-slate-100">
                     <img 
                       src={item.featuredImage || `https://picsum.photos/seed/${item.title}/200/200`} 
                       alt="News" 
@@ -929,40 +925,40 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       referrerPolicy="no-referrer" 
                     />
                   </div>
-                  <div className="space-y-1">
-                    <h4 className="font-black text-slate-900 text-sm group-hover:text-emerald-600 transition-colors line-clamp-2 leading-snug">{item.title}</h4>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{safeFormat(item.publishedAt || item.createdAt, 'MMM d, yyyy')}</p>
+                  <div className="space-y-0.5 min-w-0">
+                    <h4 className="font-black text-slate-900 text-[9px] group-hover:text-emerald-600 transition-colors line-clamp-2 leading-tight uppercase tracking-tight">{item.title}</h4>
+                    <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{safeFormat(item.publishedAt || item.createdAt, 'MMM d, yyyy')}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                <Calendar size={24} className="text-blue-500" />
-                Events
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-[10px] font-black text-slate-900 tracking-tight flex items-center gap-1.5 uppercase">
+                <Calendar size={14} className="text-blue-600" />
+                EVENTS
               </h3>
               <button 
                 onClick={() => setActiveTab('events')}
-                className="text-xs font-black text-blue-600 uppercase tracking-widest hover:underline"
+                className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-600 transition-colors flex items-center gap-1"
               >
-                View All
+                VIEW ALL <ArrowRight size={10} />
               </button>
             </div>
-            <div className="p-4 space-y-2">
+            <div className="p-2 space-y-1">
               {events?.slice(0, 3).map((event: any, i) => {
                 const date = event.eventDate || event.startDate;
                 return (
-                  <div key={i} className="p-4 rounded-2xl hover:bg-slate-50 transition-all flex items-center gap-4 group">
-                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex flex-col items-center justify-center text-center shrink-0 group-hover:scale-105 transition-transform">
-                      <span className="text-[10px] font-black uppercase leading-none">{safeFormat(date, 'MMM')}</span>
-                      <span className="text-lg font-black leading-none">{safeFormat(date, 'd')}</span>
+                  <div key={i} className="p-1.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-2 group cursor-pointer" onClick={() => setActiveTab('events')}>
+                    <div className="w-7 h-7 bg-blue-50 text-blue-600 rounded-md flex flex-col items-center justify-center text-center shrink-0 group-hover:scale-105 transition-transform border border-blue-100">
+                      <span className="text-[7px] font-black uppercase leading-none">{safeFormat(date, 'MMM')}</span>
+                      <span className="text-[10px] font-black leading-none mt-0.5">{safeFormat(date, 'd')}</span>
                     </div>
                     <div className="min-w-0">
-                      <h4 className="font-black text-slate-900 truncate text-sm">{event.title}</h4>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">{event.location}</p>
+                      <h4 className="font-black text-slate-900 truncate text-[10px] uppercase tracking-tight">{event.title}</h4>
+                      <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest truncate">{event.location}</p>
                     </div>
                   </div>
                 );
@@ -973,64 +969,67 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
       </div>
     </>
   )}
-
       {/* Notices Tab */}
       {activeTab === 'notices' && (
-        <motion.div variants={itemVariants} className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900">Important Notices</h2>
-              <p className="text-slate-600">Stay updated with the latest official communications and alerts.</p>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">IMPORTANT NOTICES</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Stay updated with official communications and alerts</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200 flex items-center gap-2">
-                <Bell size={18} />
-                <span className="text-sm font-bold uppercase tracking-wider">{notices.length} Active</span>
+              <div className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 flex items-center gap-1.5">
+                <Bell size={12} />
+                <span className="text-[8px] font-black uppercase tracking-widest">{notices.length} ACTIVE NOTICES</span>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {notices.length === 0 ? (
-              <div className="col-span-full py-20 text-center bg-white rounded-2xl border border-dashed border-slate-200">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Bell size={40} className="text-slate-300" />
+              <div className="col-span-full py-12 text-center bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100">
+                  <Bell size={24} className="text-slate-300" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">No Active Notices</h3>
-                <p className="text-slate-600">You're all caught up! Check back later for new updates.</p>
+                <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO ACTIVE NOTICES</h3>
+                <p className="text-slate-500 text-[9px] uppercase font-bold tracking-tight">You're all caught up! Check back later for updates.</p>
               </div>
             ) : (
               notices?.map((notice, i) => (
                 <motion.div 
                   key={notice.id || i}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group flex flex-col"
+                  className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group flex flex-col border-l-4 border-l-slate-300 hover:border-l-emerald-500"
                 >
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${notice.isPinned ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                        <Bell size={20} />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 border ${notice.isPinned ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                        <Bell size={14} />
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Official Notice</span>
-                        <span className="text-sm font-bold text-slate-900">{safeFormat(notice.publishAt || notice.createdAt, 'MMMM d, yyyy')}</span>
+                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1">OFFICIAL NOTICE</span>
+                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{safeFormat(notice.publishAt || notice.createdAt, 'MMM d, yyyy')}</span>
                       </div>
                     </div>
                     {notice.isPinned && (
-                      <span className="px-3 py-1 bg-amber-50 text-amber-600 text-xs font-bold rounded-full uppercase tracking-wider border border-amber-200">Pinned</span>
+                      <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[7px] font-black rounded uppercase tracking-widest border border-amber-100">PINNED</span>
                     )}
                   </div>
                   
-                  <h3 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-emerald-600 transition-colors">{notice.title}</h3>
-                  <p className="text-slate-600 leading-relaxed mb-8 line-clamp-3 flex-grow">{notice.content}</p>
+                  <h3 className="text-[12px] font-black text-slate-900 mb-2 group-hover:text-emerald-600 transition-colors line-clamp-2 leading-tight uppercase tracking-tight">{notice.title}</h3>
+                  <p className="text-slate-500 text-[10px] leading-relaxed mb-4 line-clamp-3 flex-grow font-medium">{notice.content}</p>
                   
-                  <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-auto">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Clock size={16} />
-                      <span className="text-xs font-bold uppercase tracking-wider">
-                        {safeFormat(notice.publishAt || notice.createdAt, 'h:mm a')}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Clock size={12} />
+                      <span className="text-[8px] font-black uppercase tracking-widest">
+                         {safeFormat(notice.publishAt || notice.createdAt, 'h:mm a')}
                       </span>
                     </div>
                     {notice.externalUrl && (
@@ -1038,9 +1037,9 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                         href={notice.externalUrl} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-600 transition-all flex items-center gap-2"
+                        className="px-3 py-1.5 bg-slate-900 text-white rounded font-black text-[8px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-1.5 shadow-sm"
                       >
-                        View Details <ExternalLink size={14} />
+                        VIEW DETAILS <ExternalLink size={12} />
                       </a>
                     )}
                   </div>
@@ -1049,67 +1048,69 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
             )}
           </div>
         </motion.div>
-      )}
-
-      {/* Events Tab Content */}
+      )}          {/* Events Tab Content */}
       {activeTab === 'events' && (
-        <motion.div variants={itemVariants} className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900">My Events</h2>
-              <p className="text-slate-600">Upcoming rallies, meetings, and community engagements.</p>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">MY EVENTS</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Upcoming rallies, meetings, and community engagements</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {events.length === 0 ? (
-              <div className="lg:col-span-2 py-24 text-center bg-white rounded-2xl border border-slate-200 shadow-sm">
-                <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Calendar size={48} />
+              <div className="lg:col-span-full py-12 text-center bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100">
+                  <Calendar size={24} />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">No Upcoming Events</h3>
-                <p className="text-slate-600">You're all caught up! Check back later for new events.</p>
+                <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO UPCOMING EVENTS</h3>
+                <p className="text-slate-500 text-[9px] uppercase font-bold tracking-tight">You're all caught up! Check back later for new events.</p>
               </div>
             ) : (
               events?.map((event, i) => (
                 <motion.div 
                   key={event.id || i}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group flex flex-col"
+                  className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group flex flex-col border-l-4 border-l-slate-300 hover:border-l-blue-500"
                 >
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex flex-col items-center justify-center text-center shrink-0 group-hover:scale-105 transition-transform">
-                        <span className="text-[10px] font-bold uppercase leading-none">{safeFormat(event.eventDate, 'MMM')}</span>
-                        <span className="text-xl font-bold leading-none">{safeFormat(event.eventDate, 'd')}</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-md flex flex-col items-center justify-center text-center shrink-0 group-hover:scale-105 transition-transform border border-blue-100">
+                        <span className="text-[7px] font-black uppercase leading-none">{safeFormat(event.eventDate, 'MMM')}</span>
+                        <span className="text-[11px] font-black leading-none mt-0.5">{safeFormat(event.eventDate, 'd')}</span>
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Event Date</span>
-                        <span className="text-sm font-bold text-slate-900">{safeFormat(event.eventDate, 'MMMM d, yyyy')}</span>
+                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1">EVENT DATE</span>
+                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{safeFormat(event.eventDate, 'MMM d, yyyy')}</span>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                      event.audience === 'MEMBERS' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                    <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest border ${
+                      event.audience === 'MEMBERS' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'
                     }`}>
                       {event.audience}
                     </span>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">{event.title}</h3>
-                  <p className="text-slate-600 leading-relaxed mb-8 line-clamp-2 flex-grow">{event.summary || event.description}</p>
+                  <h3 className="text-[12px] font-black text-slate-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1 leading-tight uppercase tracking-tight">{event.title}</h3>
+                  <p className="text-slate-500 text-[10px] leading-relaxed mb-4 line-clamp-2 flex-grow font-medium">{event.summary || event.description}</p>
                   
-                  <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-slate-100 mt-auto">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Clock size={16} />
-                      <span className="text-xs font-bold uppercase tracking-wider">
+                  <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100 mt-auto">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Clock size={12} />
+                      <span className="text-[8px] font-black uppercase tracking-widest">
                         {event.startAt} {event.endAt ? `- ${event.endAt}` : ''}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <MapPin size={16} />
-                      <span className="text-xs font-bold uppercase tracking-wider truncate max-w-[150px]">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <MapPin size={12} />
+                      <span className="text-[8px] font-black uppercase tracking-widest truncate max-w-[100px]">
                         {event.location}
                       </span>
                     </div>
@@ -1118,9 +1119,9 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                         href={event.attachmentUrl} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="ml-auto px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-600 transition-all flex items-center gap-2"
+                        className="ml-auto px-3 py-1.5 bg-slate-900 text-white rounded font-black text-[8px] uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-1.5 shadow-sm"
                       >
-                        Details <ExternalLink size={14} />
+                        VIEW DETAILS <ExternalLink size={12} />
                       </a>
                     )}
                   </div>
@@ -1133,36 +1134,40 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
       {/* Training Tab Content */}
       {activeTab === 'training' && (
-        <motion.div variants={itemVariants} className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900">My Training</h2>
-              <p className="text-slate-600">Access official party training materials and educational resources.</p>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">MY TRAINING</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Access official party training materials and educational resources</p>
             </div>
           </div>
 
           {!selectedProgram && !selectedCourse && (
             <>
-              <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="flex flex-col md:flex-row gap-2.5 mb-1">
                 <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
                   <input
                     type="text"
                     placeholder="Search programs or resources..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all bg-white"
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all bg-white text-[10px] font-medium"
                   />
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+                <div className="flex gap-1.5 overflow-x-auto pb-1 md:pb-0">
                   {['All', ...new Set(programs?.map(p => p.category) || [])].map(cat => (
                     <button
                       key={cat}
                       onClick={() => setFilterCategory(cat)}
-                      className={`px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
+                      className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                         filterCategory === cat 
-                        ? 'bg-emerald-600 text-white shadow-sm' 
-                        : 'bg-white text-slate-600 border border-slate-200 hover:border-emerald-200'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-200'
                       }`}
                     >
                       {cat}
@@ -1171,47 +1176,47 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {(programs || []).filter(p => {
                   const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                        p.description?.toLowerCase().includes(searchTerm.toLowerCase());
                   const matchesCategory = filterCategory === 'All' || p.category === filterCategory;
                   return matchesSearch && matchesCategory;
                 }).map((program) => (
-                  <div key={program.id} className={`bg-white rounded-2xl border ${program.isPinned ? 'border-emerald-200 shadow-sm' : 'border-slate-200'} p-8 shadow-sm hover:shadow-md transition-all group flex flex-col`}>
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <BookOpen size={28} />
+                  <div key={program.id} className={`bg-white rounded-xl border ${program.isPinned ? 'border-emerald-200 shadow-sm' : 'border-slate-200'} p-4 shadow-sm hover:shadow-md transition-all group flex flex-col border-l-4 border-l-slate-300 hover:border-l-emerald-500`}>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform border border-emerald-100">
+                        <BookOpen size={16} />
                       </div>
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-1">
                         {program.isPinned && (
-                          <span className="flex items-center gap-1 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider">
-                            <Pin size={12} className="fill-emerald-700" /> Pinned
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[7px] font-black uppercase tracking-widest border border-emerald-100">
+                            <Pin size={8} className="fill-emerald-700" /> PINNED
                           </span>
                         )}
-                        <span className="flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wider border border-blue-100">
-                          <Users size={12} className="text-blue-700" /> {program.audience}
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[7px] font-black uppercase tracking-widest border border-blue-100">
+                          <Users size={8} className="text-blue-700" /> {program.audience}
                         </span>
                       </div>
                     </div>
                     
-                    <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors">{program.name}</h3>
-                    <p className="text-slate-600 text-sm mb-6 line-clamp-3 flex-grow leading-relaxed">{program.description}</p>
+                    <h3 className="text-[12px] font-black text-slate-900 mb-1.5 group-hover:text-emerald-600 transition-colors line-clamp-2 leading-tight uppercase tracking-tight">{program.name}</h3>
+                    <p className="text-slate-500 text-[10px] mb-4 line-clamp-3 flex-grow leading-relaxed font-medium">{program.description}</p>
                     
-                    <div className="space-y-4 pt-6 border-t border-slate-100 mt-auto">
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        <span className="flex items-center gap-1"><Clock size={16} /> {safeFormat(program.createdAt, 'MMM d, yyyy')}</span>
-                        <span className="px-2 py-1 bg-slate-100 rounded-md text-slate-600">{program.category}</span>
+                    <div className="space-y-2.5 pt-3 border-t border-slate-100 mt-auto">
+                      <div className="flex items-center justify-between text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                        <span className="flex items-center gap-1.5"><Clock size={12} /> {safeFormat(program.createdAt, 'MMM d, yyyy')}</span>
+                        <span className="px-2 py-0.5 bg-slate-50 rounded text-slate-500 border border-slate-100">{program.category}</span>
                       </div>
 
                       <div className="flex flex-col gap-2">
                         {program.courses && program.courses.length > 0 && (
                           <button 
                             onClick={() => setSelectedProgram(program)}
-                            className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all group/link"
+                            className="flex items-center justify-between p-2.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all group/link border border-emerald-100"
                           >
-                            <span className="text-sm font-bold flex items-center gap-2"><Layers size={18} /> View {program.courses.length} Courses</span>
-                            <ChevronRight size={18} className="opacity-0 group-hover/link:opacity-100 transition-all" />
+                            <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"><Layers size={14} /> VIEW {program.courses.length} COURSES</span>
+                            <ChevronRight size={14} className="opacity-0 group-hover/link:opacity-100 transition-all" />
                           </button>
                         )}
                         {program.externalUrl && (
@@ -1219,10 +1224,10 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                             href={program.externalUrl} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-3 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all group/link border border-slate-200"
+                            className="flex items-center justify-between p-2.5 rounded bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all group/link border border-slate-200"
                           >
-                            <span className="text-sm font-bold flex items-center gap-2"><ExternalLink size={18} /> Open Resource</span>
-                            <ChevronRight size={18} className="opacity-0 group-hover/link:opacity-100 transition-all" />
+                            <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"><ExternalLink size={14} /> OPEN RESOURCE</span>
+                            <ChevronRight size={14} className="opacity-0 group-hover/link:opacity-100 transition-all" />
                           </a>
                         )}
                         {program.attachmentUrl && (
@@ -1230,10 +1235,10 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                             href={program.attachmentUrl} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-3 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all group/link border border-slate-200"
+                            className="flex items-center justify-between p-2.5 rounded bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all group/link border border-slate-200"
                           >
-                            <span className="text-sm font-bold flex items-center gap-2"><Paperclip size={18} /> Download Material</span>
-                            <ChevronRight size={18} className="opacity-0 group-hover/link:opacity-100 transition-all" />
+                            <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"><Paperclip size={14} /> DOWNLOAD MATERIAL</span>
+                            <ChevronRight size={14} className="opacity-0 group-hover/link:opacity-100 transition-all" />
                           </a>
                         )}
                       </div>
@@ -1241,12 +1246,12 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   </div>
                 ))}
                 {programs.length === 0 && (
-                  <div className="col-span-full py-24 text-center bg-white rounded-2xl border border-slate-200 shadow-sm">
-                    <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <GraduationCap size={48} />
+                  <div className="col-span-full py-12 text-center bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100">
+                      <GraduationCap size={24} />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">No Training Programs Available</h3>
-                    <p className="text-slate-600">We are currently developing new training materials. Please check back soon.</p>
+                    <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO TRAINING PROGRAMS AVAILABLE</h3>
+                    <p className="text-slate-500 text-[9px] uppercase font-bold tracking-tight">We are currently developing new training materials. Please check back soon.</p>
                   </div>
                 )}
               </div>
@@ -1254,45 +1259,45 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           )}
 
           {selectedProgram && !selectedCourse && (
-            <div className="space-y-8">
+            <div className="space-y-3">
               <button 
                 onClick={() => setSelectedProgram(null)}
-                className="flex items-center gap-2 text-slate-600 hover:text-emerald-600 font-black uppercase tracking-widest text-[10px] transition-all mb-8 bg-white border border-slate-200 px-6 py-3 rounded-xl w-fit group shadow-sm"
+                className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 font-black uppercase tracking-widest text-[9px] transition-all mb-1 bg-white border border-slate-200 px-3 py-2 rounded w-fit group shadow-sm"
               >
-                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Programs
+                <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" /> BACK TO PROGRAMS
               </button>
 
-              <div className="bg-white rounded-[2rem] border border-slate-200 p-8 md:p-12 shadow-sm mb-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-3 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                 <div className="relative z-10">
-                  <h2 className="text-3xl font-bold text-slate-900 mb-4">{selectedProgram.name}</h2>
-                  <p className="text-slate-600 text-lg leading-relaxed max-w-3xl">{selectedProgram.description}</p>
+                  <h2 className="text-base font-black text-slate-900 mb-1.5 uppercase tracking-tight">{selectedProgram.name}</h2>
+                  <p className="text-slate-600 text-[11px] leading-relaxed max-w-4xl font-medium">{selectedProgram.description}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {selectedProgram.courses?.map((course) => (
-                  <div key={course.id} className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm hover:shadow-md transition-all group flex flex-col">
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <Layers size={24} />
+                  <div key={course.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all group flex flex-col border-l-4 border-l-slate-300 hover:border-l-blue-500">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform border border-blue-100">
+                        <Layers size={16} />
                       </div>
-                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                      <span className="px-1.5 py-0.5 bg-slate-50 text-slate-600 rounded text-[7px] font-black uppercase tracking-widest border border-slate-100">
                         {course.level}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">{course.title}</h3>
-                    <p className="text-slate-600 text-sm mb-8 line-clamp-2 leading-relaxed flex-grow">{course.description}</p>
+                    <h3 className="text-[12px] font-black text-slate-900 mb-1.5 group-hover:text-blue-600 transition-colors leading-tight uppercase tracking-tight">{course.title}</h3>
+                    <p className="text-slate-500 text-[10px] mb-4 line-clamp-2 leading-relaxed flex-grow font-medium">{course.description}</p>
                     
-                    <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-auto">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        {course.lessons?.length || 0} Lessons
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                        {course.lessons?.length || 0} LESSONS
                       </span>
                       <button 
                         onClick={() => setSelectedCourse(course)}
-                        className="text-xs font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 flex items-center gap-2 group-hover:translate-x-1 transition-transform"
+                        className="text-[9px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 flex items-center gap-1.5 group-hover:translate-x-1 transition-all"
                       >
-                        Start Course <ChevronRight size={18} />
+                        START COURSE <ChevronRight size={12} />
                       </button>
                     </div>
                   </div>
@@ -1302,39 +1307,39 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           )}
 
           {selectedCourse && (
-            <div className="space-y-8">
+            <div className="space-y-3">
               <button 
                 onClick={() => setSelectedCourse(null)}
-                className="flex items-center gap-2 text-slate-600 hover:text-blue-600 font-black uppercase tracking-widest text-[10px] transition-all mb-8 bg-white border border-slate-200 px-6 py-3 rounded-xl w-fit group shadow-sm"
+                className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-black uppercase tracking-widest text-[9px] transition-all mb-1 bg-white border border-slate-200 px-3 py-2 rounded w-fit group shadow-sm"
               >
-                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Courses
+                <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" /> BACK TO COURSES
               </button>
 
-              <div className="bg-white rounded-[2rem] border border-slate-200 p-8 md:p-12 shadow-sm mb-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-3 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                 <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-black uppercase tracking-widest">
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[7px] font-black uppercase tracking-widest border border-blue-100">
                       {selectedCourse.level}
                     </span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      {selectedCourse.lessons?.length || 0} Lessons
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                      {selectedCourse.lessons?.length || 0} LESSONS
                     </span>
                   </div>
-                  <h2 className="text-3xl font-bold text-slate-900 mb-4">{selectedCourse.title}</h2>
-                  <p className="text-slate-600 text-lg leading-relaxed max-w-3xl">{selectedCourse.description}</p>
+                  <h2 className="text-base font-black text-slate-900 mb-1.5 uppercase tracking-tight">{selectedCourse.title}</h2>
+                  <p className="text-slate-600 text-[11px] leading-relaxed max-w-4xl font-medium">{selectedCourse.description}</p>
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {selectedCourse.lessons?.map((lesson) => (
-                  <div key={lesson.id} className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col md:flex-row gap-8 hover:border-blue-200 transition-colors">
-                    <div className="flex-shrink-0 w-16 h-16 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-2xl">
+                  <div key={lesson.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col md:flex-row gap-5 hover:border-blue-200 transition-colors border-l-4 border-l-slate-200 hover:border-l-blue-500">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-black text-base border border-blue-100">
                       {lesson.order}
                     </div>
                     <div className="flex-grow">
-                      <h3 className="text-xl font-bold text-slate-900 mb-4">{lesson.title}</h3>
-                      <div className="prose prose-slate max-w-none mb-8 text-slate-600 leading-relaxed">
+                      <h3 className="text-[12px] font-black text-slate-900 mb-2 uppercase tracking-tight">{lesson.title}</h3>
+                      <div className="prose prose-sm prose-slate max-w-none mb-4 text-slate-600 leading-relaxed text-[11px] font-medium">
                         {lesson.content}
                       </div>
                       {lesson.videoUrl && (
@@ -1342,9 +1347,9 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                           href={lesson.videoUrl} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-slate-200"
+                          className="inline-flex items-center gap-2.5 px-4 py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-sm"
                         >
-                          <PlayCircle size={20} className="text-blue-400" /> Watch Video Lesson
+                          <PlayCircle size={14} className="text-blue-400" /> WATCH VIDEO LESSON
                         </a>
                       )}
                     </div>
@@ -1358,48 +1363,48 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
       {/* Surveys & Polls Tab Content */}
       {activeTab === 'surveys' && (
-        <motion.div variants={itemVariants} className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div variants={itemVariants} className="space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Surveys & Polls</h2>
-              <p className="text-slate-600">Your opinion matters. Participate in community feedback and decision making.</p>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">SURVEYS & POLLS</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Community feedback and decision making hub</p>
             </div>
-            <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+            <div className="flex gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
               <button 
                 onClick={() => setSurveyTab('surveys')}
-                className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${surveyTab === 'surveys' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1 rounded font-black text-[8px] uppercase tracking-widest transition-all ${surveyTab === 'surveys' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'}`}
               >
-                Surveys
+                SURVEYS
               </button>
               <button 
                 onClick={() => setSurveyTab('polls')}
-                className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${surveyTab === 'polls' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1 rounded font-black text-[8px] uppercase tracking-widest transition-all ${surveyTab === 'polls' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'}`}
               >
-                Polls
+                POLLS
               </button>
             </div>
           </div>
 
           {surveyTab === 'surveys' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {surveys?.map((survey) => (
-                <div key={survey.id} className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm hover:shadow-md transition-all group flex flex-col">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <ClipboardList size={28} />
+                <div key={survey.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all group flex flex-col border-l-4 border-l-slate-300 hover:border-l-emerald-500">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform border border-emerald-100">
+                      <ClipboardList size={16} />
                     </div>
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider">
-                      Active
+                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[7px] font-black uppercase tracking-widest border border-emerald-200">
+                      ACTIVE
                     </span>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors">{survey.title}</h3>
-                  <p className="text-slate-600 text-sm mb-8 line-clamp-3 leading-relaxed flex-grow">{survey.description}</p>
+                  <h3 className="text-[12px] font-black text-slate-900 mb-1.5 group-hover:text-emerald-600 transition-colors line-clamp-1 leading-tight uppercase tracking-tight">{survey.title}</h3>
+                  <p className="text-slate-500 text-[10px] mb-4 line-clamp-2 leading-relaxed flex-grow font-medium">{survey.description}</p>
                   
-                  <div className="space-y-4 pt-6 border-t border-slate-100 mt-auto">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      <span className="flex items-center gap-1"><Calendar size={16} /> {safeFormat(survey.createdAt, 'MMM d, yyyy')}</span>
-                      <span className="flex items-center gap-1"><Users size={16} /> {survey._count?.responses || 0} Responses</span>
+                  <div className="space-y-2.5 pt-3 border-t border-slate-100 mt-auto">
+                    <div className="flex items-center justify-between text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                      <span className="flex items-center gap-1.5"><Calendar size={12} /> {safeFormat(survey.createdAt, 'MMM d, yyyy')}</span>
+                      <span className="flex items-center gap-1.5"><Users size={12} /> {survey._count?.responses || 0} RESPONSES</span>
                     </div>
 
                     <button 
@@ -1414,41 +1419,41 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                           toast.error('Failed to load survey details');
                         }
                       }}
-                      className="w-full py-4 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-sm"
                     >
-                      Take Survey <ChevronRight size={18} />
+                      TAKE SURVEY <ChevronRight size={12} />
                     </button>
                   </div>
                 </div>
               ))}
               {surveys.length === 0 && (
-                <div className="col-span-full py-24 text-center bg-white rounded-2xl border border-slate-200 shadow-sm">
-                  <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <ClipboardList size={48} />
+                <div className="col-span-full py-12 text-center bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100">
+                    <ClipboardList size={24} />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">No Active Surveys</h3>
-                  <p className="text-slate-600">There are no surveys requiring your feedback at this time.</p>
+                  <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO ACTIVE SURVEYS</h3>
+                  <p className="text-slate-500 text-[9px] font-medium uppercase tracking-tight">There are no surveys requiring your feedback at this time.</p>
                 </div>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {polls?.map((poll) => (
-                <div key={poll.id} className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+                <div key={poll.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-4 border-l-4 border-l-slate-300 hover:border-l-blue-500 transition-all">
                   <div className="flex justify-between items-start">
-                    <h3 className="text-xl font-bold text-slate-900">{poll.question}</h3>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wider">
-                        Active
+                    <h3 className="text-[12px] font-black text-slate-900 leading-tight uppercase tracking-tight max-w-[80%]">{poll.question}</h3>
+                    <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[7px] font-black uppercase tracking-widest border border-blue-200">
+                        ACTIVE
                       </span>
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{poll._count?.votes || 0} Votes</span>
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{poll._count?.votes || 0} VOTES</span>
                     </div>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {(poll.options || []).map((opt) => {
                       const percentage = (poll._count?.votes || 0) > 0 ? ((opt._count?.votes || 0) / poll._count.votes) * 100 : 0;
                       return (
-                        <div key={opt.id} className="space-y-2">
+                        <div key={opt.id} className="space-y-1.5">
                           <button 
                             onClick={async () => {
                               try {
@@ -1461,12 +1466,12 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                                 toast.error('Failed to submit vote');
                               }
                             }}
-                            className="w-full flex justify-between items-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all group border border-slate-100 hover:border-slate-300"
+                            className="w-full flex justify-between items-center p-2.5 rounded bg-slate-50 hover:bg-white transition-all group border border-slate-100 hover:border-slate-300 hover:shadow-sm"
                           >
-                            <span className="font-bold text-slate-700 group-hover:text-slate-900">{opt.text}</span>
-                            <span className="text-sm font-bold text-slate-500">{Math.round(percentage)}%</span>
+                            <span className="font-black text-[10px] text-slate-700 group-hover:text-slate-900 uppercase tracking-tight">{opt.text}</span>
+                            <span className="text-[9px] font-black text-slate-500">{Math.round(percentage)}%</span>
                           </button>
-                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                             <motion.div 
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
@@ -1477,24 +1482,24 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       );
                     })}
                   </div>
-                  <div className="flex justify-between items-center pt-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-t border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-emerald-500" />
-                      Live Results
+                  <div className="flex justify-between items-center pt-3 text-[8px] font-black text-slate-400 uppercase tracking-widest border-t border-slate-100">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-emerald-500" />
+                      LIVE RESULTS
                     </div>
                     <button className="text-slate-400 hover:text-slate-900 transition-colors">
-                      <Send size={18} />
+                      <Send size={12} />
                     </button>
                   </div>
                 </div>
               ))}
               {polls.length === 0 && (
-                <div className="col-span-full py-24 text-center bg-white rounded-2xl border border-slate-200 shadow-sm">
-                  <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Vote size={48} />
+                <div className="col-span-full py-12 text-center bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100">
+                    <Vote size={24} />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">No Active Polls</h3>
-                  <p className="text-slate-600">There are no active polls at the moment. Check back later!</p>
+                  <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO ACTIVE POLLS</h3>
+                  <p className="text-slate-500 text-[9px] font-medium uppercase tracking-tight">There are no active polls at the moment. Check back later!</p>
                 </div>
               )}
             </div>
@@ -1508,17 +1513,19 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-8 md:p-12 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl relative"
+            className="bg-white rounded-xl p-4 md:p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl relative border border-slate-200"
           >
             <button 
               onClick={() => setShowTakeSurvey(false)}
-              className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-100"
+              className="absolute top-3 right-3 p-1 text-slate-400 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-100"
             >
-              <X size={24} />
+              <X size={16} />
             </button>
 
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">{currentSurvey.title}</h2>
-            <p className="text-slate-600 mb-8 leading-relaxed">{currentSurvey.description}</p>
+            <div className="mb-4">
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">{currentSurvey.title}</h2>
+              <p className="text-slate-500 text-[9px] font-medium leading-relaxed mt-0.5">{currentSurvey.description}</p>
+            </div>
             
             <form onSubmit={async (e) => {
               e.preventDefault();
@@ -1543,10 +1550,10 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               } finally {
                 setSubmitting(false);
               }
-            }} className="space-y-8">
+            }} className="space-y-4">
               {(currentSurvey.questions || []).map((q: any, index: number) => (
-                <div key={q.id} className="space-y-4">
-                  <label className="block text-lg font-bold text-slate-900">
+                <div key={q.id} className="space-y-1.5 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <label className="block text-[10px] font-black text-slate-900 uppercase tracking-tight">
                     {index + 1}. {q.text}
                   </label>
                   
@@ -1554,34 +1561,35 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <textarea 
                       value={answers[q.id] || ''}
                       onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none h-32 resize-none"
+                      className="w-full p-2 bg-white border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none h-16 resize-none text-[10px] font-medium"
+                      placeholder="Type your response here..."
                       required
                     />
                   )}
 
                   {q.type === 'MULTIPLE_CHOICE' && (
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-1">
                       {(q.options || []).map((opt: string, oIndex: number) => (
-                        <label key={oIndex} className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${answers[q.id] === opt ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                        <label key={oIndex} className={`flex items-center gap-2 px-2 py-1.5 rounded-md border cursor-pointer transition-all ${answers[q.id] === opt ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-white border-slate-200 hover:bg-white hover:border-slate-300'}`}>
                           <input 
                             type="radio"
                             name={`question-${q.id}`}
                             value={opt}
                             checked={answers[q.id] === opt}
                             onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})}
-                            className="w-5 h-5 text-emerald-600 focus:ring-emerald-500"
+                            className="w-3 h-3 text-emerald-600 focus:ring-emerald-500"
                             required
                           />
-                          <span className="font-bold">{opt}</span>
+                          <span className="font-bold text-[10px]">{opt}</span>
                         </label>
                       ))}
                     </div>
                   )}
 
                   {q.type === 'RATING' && (
-                    <div className="flex justify-between gap-2">
+                    <div className="flex justify-between gap-1">
                       {[1, 2, 3, 4, 5].map((rating) => (
-                        <label key={rating} className="flex flex-col items-center gap-2 cursor-pointer flex-1">
+                        <label key={rating} className="flex flex-col items-center gap-1 cursor-pointer flex-1">
                           <input 
                             type="radio"
                             name={`question-${q.id}`}
@@ -1591,7 +1599,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                             className="sr-only"
                             required
                           />
-                          <div className={`w-full aspect-square rounded-xl flex items-center justify-center text-xl font-bold transition-all ${answers[q.id] === rating.toString() ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>
+                          <div className={`w-full aspect-square rounded-md flex items-center justify-center text-[10px] font-black transition-all ${answers[q.id] === rating.toString() ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-50'}`}>
                             {rating}
                           </div>
                         </label>
@@ -1601,20 +1609,20 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 </div>
               ))}
 
-              <div className="flex justify-end gap-4 pt-8 border-t border-slate-200">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button 
                   type="button"
                   onClick={() => setShowTakeSurvey(false)}
-                  className="px-6 py-3 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-3 py-1.5 rounded-md font-black text-[8px] uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-colors"
                 >
-                  Cancel
+                  CANCEL
                 </button>
                 <button 
                   type="submit"
                   disabled={submitting}
-                  className="px-8 py-3 rounded-xl font-bold text-sm bg-slate-900 text-white hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                  className="px-4 py-1.5 rounded-md font-black text-[8px] uppercase tracking-widest bg-slate-900 text-white hover:bg-emerald-600 disabled:opacity-50 transition-all shadow-sm"
                 >
-                  {submitting ? 'Submitting...' : 'Submit Response'}
+                  {submitting ? 'SUBMITTING...' : 'SUBMIT RESPONSE'}
                 </button>
               </div>
             </form>
@@ -1624,73 +1632,105 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
       {/* Help & Grievances Tab Content */}
       {activeTab === 'grievances' && (
-        <motion.div variants={itemVariants} className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div variants={itemVariants} className="space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Help & Grievances</h2>
-              <p className="text-slate-600">Report issues, seek assistance, or provide feedback directly to our team.</p>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">GRIEVANCE CENTER</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Report issues, seek assistance, or provide feedback</p>
             </div>
             <button 
               onClick={() => setShowNewGrievanceModal(true)}
-              className="px-6 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-sm"
+              className="px-4 py-2 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-sm"
             >
-              <Plus size={18} />
-              Submit New Grievance
+              <PlusCircle size={14} />
+              SUBMIT NEW GRIEVANCE
             </button>
           </div>
 
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <History size={20} className="text-emerald-600" />
-              Your Submission History
-            </h3>
-
-            {grievances.length === 0 ? (
-              <div className="py-24 text-center bg-white rounded-2xl border border-slate-200 shadow-sm">
-                <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <ShieldCheck size={48} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="lg:col-span-1 space-y-3">
+              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                <h3 className="text-[10px] font-black text-slate-900 mb-3 uppercase tracking-widest flex items-center gap-2">
+                  <ShieldCheck size={14} className="text-emerald-500" /> RESOLUTION STATS
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block mb-1">TOTAL</span>
+                    <span className="text-xl font-black text-slate-900 leading-none">{grievances.length}</span>
+                  </div>
+                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <span className="text-[7px] font-black text-emerald-600 uppercase tracking-widest block mb-1">RESOLVED</span>
+                    <span className="text-xl font-black text-emerald-700 leading-none">
+                      {grievances.filter(g => g.status === 'RESOLVED').length}
+                    </span>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">No Grievances Found</h3>
-                <p className="text-slate-600">You haven't submitted any grievances or help requests yet.</p>
               </div>
-            ) : (
-              <div className="grid gap-4">
-                {(grievances || [])?.map((g) => (
-                  <motion.div 
-                    key={g.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={() => setSelectedGrievance(g)}
-                    className="bg-white rounded-2xl border border-slate-200 p-8 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all group"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                      <div className="flex items-center gap-3">
-                        <GrievanceStatusBadge status={g.status} />
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
-                          {g.category.name}
-                        </span>
-                      </div>
-                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                        <Calendar size={16} />
-                        {safeFormat(g.createdAt, 'MMM d, yyyy')}
-                      </div>
-                    </div>
-                    <h4 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors">{g.title}</h4>
-                    <p className="text-slate-600 text-sm line-clamp-2 leading-relaxed">{g.description}</p>
-                    
-                    <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        <MessageCircle size={16} />
-                        {g.responses?.length || 0} Responses
-                      </div>
-                      <div className="text-emerald-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
-                        View Details <ChevronRight size={18} />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+
+              <div className="bg-emerald-900 text-white rounded-xl p-4 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-white/20 transition-all" />
+                <div className="relative z-10">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest mb-2">NEED URGENT HELP?</h3>
+                  <p className="text-emerald-100 text-[9px] leading-relaxed mb-3 font-medium">Our dedicated support team is available 24/7 for critical party matters.</p>
+                  <button className="w-full py-2 bg-white text-emerald-900 rounded font-black text-[8px] uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-sm">
+                    CONTACT SUPPORT
+                  </button>
+                </div>
               </div>
-            )}
+            </div>
+
+            <div className="lg:col-span-2 space-y-3">
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 ml-1">
+                <History size={14} className="text-emerald-600" /> SUBMISSION HISTORY
+              </h3>
+
+              {grievances.length === 0 ? (
+                <div className="py-12 text-center bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-100">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO GRIEVANCES FOUND</h3>
+                  <p className="text-slate-500 text-[9px] font-medium uppercase tracking-tight">You haven't submitted any grievances or help requests yet.</p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {(grievances || [])?.map((g) => (
+                    <motion.div 
+                      key={g.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      onClick={() => setSelectedGrievance(g)}
+                      className="bg-white rounded-xl border border-slate-200 p-4 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all group border-l-4 border-l-slate-300 hover:border-l-emerald-500"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-2">
+                          <GrievanceStatusBadge status={g.status} />
+                          <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                            {g.category.name}
+                          </span>
+                        </div>
+                        <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                          <Calendar size={12} />
+                          {safeFormat(g.createdAt, 'MMM d, yyyy')}
+                        </div>
+                      </div>
+                      <h4 className="text-[12px] font-black text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors leading-tight uppercase tracking-tight">{g.title}</h4>
+                      <p className="text-slate-500 text-[10px] line-clamp-1 leading-relaxed font-medium">{g.description}</p>
+                      
+                      <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                          <MessageCircle size={12} />
+                          {g.responses?.length || 0} RESPONSES
+                        </div>
+                        <div className="text-emerald-600 font-black text-[9px] uppercase tracking-widest flex items-center gap-1.5 group-hover:translate-x-1 transition-all">
+                          VIEW DETAILS <ChevronRight size={12} />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </motion.div>
       )}
@@ -1701,17 +1741,19 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-8 md:p-12 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl relative"
+            className="bg-white rounded-xl p-4 md:p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl relative border border-slate-200"
           >
             <button 
               onClick={() => setShowNewGrievanceModal(false)}
-              className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-100"
+              className="absolute top-3 right-3 p-1 text-slate-400 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-100"
             >
-              <X size={24} />
+              <X size={16} />
             </button>
 
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Submit Grievance</h2>
-            <p className="text-slate-600 mb-8 leading-relaxed">Provide detailed information about your concern. We will review it promptly.</p>
+            <div className="mb-4">
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">SUBMIT GRIEVANCE</h2>
+              <p className="text-slate-500 text-[9px] font-medium leading-relaxed mt-0.5">Provide detailed information about your concern. We will review it promptly.</p>
+            </div>
             
             <form onSubmit={async (e) => {
               e.preventDefault();
@@ -1730,27 +1772,27 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               } finally {
                 setSubmitting(false);
               }
-            }} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 ml-1">Title</label>
+            }} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">ISSUE TITLE</label>
                 <input 
                   required
                   type="text" 
                   value={newGrievance.title}
                   onChange={e => setNewGrievance({...newGrievance, title: e.target.value})}
                   placeholder="Brief summary of the issue"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none text-[10px] font-medium"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Category</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">CATEGORY</label>
                   <select 
                     required
                     value={newGrievance.categoryId}
                     onChange={e => setNewGrievance({...newGrievance, categoryId: e.target.value})}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none appearance-none text-[10px] font-medium"
                   >
                     <option value="">Select Category</option>
                     {(grievanceCategories || []).map(c => (
@@ -1758,13 +1800,13 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     ))}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Priority</label>
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">PRIORITY LEVEL</label>
                   <select 
                     required
                     value={newGrievance.priority}
                     onChange={e => setNewGrievance({...newGrievance, priority: e.target.value})}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none appearance-none text-[10px] font-medium"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -1774,32 +1816,32 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 ml-1">Description</label>
+              <div className="space-y-1">
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">DETAILED DESCRIPTION</label>
                 <textarea 
                   required
                   rows={4}
                   value={newGrievance.description}
                   onChange={e => setNewGrievance({...newGrievance, description: e.target.value})}
                   placeholder="Provide detailed information..."
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none resize-none text-[10px] font-medium"
                 />
               </div>
               
-              <div className="flex justify-end gap-4 pt-6 border-t border-slate-200">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button 
                   type="button"
                   onClick={() => setShowNewGrievanceModal(false)}
-                  className="px-6 py-3 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-3 py-1.5 rounded-md font-black text-[8px] uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-colors"
                 >
-                  Cancel
+                  CANCEL
                 </button>
                 <button 
                   type="submit"
                   disabled={submitting}
-                  className="px-8 py-3 rounded-xl font-bold text-sm bg-slate-900 text-white hover:bg-emerald-600 disabled:opacity-50 transition-all shadow-sm"
+                  className="px-4 py-1.5 rounded-md font-black text-[8px] uppercase tracking-widest bg-slate-900 text-white hover:bg-emerald-600 disabled:opacity-50 transition-all shadow-sm"
                 >
-                  {submitting ? 'Submitting...' : 'Submit Grievance'}
+                  {submitting ? 'SUBMITTING...' : 'SUBMIT GRIEVANCE'}
                 </button>
               </div>
             </form>
@@ -1813,60 +1855,60 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl w-full max-w-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="bg-white rounded-xl w-full max-w-xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200"
           >
-            <div className="p-8 border-b border-slate-200 flex justify-between items-start bg-slate-50">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
+            <div className="p-3.5 border-b border-slate-200 flex justify-between items-start bg-slate-50">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1">
                   <GrievanceStatusBadge status={selectedGrievance.status} />
                   <GrievancePriorityBadge priority={selectedGrievance.priority} />
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
+                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-sm">
                     {selectedGrievance.category?.name || 'General'}
                   </span>
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900">{selectedGrievance.title}</h2>
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  <Calendar size={16} />
-                  Submitted on {safeFormat(selectedGrievance.createdAt, 'MMM d, yyyy')}
+                <h2 className="text-[13px] font-black text-slate-900 leading-tight uppercase tracking-tight">{selectedGrievance.title}</h2>
+                <div className="flex items-center gap-1 text-[7px] font-black text-slate-400 uppercase tracking-widest">
+                  <Calendar size={9} />
+                  SUBMITTED ON {safeFormat(selectedGrievance.createdAt, 'MMM d, yyyy')}
                 </div>
               </div>
               <button 
                 onClick={() => setSelectedGrievance(null)}
-                className="p-2 text-slate-400 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-200"
+                className="p-1 text-slate-400 hover:text-slate-900 transition-colors rounded-md hover:bg-slate-200"
               >
-                <X size={24} />
+                <X size={16} />
               </button>
             </div>
 
-            <div className="p-8 overflow-y-auto flex-1 space-y-8">
-              <div className="prose prose-slate max-w-none">
-                <p className="text-slate-700 whitespace-pre-wrap text-base leading-relaxed">{selectedGrievance.description}</p>
+            <div className="p-4 overflow-y-auto flex-1 space-y-4">
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <p className="text-slate-700 whitespace-pre-wrap text-[10px] leading-relaxed font-medium">{selectedGrievance.description}</p>
               </div>
 
-              <div className="space-y-6">
-                <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-4 flex items-center gap-2">
-                  <MessageCircle size={20} className="text-emerald-600" />
-                  Updates & Responses
+              <div className="space-y-2.5">
+                <h3 className="text-[9px] font-black text-slate-900 border-b border-slate-100 pb-1 flex items-center gap-1.5 uppercase tracking-widest">
+                  <MessageCircle size={12} className="text-emerald-600" />
+                  UPDATES & RESPONSES
                 </h3>
                 
                 {(!selectedGrievance.responses || (selectedGrievance.responses || []).filter(r => !r.isInternal).length === 0) ? (
-                  <div className="text-center py-12 text-slate-500 italic bg-slate-50 rounded-xl">
+                  <div className="text-center py-6 text-slate-500 text-[9px] font-bold uppercase tracking-wider bg-slate-50/50 rounded-lg border border-dashed border-slate-200">
                     No public responses yet. Our team is reviewing your concern.
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-2">
                     {(selectedGrievance.responses || []).filter(r => !r.isInternal).map(response => (
-                      <div key={response.id} className={`p-6 rounded-2xl ${response.userId === user?.id ? 'bg-emerald-50 ml-12' : 'bg-slate-50 mr-12'}`}>
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-200">
-                              <User size={16} />
+                      <div key={response.id} className={`p-2.5 rounded-lg border ${response.userId === user?.id ? 'bg-emerald-50 border-emerald-100 ml-6' : 'bg-slate-50 border-slate-100 mr-6'}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1">
+                            <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-200">
+                              <User size={8} />
                             </div>
-                            <span className="text-sm font-bold text-slate-900">{response.user?.displayName || 'Team Member'}</span>
+                            <span className="text-[8px] font-black text-slate-900 uppercase">{response.user?.displayName || 'Team Member'}</span>
                           </div>
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{safeFormat(response.createdAt, 'MMM d, h:mm a')}</span>
+                          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">{safeFormat(response.createdAt, 'MMM d, h:mm a')}</span>
                         </div>
-                        <p className="text-slate-700 whitespace-pre-wrap">{response.content}</p>
+                        <p className="text-slate-700 text-[9px] whitespace-pre-wrap leading-relaxed font-medium">{response.content}</p>
                       </div>
                     ))}
                   </div>
@@ -1874,7 +1916,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </div>
             </div>
 
-            <div className="p-8 border-t border-slate-200 bg-slate-50">
+            <div className="p-3.5 border-t border-slate-200 bg-slate-50">
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 if (!grievanceResponse.trim()) return;
@@ -1896,22 +1938,21 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 } finally {
                   setSubmitting(false);
                 }
-              }} className="space-y-4">
+              }} className="space-y-2">
                 <textarea 
                   required
                   value={grievanceResponse}
                   onChange={e => setGrievanceResponse(e.target.value)}
                   placeholder="Add a comment or provide more details..."
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none shadow-sm"
-                  rows={3}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none resize-none shadow-sm text-[10px] font-medium h-16"
                 />
                 <div className="flex justify-end">
                   <button 
                     type="submit"
                     disabled={submitting || !grievanceResponse.trim()}
-                    className="px-8 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 disabled:opacity-50 transition-all shadow-sm"
+                    className="px-4 py-1.5 bg-slate-900 text-white rounded-md text-[8px] font-black uppercase tracking-widest hover:bg-emerald-600 disabled:opacity-50 transition-all shadow-sm"
                   >
-                    {submitting ? 'Sending...' : 'Send Message'}
+                    {submitting ? 'SENDING...' : 'SEND RESPONSE'}
                   </button>
                 </div>
               </form>
@@ -1920,76 +1961,80 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
         </div>
       )}
 
-      {/* Profile Tab Content */}
       {/* Membership Tab */}
       {activeTab === 'membership' && (
-        <motion.div variants={itemVariants} className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div variants={itemVariants} className="space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900">My Membership</h2>
-              <p className="text-slate-600">Manage your official party membership and access exclusive benefits.</p>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">MY MEMBERSHIP</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Manage your official party membership and access exclusive benefits</p>
             </div>
           </div>
 
           {user.role === 'MEMBER' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               <div className="lg:col-span-1">
-                <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-                  <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                    <Award size={24} className="text-emerald-500" />
-                    Your Membership
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
+                  <h3 className="text-[10px] font-black text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-widest">
+                    <Award size={14} className="text-emerald-500" />
+                    YOUR MEMBERSHIP
                   </h3>
-                  <div className="space-y-6">
-                    <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                      <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Status</p>
-                      <p className="text-lg font-bold text-emerald-900">ACTIVE MEMBER</p>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                      <p className="text-[7px] font-black text-emerald-600 uppercase tracking-widest mb-1">STATUS</p>
+                      <p className="text-[12px] font-black text-emerald-900 uppercase">ACTIVE MEMBER</p>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-2 px-1">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Member ID</span>
-                        <span className="font-mono font-bold text-slate-800">{profile?.membershipId || '---'}</span>
+                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">MEMBER ID</span>
+                        <span className="font-mono font-black text-slate-800 text-[10px]">{profile?.membershipId || '---'}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Province</span>
-                        <span className="font-bold text-slate-800">{profile?.province || '---'}</span>
+                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">PROVINCE</span>
+                        <span className="font-black text-slate-800 text-[10px] uppercase tracking-tight">{profile?.province || '---'}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">District</span>
-                        <span className="font-bold text-slate-800">{profile?.district || '---'}</span>
+                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">DISTRICT</span>
+                        <span className="font-black text-slate-800 text-[10px] uppercase tracking-tight">{profile?.district || '---'}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 pt-2">
                       <button 
                         onClick={() => setShowIdCard(true)}
-                        className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
+                        className="w-full py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
-                        <IdCard size={18} />
-                        View Digital ID
+                        <IdCard size={14} />
+                        VIEW DIGITAL ID
                       </button>
                       <button 
                         onClick={() => setIsRenewing(true)}
-                        className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-500 transition-all shadow-sm flex items-center justify-center gap-2"
+                        className="w-full py-2 bg-emerald-600 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
-                        <Clock size={18} />
-                        Renew Membership
+                        <Clock size={14} />
+                        RENEW MEMBERSHIP
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm h-full">
-                  <h3 className="text-xl font-bold text-slate-900 mb-6">Membership Benefits</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm h-full">
+                  <h3 className="text-[10px] font-black text-slate-900 mb-3 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-blue-500" /> MEMBERSHIP BENEFITS
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
-                      { title: 'Voting Rights', desc: 'Participate in internal party elections and policy decisions.' },
-                      { title: 'Exclusive Training', desc: 'Access advanced political and leadership training programs.' },
-                      { title: 'Event Access', desc: 'Priority registration for party conventions and rallies.' },
-                      { title: 'Direct Feedback', desc: 'Direct channel to provide feedback to party leadership.' }
+                      { title: 'Voting Rights', desc: 'Participate in internal party elections and policy decisions.', icon: Vote },
+                      { title: 'Exclusive Training', desc: 'Access advanced political and leadership training programs.', icon: GraduationCap },
+                      { title: 'Event Access', desc: 'Priority registration for party conventions and rallies.', icon: Calendar },
+                      { title: 'Direct Feedback', desc: 'Direct channel to provide feedback to party leadership.', icon: MessageSquareText }
                     ].map((benefit, i) => (
-                      <div key={i} className="p-6 bg-slate-50 rounded-xl border border-slate-100">
-                        <h4 className="font-bold text-slate-900 mb-2">{benefit.title}</h4>
-                        <p className="text-sm text-slate-600 leading-relaxed">{benefit.desc}</p>
+                      <div key={i} className="p-3 bg-slate-50 rounded-lg border border-slate-100 hover:bg-white hover:border-slate-300 transition-all group">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <benefit.icon size={14} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                          <h4 className="font-black text-slate-900 text-[11px] uppercase tracking-tight">{benefit.title}</h4>
+                        </div>
+                        <p className="text-[10px] text-slate-500 leading-relaxed font-medium">{benefit.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -1997,93 +2042,114 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </div>
             </div>
           ) : user.role === 'APPLICANT_MEMBER' ? (
-            <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center max-w-2xl mx-auto">
-              <div className="w-24 h-24 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-8">
-                <Clock size={48} />
+            <div className="bg-white rounded-xl p-10 border border-slate-200 shadow-sm text-center max-w-md mx-auto border-t-4 border-t-amber-500">
+              <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
+                <Clock size={24} />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Application Under Review</h3>
-              <p className="text-slate-600 mb-8 leading-relaxed">Your membership application is currently being processed by our verification team. We will notify you once your status is updated.</p>
-              <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2">
-                  <span className="text-slate-500">Progress</span>
+              <h3 className="text-[14px] font-black text-slate-900 mb-1.5 uppercase tracking-tight">APPLICATION UNDER REVIEW</h3>
+              <p className="text-slate-500 text-[10px] mb-6 leading-relaxed font-medium uppercase tracking-tight">Your membership application is currently being processed by our verification team. We will notify you once your status is updated.</p>
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                <div className="flex justify-between text-[8px] font-black uppercase tracking-widest mb-2">
+                  <span className="text-slate-500">VERIFICATION PROGRESS</span>
                   <span className="text-amber-600">65%</span>
                 </div>
                 <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 w-[65%] rounded-full" />
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '65%' }}
+                    className="h-full bg-amber-500 rounded-full" 
+                  />
                 </div>
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center max-w-2xl mx-auto">
-              <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8">
-                <Award size={48} />
+            <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center max-w-md mx-auto border-t-4 border-t-emerald-500">
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-emerald-100">
+                <Award size={28} />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Join the Movement</h3>
-              <p className="text-slate-600 mb-8 leading-relaxed">Become a formal member of the party to unlock voting rights, exclusive training, and direct participation in our mission.</p>
+              <h3 className="text-[16px] font-black text-slate-900 mb-2 uppercase tracking-tight">JOIN THE MOVEMENT</h3>
+              <p className="text-slate-500 text-[11px] mb-8 leading-relaxed font-medium uppercase tracking-tight">Become a formal member of the party to unlock voting rights, exclusive training, and direct participation in our mission.</p>
               <button 
                 onClick={() => setCurrentView('membership-public')}
-                className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-emerald-600 transition-all shadow-sm"
+                className="px-8 py-3 bg-slate-900 text-white rounded-lg font-black text-[11px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-md flex items-center justify-center gap-2 mx-auto"
               >
-                Apply for Membership
+                APPLY FOR MEMBERSHIP <ArrowRight size={14} />
               </button>
             </div>
           )}
         </motion.div>
       )}
 
-      {/* Volunteer Tab */}
+      {/* Volunteer Tab Content */}
       {activeTab === 'volunteer' && (
-        <motion.div variants={itemVariants} className="space-y-8">
+        <motion.div variants={itemVariants} className="space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+            <div>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">VOLUNTEER HUB</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Manage your volunteer activities and track your impact</p>
+            </div>
+          </div>
+
           {volunteer ? (
             volunteer.status === 'APPROVED' ? (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 <div className="lg:col-span-1">
-                  <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-                    <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                      <Heart size={24} className="text-rose-500" />
-                      Volunteer Status
+                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm border-l-4 border-l-rose-500">
+                    <h3 className="text-[10px] font-black text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-widest">
+                      <Heart size={14} className="text-rose-500" />
+                      VOLUNTEER STATUS
                     </h3>
-                    <div className="space-y-6">
-                      <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                        <p className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-1">Status</p>
-                        <p className="text-lg font-bold text-rose-900">ACTIVE VOLUNTEER</p>
+                    <div className="space-y-3">
+                      <div className="p-3 bg-rose-50 rounded-lg border border-rose-100">
+                        <p className="text-[7px] font-black text-rose-600 uppercase tracking-widest mb-1">STATUS</p>
+                        <p className="text-[12px] font-black text-rose-900 uppercase">ACTIVE VOLUNTEER</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hours</p>
-                          <p className="text-2xl font-bold text-slate-900">{volunteer.totalHours || 0}</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">HOURS</p>
+                          <p className="text-lg font-black text-slate-900 leading-none">{volunteer.totalHours || 0}</p>
                         </div>
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Projects</p>
-                          <p className="text-2xl font-bold text-slate-900">{volunteer.projectsCount || 0}</p>
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">PROJECTS</p>
+                          <p className="text-lg font-black text-slate-900 leading-none">{volunteer.projectsCount || 0}</p>
                         </div>
                       </div>
                       <button 
                         onClick={() => setCurrentView('volunteer-enrollment')}
-                        className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-rose-600 transition-all shadow-sm"
+                        className="w-full py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
-                        Volunteer Portal
+                        <ShieldCheck size={14} />
+                        VOLUNTEER PORTAL
                       </button>
                     </div>
                   </div>
                 </div>
                 <div className="lg:col-span-2">
-                  <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm h-full">
-                    <h3 className="text-xl font-bold text-slate-900 mb-6">Active Assignments</h3>
-                    <div className="space-y-4">
+                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm h-full">
+                    <h3 className="text-[10px] font-black text-slate-900 mb-3 uppercase tracking-widest flex items-center gap-2">
+                      <History size={14} className="text-slate-400" /> ACTIVE ASSIGNMENTS
+                    </h3>
+                    <div className="space-y-2">
                       {volunteer.assignments?.length > 0 ? (
                         volunteer?.assignments?.map((as: any, i: number) => (
-                          <div key={i} className="p-6 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                          <div key={i} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center group hover:bg-white hover:border-slate-300 hover:shadow-md transition-all">
                             <div>
-                              <h4 className="font-bold text-slate-900">{as.title}</h4>
-                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">{as.role}</p>
+                              <h4 className="font-black text-slate-900 text-[11px] uppercase tracking-tight">{as.title}</h4>
+                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{as.role}</p>
                             </div>
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold uppercase tracking-wider">In Progress</span>
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[7px] font-black uppercase tracking-widest border border-emerald-200">IN PROGRESS</span>
                           </div>
                         ))
                       ) : (
                         <div className="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                          <p className="text-slate-500 font-bold text-sm">No active assignments.</p>
+                          <Heart size={24} className="mx-auto text-slate-300 mb-2 opacity-50" />
+                          <p className="text-slate-500 font-black text-[9px] uppercase tracking-widest">No active assignments found</p>
+                          <button 
+                            onClick={() => setCurrentView('volunteer-enrollment')}
+                            className="mt-3 text-[8px] font-black text-emerald-600 hover:text-emerald-700 underline uppercase tracking-widest"
+                          >
+                            BROWSE OPPORTUNITIES
+                          </button>
                         </div>
                       )}
                     </div>
@@ -2091,90 +2157,98 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-[3rem] p-12 border border-slate-200 shadow-sm text-center max-w-2xl mx-auto">
-                <div className="w-24 h-24 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-8">
-                  <Clock size={48} />
+              <div className="bg-white rounded-xl p-10 border border-slate-200 shadow-sm text-center max-w-md mx-auto border-t-4 border-t-blue-500">
+                <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
+                  <Clock size={24} />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Volunteer Application Pending</h3>
-                <p className="text-slate-500 font-medium mb-8">Thank you for your interest in volunteering! Our team is reviewing your application and will reach out shortly.</p>
+                <h3 className="text-[14px] font-black text-slate-900 mb-1.5 uppercase tracking-tight">APPLICATION PENDING</h3>
+                <p className="text-slate-500 text-[10px] mb-0 leading-relaxed font-medium uppercase tracking-tight">Thank you for your interest! Our team is reviewing your application and will reach out shortly via email or phone.</p>
               </div>
             )
           ) : (
-            <div className="bg-white rounded-[3rem] p-12 border border-slate-200 shadow-sm text-center max-w-2xl mx-auto">
-              <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-8">
-                <Heart size={48} />
+            <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center max-w-md mx-auto border-t-4 border-t-rose-500">
+              <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-rose-100">
+                <Heart size={28} />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Volunteer for Change</h3>
-              <p className="text-slate-500 font-medium mb-12">Join our team of dedicated volunteers and make a real impact on the ground. Your skills and time can help us build a better future.</p>
+              <h3 className="text-[16px] font-black text-slate-900 mb-2 uppercase tracking-tight">VOLUNTEER FOR CHANGE</h3>
+              <p className="text-slate-500 text-[11px] mb-8 leading-relaxed font-medium uppercase tracking-tight">Join our team of dedicated volunteers and make a real impact on the ground. Your skills and time can help us build a better future.</p>
               <button 
                 onClick={() => setCurrentView('volunteer-enrollment')}
-                className="px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-sm hover:bg-rose-600 transition-all shadow-xl shadow-slate-200"
+                className="px-8 py-3 bg-slate-900 text-white rounded-lg font-black text-[11px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-md flex items-center justify-center gap-2 mx-auto"
               >
-                Apply to Volunteer
+                APPLY TO VOLUNTEER <ArrowRight size={14} />
               </button>
             </div>
           )}
         </motion.div>
       )}
 
-      {/* Donations Tab */}
+      {/* Donations Tab Content */}
       {activeTab === 'donations' && (
-        <motion.div variants={itemVariants} className="space-y-8">
+        <motion.div variants={itemVariants} className="space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+            <div>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">DONATIONS & IMPACT</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Track your contributions and support active campaigns</p>
+            </div>
+          </div>
+
           {/* Donation Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-rose-600 rounded-2xl p-8 text-white shadow-md">
-              <p className="text-xs font-bold text-rose-200 uppercase tracking-wider mb-2">Total Contributions</p>
-              <p className="text-4xl font-bold">NPR {(donorProfile?.totalDonated || donations.reduce((acc, d) => acc + d.amount, 0)).toLocaleString()}</p>
-              <div className="mt-4 flex items-center gap-2 text-rose-200 text-sm font-bold">
-                <Heart size={16} />
-                <span>{donations.length} Contributions made</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-rose-600 rounded-xl p-4 text-white shadow-md border border-rose-500 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-white/20 transition-all" />
+              <p className="text-[8px] font-black text-rose-200 uppercase tracking-widest mb-1 relative z-10">TOTAL CONTRIBUTIONS</p>
+              <p className="text-2xl font-black tracking-tight relative z-10">NPR {(donorProfile?.totalDonated || donations.reduce((acc, d) => acc + d.amount, 0)).toLocaleString()}</p>
+              <div className="mt-2 flex items-center gap-2 text-rose-100 text-[9px] font-black uppercase tracking-widest relative z-10">
+                <Heart size={14} />
+                <span>{donations.length} TRANSACTIONS</span>
               </div>
             </div>
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Donor Level</p>
-              <p className="text-4xl font-bold text-slate-900">{donorProfile?.donorLevel || 'Supporter'}</p>
-              <p className="mt-4 text-slate-600 text-sm italic">Your support fuels our movement.</p>
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-center">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">DONOR LEVEL</p>
+              <p className="text-xl font-black text-slate-900 tracking-tight uppercase">{donorProfile?.donorLevel || 'SUPPORTER'}</p>
+              <p className="mt-1 text-slate-500 text-[9px] font-black uppercase tracking-widest">Your support fuels our movement</p>
             </div>
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quick Action</p>
-                <p className="text-xl font-bold text-slate-900">Support a Campaign</p>
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">QUICK ACTION</p>
+                <p className="text-[12px] font-black text-slate-900 uppercase tracking-tight">SUPPORT A CAMPAIGN</p>
               </div>
               <button 
                 onClick={() => setCurrentView('donate')}
-                className="mt-6 w-full py-3 bg-rose-600 text-white rounded-xl font-bold text-sm hover:bg-rose-700 transition-all shadow-sm"
+                className="mt-3 w-full py-2 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm flex items-center justify-center gap-2"
               >
-                Donate Now
+                DONATE NOW <ArrowRight size={12} />
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {/* Donation History */}
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-              <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                <Activity size={24} className="text-rose-500" />
-                Contribution History
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <h3 className="text-[10px] font-black text-slate-900 mb-4 flex items-center gap-2 uppercase tracking-widest">
+                <Activity size={16} className="text-rose-500" />
+                CONTRIBUTION HISTORY
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {donations.length > 0 ? (
                   donations?.map((donation, i) => (
-                    <div key={i} className="p-6 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center hover:bg-white hover:shadow-sm transition-all group">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Heart size={20} />
+                    <div key={i} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center hover:bg-white hover:shadow-md transition-all group">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform border border-rose-100">
+                          <Heart size={16} />
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-900">{donation.campaign?.title || 'General Donation'}</h4>
-                          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+                          <h4 className="font-black text-slate-900 text-[11px] uppercase tracking-tight">{donation.campaign?.title || 'GENERAL DONATION'}</h4>
+                          <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest mt-1">
                             {safeFormat(donation.transaction?.date || donation.createdAt || new Date(), 'MMM d, yyyy')}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-slate-900">NPR {(Number(donation.transaction?.amount || donation.amount) || 0).toLocaleString()}</p>
-                        <p className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full inline-block mt-1 ${
-                          donation.transaction?.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        <p className="font-black text-slate-900 text-[11px] uppercase tracking-tight">NPR {(Number(donation.transaction?.amount || donation.amount) || 0).toLocaleString()}</p>
+                        <p className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded inline-block mt-1 border ${
+                          donation.transaction?.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
                         }`}>
                           {donation.transaction?.status || 'PENDING'}
                         </p>
@@ -2182,63 +2256,64 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     </div>
                   ))
                 ) : (
-                  <div className="p-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    <Heart size={48} className="mx-auto text-slate-300 mb-4" />
-                    <p className="text-slate-500 font-bold text-sm">No contributions yet.</p>
+                  <div className="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <Heart size={24} className="mx-auto text-slate-300 mb-2 opacity-50" />
+                    <p className="text-slate-500 font-black text-[9px] uppercase tracking-widest">No contributions recorded yet</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Active Campaigns */}
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-              <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                <Megaphone size={24} className="text-emerald-500" />
-                Active Campaigns
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <h3 className="text-[10px] font-black text-slate-900 mb-4 flex items-center gap-2 uppercase tracking-widest">
+                <Megaphone size={16} className="text-emerald-500" />
+                ACTIVE CAMPAIGNS
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {activeCampaigns.length > 0 ? (
                   activeCampaigns?.slice(0, 3).map((campaign, i) => (
-                    <div key={i} className="p-6 bg-slate-50 rounded-xl border border-slate-100 space-y-4">
+                    <div key={i} className="p-4 bg-slate-50 rounded-lg border border-slate-100 space-y-3 group hover:bg-white hover:shadow-md transition-all">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-bold text-slate-900">{campaign.title}</h4>
-                          <p className="text-sm text-slate-600 line-clamp-1 mt-1">{campaign.description}</p>
+                          <h4 className="font-black text-slate-900 text-[11px] uppercase tracking-tight">{campaign.title}</h4>
+                          <p className="text-[10px] text-slate-500 line-clamp-1 mt-1 leading-relaxed font-medium uppercase tracking-tight">{campaign.description}</p>
                         </div>
-                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[8px] font-black rounded uppercase tracking-widest border border-emerald-100 shrink-0 ml-2">
                           {(campaign.fundraiserType || '').replace('_', ' ')}
                         </span>
                       </div>
                       
                       <div className="space-y-2">
-                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider">
-                          <span className="text-slate-500">Progress</span>
+                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
+                          <span className="text-slate-400">FUNDING PROGRESS</span>
                           <span className="text-emerald-600">{Math.round((Number(campaign.currentAmount || 0) / Number(campaign.goalAmount || 1)) * 100)}%</span>
                         </div>
                         <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                          <div 
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(100, (Number(campaign.currentAmount || 0) / Number(campaign.goalAmount || 1)) * 100)}%` }}
                             className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
-                            style={{ width: `${Math.min(100, (Number(campaign.currentAmount || 0) / Number(campaign.goalAmount || 1)) * 100)}%` }}
                           />
                         </div>
-                        <div className="flex justify-between text-xs font-bold">
+                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
                           <span className="text-slate-900">NPR {(Number(campaign.currentAmount) || 0).toLocaleString()}</span>
-                          <span className="text-slate-500">Goal: NPR {(Number(campaign.goalAmount) || 0).toLocaleString()}</span>
+                          <span className="text-slate-400">GOAL: NPR {(Number(campaign.goalAmount) || 0).toLocaleString()}</span>
                         </div>
                       </div>
 
                       <button 
                         onClick={() => setCurrentView('donate')}
-                        className="w-full py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm"
+                        className="w-full py-2 bg-emerald-600 text-white rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
-                        Support Campaign
+                        SUPPORT CAMPAIGN <ArrowRight size={12} />
                       </button>
                     </div>
                   ))
                 ) : (
-                  <div className="p-12 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                    <Megaphone size={48} className="mx-auto text-slate-200 mb-4" />
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No active campaigns.</p>
+                  <div className="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <Megaphone size={24} className="mx-auto text-slate-300 mb-2 opacity-50" />
+                    <p className="text-slate-500 font-black text-[9px] uppercase tracking-widest">No active campaigns at this time</p>
                   </div>
                 )}
               </div>
@@ -2249,19 +2324,26 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
       {activeTab === 'profile' && (
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
+          className="space-y-3"
         >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+            <div>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">USER PROFILE & SETTINGS</h2>
+              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Manage your personal information and account security</p>
+            </div>
+          </div>
+
           {isEditingProfile && (user.role === 'MEMBER' || user.role === 'APPLICANT_MEMBER') ? (
-            <div className="bg-white rounded-2xl p-8 md:p-12 border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-slate-900">Edit Profile</h2>
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between mb-3.5">
+                <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">EDIT PROFILE DETAILS</h2>
                 <button 
                   onClick={() => setIsEditingProfile(false)}
-                  className="px-6 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all text-sm"
+                  className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded font-black hover:bg-slate-200 transition-all text-[8px] uppercase tracking-widest border border-slate-200"
                 >
-                  Cancel
+                  CANCEL
                 </button>
               </div>
               <MemberProfileSettings 
@@ -2275,12 +2357,12 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               />
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {/* Profile Summary Card */}
-              <div className="lg:col-span-1 space-y-6">
-                <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center">
-                  <div className="relative inline-block mb-6">
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-50 bg-slate-100 shadow-inner">
+              <div className="lg:col-span-1 space-y-3">
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm text-center">
+                  <div className="relative inline-block mb-3.5">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-emerald-50 bg-slate-100 shadow-inner mx-auto">
                       <img 
                         src={profile?.profilePhotoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} 
                         alt="Profile" 
@@ -2288,21 +2370,21 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <div className="absolute bottom-0 right-0 w-10 h-10 bg-emerald-500 text-white rounded-full border-4 border-white flex items-center justify-center shadow-sm">
-                      <CheckCircle2 size={20} />
+                    <div className="absolute bottom-0 right-0 w-6 h-6 bg-emerald-500 text-white rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                      <CheckCircle2 size={12} />
                     </div>
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-900">{user.displayName}</h2>
-                  <p className="text-slate-500 font-bold uppercase tracking-wider text-xs mt-1">{user.role.replace('_', ' ')}</p>
+                  <h2 className="text-[14px] font-black text-slate-900 uppercase tracking-tight">{user.displayName}</h2>
+                  <p className="text-slate-400 font-black uppercase tracking-widest text-[9px] mt-0.5">{user.role.replace('_', ' ')}</p>
                   
-                  <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-500 font-bold uppercase tracking-wider text-xs">Verification</span>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                  <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 font-black uppercase tracking-widest text-[8px]">VERIFICATION</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest border ${
+                          user.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'
                         }`}>
-                          {user.isActive ? 'Verified' : 'Unverified'}
+                          {user.isActive ? 'VERIFIED' : 'UNVERIFIED'}
                         </span>
                         {!user.isActive && user.role === 'PUBLIC' && (
                           <button 
@@ -2315,59 +2397,60 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                                 toast.error('Verification failed');
                               }
                             }}
-                            className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 underline uppercase tracking-wider"
+                            className="text-[8px] font-black text-emerald-600 hover:text-emerald-700 underline uppercase tracking-widest"
                           >
-                            Verify Now
+                            VERIFY NOW
                           </button>
                         )}
                       </div>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-500 font-bold uppercase tracking-wider text-xs">Member Since</span>
-                      <span className="text-slate-900 font-bold">{safeFormat(user.createdAt, 'MMM yyyy')}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 font-black uppercase tracking-widest text-[8px]">MEMBER SINCE</span>
+                      <span className="text-slate-900 font-black text-[9px] uppercase tracking-tight">{safeFormat(user.createdAt, 'MMM yyyy')}</span>
                     </div>
                   </div>
 
                   {(user.role === 'MEMBER' || user.role === 'APPLICANT_MEMBER') && (
                     <button 
                       onClick={() => setIsEditingProfile(true)}
-                      className="w-full mt-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-emerald-600 transition-all shadow-sm"
+                      className="w-full mt-4 py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
                     >
-                      Edit Profile Details
+                      <Settings size={14} />
+                      EDIT PROFILE DETAILS
                     </button>
                   )}
                 </div>
 
                 {/* Identity Context */}
-                <div className="bg-slate-900 rounded-2xl p-8 text-white shadow-md">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-6">Linked Identity</h3>
-                  <div className="space-y-6">
+                <div className="bg-slate-900 rounded-xl p-4 text-white shadow-md border border-slate-800">
+                  <h3 className="text-[8px] font-black uppercase tracking-widest text-emerald-400 mb-3">LINKED IDENTITY</h3>
+                  <div className="space-y-3">
                     {user.role === 'MEMBER' && (
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center">
-                          <Shield size={24} />
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-emerald-500/20 text-emerald-400 rounded-md flex items-center justify-center border border-emerald-500/30">
+                          <Shield size={16} />
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Membership</p>
-                          <p className="font-bold text-white">Active Party Member</p>
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">MEMBERSHIP</p>
+                          <p className="font-black text-white text-[11px] uppercase tracking-tight">ACTIVE PARTY MEMBER</p>
                         </div>
                       </div>
                     )}
                     {volunteer && (
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center">
-                          <Heart size={24} />
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-500/20 text-blue-400 rounded-md flex items-center justify-center border border-blue-500/30">
+                          <Heart size={16} />
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Volunteer</p>
-                          <p className="font-bold text-white">{volunteer.status === 'APPROVED' ? 'Active Volunteer' : 'Volunteer Applicant'}</p>
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">VOLUNTEER</p>
+                          <p className="font-black text-white text-[11px] uppercase tracking-tight">{volunteer.status === 'APPROVED' ? 'ACTIVE VOLUNTEER' : 'VOLUNTEER APPLICANT'}</p>
                         </div>
                       </div>
                     )}
                     {!volunteer && user.role === 'PUBLIC' && (
-                      <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                        <p className="text-sm text-slate-300 leading-relaxed">
-                          You are currently a <span className="text-white font-bold">Registered User</span>. Join as a member or volunteer to unlock more features.
+                      <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-[10px] text-slate-300 leading-relaxed font-medium uppercase tracking-tight">
+                          You are currently a <span className="text-white font-black">REGISTERED USER</span>. Join as a member or volunteer to unlock more features.
                         </p>
                       </div>
                     )}
@@ -2376,85 +2459,91 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </div>
 
               {/* Profile Details & Settings */}
-              <div className="lg:col-span-2 space-y-8">
+              <div className="lg:col-span-2 space-y-3">
                 {/* Personal Information */}
-                <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-                  <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                    <User size={24} className="text-emerald-500" />
-                    Personal Information
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                  <h3 className="text-[10px] font-black text-slate-900 mb-3.5 flex items-center gap-1.5 uppercase tracking-widest">
+                    <User size={14} className="text-emerald-500" />
+                    PERSONAL INFORMATION
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Name</p>
-                      <p className="text-lg font-bold text-slate-900">{user.displayName}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">FULL NAME</p>
+                      <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{user.displayName}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address</p>
-                      <p className="text-lg font-bold text-slate-900">{user.email}</p>
+                    <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">EMAIL ADDRESS</p>
+                      <p className="text-[11px] font-black text-slate-900">{user.email}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phone Number</p>
-                      <p className="text-lg font-bold text-slate-900">{user.phoneNumber || 'Not provided'}</p>
+                    <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PHONE NUMBER</p>
+                      <p className="text-[11px] font-black text-slate-900">{user.phoneNumber || 'NOT PROVIDED'}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Account Type</p>
-                      <p className="text-lg font-bold text-slate-900 uppercase">{user.role.replace('_', ' ')}</p>
+                    <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ACCOUNT TYPE</p>
+                      <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{user.role.replace('_', ' ')}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Member Specific Details */}
                 {profile && (
-                  <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-                    <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                      <Award size={24} className="text-blue-500" />
-                      Membership Details
+                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-900 mb-3.5 flex items-center gap-1.5 uppercase tracking-widest">
+                      <Award size={14} className="text-blue-500" />
+                      MEMBERSHIP DETAILS
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Membership ID</p>
-                        <p className="text-lg font-bold text-slate-900">{profile.membershipId || 'Pending'}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">MEMBERSHIP ID</p>
+                        <p className="text-[11px] font-mono font-black text-slate-900 uppercase tracking-tight">{profile.membershipId || 'PENDING'}</p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Province</p>
-                        <p className="text-lg font-bold text-slate-900">{profile.province || 'Not specified'}</p>
+                      <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PROVINCE</p>
+                        <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{profile.province || 'NOT SPECIFIED'}</p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">District</p>
-                        <p className="text-lg font-bold text-slate-900">{profile.district || 'Not specified'}</p>
+                      <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">DISTRICT</p>
+                        <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{profile.district || 'NOT SPECIFIED'}</p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Local Level</p>
-                        <p className="text-lg font-bold text-slate-900">{profile.localLevel || 'Not specified'}</p>
+                      <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">LOCAL LEVEL</p>
+                        <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{profile.localLevel || 'NOT SPECIFIED'}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Account Security */}
-                <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-                  <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                    <Shield size={24} className="text-rose-500" />
-                    Account Security
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                  <h3 className="text-[10px] font-black text-slate-900 mb-3 flex items-center gap-1.5 uppercase tracking-widest">
+                    <Shield size={14} className="text-rose-500" />
+                    ACCOUNT SECURITY
                   </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-6 bg-slate-50 rounded-xl border border-slate-100">
-                      <div>
-                        <p className="font-bold text-slate-900">Password</p>
-                        <p className="text-sm text-slate-600 mt-1">Last changed {safeFormat(user.createdAt, 'MMM d, yyyy')}</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 group hover:bg-white hover:shadow-sm transition-all">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-white rounded-md border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-rose-500 transition-colors">
+                          <Lock size={14} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">PASSWORD</p>
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">LAST CHANGED {safeFormat(user.createdAt, 'MMM d, yyyy')}</p>
+                        </div>
                       </div>
-                      <button className="px-6 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm">
-                        Change
-                      </button>
+                      <button className="text-[8px] font-black text-slate-900 hover:text-emerald-600 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">CHANGE</button>
                     </div>
-                    <div className="flex items-center justify-between p-6 bg-slate-50 rounded-xl border border-slate-100">
-                      <div>
-                        <p className="font-bold text-slate-900">Two-Factor Authentication</p>
-                        <p className="text-sm text-slate-600 mt-1">Add an extra layer of security to your account.</p>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 group hover:bg-white hover:shadow-sm transition-all">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-white rounded-md border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-emerald-500 transition-colors">
+                          <Smartphone size={14} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">TWO-FACTOR AUTH</p>
+                          <p className="text-[7px] font-black text-emerald-600 uppercase tracking-widest">ENABLED</p>
+                        </div>
                       </div>
-                      <button className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-700 transition-all shadow-sm">
-                        Enable
-                      </button>
+                      <button className="text-[8px] font-black text-slate-900 hover:text-emerald-600 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">MANAGE</button>
                     </div>
                   </div>
                 </div>
@@ -2465,21 +2554,21 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
       )}
       {/* Member ID Card Modal */}
       {isRenewing && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-slate-900">Request Renewal</h3>
-              <button onClick={() => setIsRenewing(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={24} />
+              <h3 className="text-lg font-bold text-slate-900">Request Renewal</h3>
+              <button onClick={() => setIsRenewing(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100">
+                <X size={20} />
               </button>
             </div>
             
-            <p className="text-slate-600 mb-6 text-sm">
+            <p className="text-slate-500 mb-6 text-sm leading-relaxed">
               Submit a request to renew your membership. An administrator will review your request and extend your membership expiry date.
             </p>
 
             <form onSubmit={handleRenewalSubmit}>
-              <div className="mb-6">
+              <div className="mb-5">
                 <PaymentMethodSelector 
                   module="RENEWALS"
                   selectedMethodId={selectedMethod?.id || null}
@@ -2488,29 +2577,29 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
                   Additional Note (Optional)
                 </label>
                 <textarea
                   value={renewalNote}
                   onChange={(e) => setRenewalNote(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all resize-none h-24"
+                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all resize-none h-20 text-sm"
                   placeholder="Any message for the admin..."
                 />
               </div>
 
-              <div className="flex gap-3 justify-end mt-6">
+              <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsRenewing(false)}
-                  className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-xl"
+                  className="px-4 py-2 text-slate-600 font-bold text-xs hover:bg-slate-50 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!selectedMethod}
-                  className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   Submit Request
                 </button>

@@ -75,43 +75,43 @@ export const MemberProfileSettings: React.FC<MemberProfileSettingsProps> = ({ pr
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      <div className="flex items-center gap-4">
+    <div className="max-w-4xl mx-auto space-y-6 pb-8">
+      <div className="flex items-center gap-3">
         <button 
           onClick={onBack}
-          className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+          className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
         >
-          <ChevronLeft size={20} className="text-slate-600" />
+          <ChevronLeft size={16} className="text-slate-600" />
         </button>
         <div>
-          <h1 className="text-2xl font-black text-slate-800">Profile Settings</h1>
-          <p className="text-slate-500 text-sm">Manage your personal information and contact details.</p>
+          <h1 className="text-xl font-bold text-slate-900">Profile Settings</h1>
+          <p className="text-slate-500 text-xs mt-0.5">Manage your personal information and contact details.</p>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl flex items-center gap-3">
-          <AlertCircle size={20} />
-          <p className="font-medium text-sm">{error}</p>
+        <div className="p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-lg flex items-center gap-2">
+          <AlertCircle size={16} />
+          <p className="font-bold text-xs">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3">
-          <CheckCircle2 size={20} />
-          <p className="font-medium text-sm">Profile updated successfully.</p>
+        <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg flex items-center gap-2">
+          <CheckCircle2 size={16} />
+          <p className="font-bold text-xs">Profile updated successfully.</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Photo & Read-Only Info */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-center">
-            <div className="relative inline-block mb-4">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-slate-100">
+        <div className="space-y-4">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+            <div className="relative inline-block mb-3">
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-sm bg-slate-100">
                 {uploadingPhoto ? (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+                    <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
                   </div>
                 ) : (
                   <img 
@@ -125,9 +125,9 @@ export const MemberProfileSettings: React.FC<MemberProfileSettingsProps> = ({ pr
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingPhoto}
-                className="absolute bottom-0 right-0 p-2.5 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                className="absolute bottom-0 right-0 p-2 bg-emerald-600 text-white rounded-full shadow-sm hover:bg-emerald-700 transition-colors disabled:opacity-50"
               >
-                <Camera size={18} />
+                <Camera size={14} />
               </button>
               <input 
                 type="file" 
@@ -137,35 +137,35 @@ export const MemberProfileSettings: React.FC<MemberProfileSettingsProps> = ({ pr
                 className="hidden" 
               />
             </div>
-            <h2 className="text-xl font-black text-slate-800">{profile.fullName}</h2>
-            <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest mt-1">{profile.status}</p>
+            <h2 className="text-lg font-bold text-slate-900">{profile.fullName}</h2>
+            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">{profile.status}</p>
           </div>
 
-          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <User size={14} />
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <User size={12} />
               Identity & Membership (Read-Only)
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Member ID</p>
-                <p className="font-mono font-bold text-slate-800">{profile.membershipId || 'N/A'}</p>
+                <p className="font-mono font-bold text-slate-900 text-xs">{profile.membershipId || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Organization Unit</p>
-                <p className="font-bold text-slate-800">{profile.orgUnit?.name || 'N/A'}</p>
+                <p className="font-bold text-slate-900 text-xs">{profile.orgUnit?.name || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Joined Date</p>
-                <p className="font-bold text-slate-800">{profile.joinedDate ? new Date(profile.joinedDate).toLocaleDateString() : 'N/A'}</p>
+                <p className="font-bold text-slate-900 text-xs">{profile.joinedDate ? new Date(profile.joinedDate).toLocaleDateString() : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Issue Date</p>
-                <p className="font-bold text-slate-800">{(profile.issueDate || profile.joinedDate || profile.createdAt) ? new Date(profile.issueDate || profile.joinedDate || profile.createdAt).toLocaleDateString() : 'N/A'}</p>
+                <p className="font-bold text-slate-900 text-xs">{(profile.issueDate || profile.joinedDate || profile.createdAt) ? new Date(profile.issueDate || profile.joinedDate || profile.createdAt).toLocaleDateString() : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Expiry Date</p>
-                <p className="font-bold text-slate-800">
+                <p className="font-bold text-slate-900 text-xs">
                   {profile.expiryDate 
                     ? new Date(profile.expiryDate).toLocaleDateString() 
                     : (profile.issueDate || profile.joinedDate || profile.createdAt) 
@@ -175,11 +175,11 @@ export const MemberProfileSettings: React.FC<MemberProfileSettingsProps> = ({ pr
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Citizenship Number</p>
-                <p className="font-mono font-bold text-slate-800">{profile.citizenshipNumber || 'N/A'}</p>
+                <p className="font-mono font-bold text-slate-900 text-xs">{profile.citizenshipNumber || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Payment Method</p>
-                <p className="font-bold text-slate-800 uppercase">{profile.paymentMethod || 'N/A'}</p>
+                <p className="font-bold text-slate-900 text-xs uppercase">{profile.paymentMethod || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -187,143 +187,143 @@ export const MemberProfileSettings: React.FC<MemberProfileSettingsProps> = ({ pr
 
         {/* Right Column: Editable Form */}
         <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+          <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
             
             {/* Contact Information */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-2">
-                <Phone size={16} className="text-emerald-600" />
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                <Phone size={14} className="text-emerald-600" />
                 Contact Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Email Address</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
                   <input 
                     type="email" 
                     name="email" 
                     value={formData.email} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Mobile Number</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Mobile Number</label>
                   <input 
                     type="tel" 
                     name="mobile" 
                     value={formData.mobile} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Alt Contact Name</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Alt Contact Name</label>
                   <input 
                     type="text" 
                     name="alternateContactName" 
                     value={formData.alternateContactName} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Alt Contact Mobile</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Alt Contact Mobile</label>
                   <input 
                     type="tel" 
                     name="alternateContactMobile" 
                     value={formData.alternateContactMobile} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
               </div>
             </div>
 
             {/* Address */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-2">
-                <MapPin size={16} className="text-emerald-600" />
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                <MapPin size={14} className="text-emerald-600" />
                 Current Address
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Province</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Province</label>
                   <input 
                     type="text" 
                     name="province" 
                     value={formData.province} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">District</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">District</label>
                   <input 
                     type="text" 
                     name="district" 
                     value={formData.district} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Local Level</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Local Level</label>
                   <input 
                     type="text" 
                     name="localLevel" 
                     value={formData.localLevel} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ward</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Ward</label>
                   <input 
                     type="number" 
                     name="ward" 
                     value={formData.ward} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
                 <div className="space-y-1 md:col-span-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Tole / Street</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Tole / Street</label>
                   <input 
                     type="text" 
                     name="tole" 
                     value={formData.tole} 
                     onChange={handleChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                   />
                 </div>
               </div>
             </div>
 
             {/* Personal Details */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-2">
-                <Briefcase size={16} className="text-emerald-600" />
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                <Briefcase size={14} className="text-emerald-600" />
                 Personal Details
               </h3>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Occupation</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Occupation</label>
                 <input 
                   type="text" 
                   name="occupation" 
                   value={formData.occupation} 
                   onChange={handleChange} 
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-all"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm"
                 />
               </div>
             </div>
 
-            <div className="pt-4 flex justify-end">
+            <div className="pt-4 flex justify-end border-t border-slate-100">
               <button 
                 type="submit" 
                 disabled={loading}
-                className="px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
               >
-                {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 Save Changes
               </button>
             </div>
