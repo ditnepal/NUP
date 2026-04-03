@@ -365,6 +365,10 @@ router.post('/membership-status', async (req, res) => {
           select: {
             name: true
           }
+        },
+        transactions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
         }
       }
     });
@@ -407,7 +411,8 @@ router.post('/membership-status', async (req, res) => {
       paymentMethod: member.paymentMethod,
       createdAt: member.createdAt,
       orgUnit: member.orgUnit,
-      hasAccount: !!member.userId
+      hasAccount: !!member.userId,
+      latestTransaction: member.transactions?.[0] || null
     });
   } catch (error: any) {
     console.error('Error checking membership status:', error);

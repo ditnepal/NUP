@@ -93,19 +93,29 @@ router.post('/:id/process', authenticate, authorize(['ADMIN', 'STAFF']), async (
           data: {
             expiryDate: newExpiryDate
           }
+        }),
+        prisma.transaction.updateMany({
+          where: { renewalRequestId: id, status: 'PENDING' },
+          data: { status: 'COMPLETED' }
         })
       ]);
     } else {
       // Reject
-      await prisma.renewalRequest.update({
-        where: { id },
-        data: {
-          status: 'REJECTED',
-          adminNote: adminNote || null,
-          reviewedBy: adminId,
-          reviewedAt: new Date()
-        }
-      });
+      await prisma.$transaction([
+        prisma.renewalRequest.update({
+          where: { id },
+          data: {
+            status: 'REJECTED',
+            adminNote: adminNote || null,
+            reviewedBy: adminId,
+            reviewedAt: new Date()
+          }
+        }),
+        prisma.transaction.updateMany({
+          where: { renewalRequestId: id, status: 'PENDING' },
+          data: { status: 'FAILED' }
+        })
+      ]);
     }
 
     const updatedRenewal = await prisma.renewalRequest.findUnique({

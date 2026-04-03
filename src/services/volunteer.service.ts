@@ -96,7 +96,7 @@ export class VolunteerService extends BaseService {
       data
     });
 
-    // Update assignment status to COMPLETED if report submitted (optional logic)
+    // Update assignment status to COMPLETED if report submitted
     await this.db.volunteerAssignment.update({
       where: { id: data.assignmentId },
       data: { status: 'COMPLETED' }
@@ -106,23 +106,78 @@ export class VolunteerService extends BaseService {
       action: 'VOLUNTEER_REPORT_SUBMITTED',
       entityType: 'VolunteerReport',
       entityId: report.id,
-      details: { hoursSpent: data.hoursSpent }
+      details: { hoursSpent: data.hoursSpent, assignmentId: data.assignmentId }
     });
 
     return report;
   }
 
   /**
+   * Get all volunteer reports (Admin oversight)
+   */
+  async getReports(volunteerId?: string) {
+    return await this.db.volunteerReport.findMany({
+      where: volunteerId ? { assignment: { volunteerId } } : {},
+      include: {
+        assignment: {
+          include: {
+            volunteer: { select: { fullName: true } },
+            campaign: { select: { title: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  /**
    * Get all active volunteers
    */
   async getActiveVolunteers() {
-    return await this.db.volunteer.findMany({
+    const volunteers = await this.db.volunteer.findMany({
       where: { status: 'ACTIVE' },
       include: {
         member: { select: { membershipId: true, fullName: true } },
-        assignments: { where: { status: 'PENDING' } }
+        assignments: { 
+          include: { campaign: { select: { title: true } } }
+        }
       }
     });
+
+    // Enrich with stats
+    return await Promise.all(volunteers.map(async (v) => {
+      const reports = await this.db.volunteerReport.findMany({
+        where: { assignment: { volunteerId: v.id } }
+      });
+      const totalHours = reports.reduce((sum, r) => sum + (r.hoursSpent || 0), 0);
+      const projectsCount = v.assignments.filter(a => a.status === 'COMPLETED').length;
+      return { ...v, totalHours, projectsCount };
+    }));
+  }
+
+  /**
+   * Get all volunteers
+   */
+  async getAllVolunteers() {
+    const volunteers = await this.db.volunteer.findMany({
+      include: {
+        member: { select: { membershipId: true, fullName: true } },
+        assignments: { 
+          include: { campaign: { select: { title: true } } }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Enrich with stats
+    return await Promise.all(volunteers.map(async (v) => {
+      const reports = await this.db.volunteerReport.findMany({
+        where: { assignment: { volunteerId: v.id } }
+      });
+      const totalHours = reports.reduce((sum, r) => sum + (r.hoursSpent || 0), 0);
+      const projectsCount = v.assignments.filter(a => a.status === 'COMPLETED').length;
+      return { ...v, totalHours, projectsCount };
+    }));
   }
 
   /**
@@ -237,15 +292,36 @@ export class VolunteerService extends BaseService {
    * Get volunteer by ID
    */
   async getById(id: string) {
-    return await this.db.volunteer.findUnique({
+    const volunteer = await this.db.volunteer.findUnique({
       where: { id },
       include: {
         member: true,
-        assignments: { include: { campaign: true } },
+        assignments: { 
+          include: { 
+            campaign: true,
+            reports: true
+          } 
+        },
         performance: true,
         recognitions: true
       }
     });
+
+    if (!volunteer) return null;
+
+    // Calculate truthful stats
+    const reports = await this.db.volunteerReport.findMany({
+      where: { assignment: { volunteerId: id } }
+    });
+
+    const totalHours = reports.reduce((sum, r) => sum + (r.hoursSpent || 0), 0);
+    const projectsCount = volunteer.assignments.filter(a => a.status === 'COMPLETED').length;
+
+    return {
+      ...volunteer,
+      totalHours,
+      projectsCount
+    };
   }
 
   /**
@@ -295,16 +371,35 @@ export class VolunteerService extends BaseService {
    * Get volunteer by user ID
    */
   async getByUserId(userId: string) {
-    return await this.db.volunteer.findFirst({
+    const volunteer = await this.db.volunteer.findFirst({
       where: { userId },
       include: {
         assignments: {
           include: {
-            campaign: { select: { title: true } }
+            campaign: { select: { title: true } },
+            reports: true
           }
-        }
+        },
+        performance: true,
+        recognitions: true
       }
     });
+
+    if (!volunteer) return null;
+
+    // Calculate truthful stats
+    const reports = await this.db.volunteerReport.findMany({
+      where: { assignment: { volunteerId: volunteer.id } }
+    });
+
+    const totalHours = reports.reduce((sum, r) => sum + (r.hoursSpent || 0), 0);
+    const projectsCount = volunteer.assignments.filter(a => a.status === 'COMPLETED').length;
+
+    return {
+      ...volunteer,
+      totalHours,
+      projectsCount
+    };
   }
 }
 

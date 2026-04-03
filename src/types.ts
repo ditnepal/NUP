@@ -598,6 +598,11 @@ export interface Volunteer {
   updatedAt: string;
   member?: Member;
   assignments?: any[];
+  reports?: any[];
+  performance?: any[];
+  recognition?: any[];
+  totalHours?: number;
+  projectsCount?: number;
 }
 
 export interface VolunteerApplication {

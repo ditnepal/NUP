@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Info, 
   Users, 
@@ -13,9 +13,12 @@ import {
   Mail,
   ExternalLink,
   Search,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
+  FileText
 } from 'lucide-react';
 import { api } from '../lib/api';
+import Markdown from 'react-markdown';
 
 interface Office {
   id: string;
@@ -45,20 +48,40 @@ interface PublicAboutProps {
   onBack?: () => void;
 }
 
-const PublicAbout: React.FC<PublicAboutProps> = ({ onBack }) => {
+export const PublicAbout: React.FC<PublicAboutProps> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<'about' | 'org' | 'offices'>('about');
   const [offices, setOffices] = useState<Office[]>([]);
   const [hierarchy, setHierarchy] = useState<OrgUnit[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // CMS Content State
+  const [aboutPage, setAboutPage] = useState<any>(null);
+  const [loadingPage, setLoadingPage] = useState(true);
+
   useEffect(() => {
-    if (activeTab === 'offices') {
+    if (activeTab === 'about') {
+      fetchAboutPage();
+    } else if (activeTab === 'offices') {
       fetchOffices();
     } else if (activeTab === 'org') {
       fetchHierarchy();
     }
   }, [activeTab]);
+
+  const fetchAboutPage = async () => {
+    setLoadingPage(true);
+    try {
+      // We use 'about-us' as the standard slug for the About page
+      const data = await api.get('/public/pages/about-us');
+      setAboutPage(data);
+    } catch (error: any) {
+      console.warn('[PublicAbout] CMS About page not found or unpublished:', error.message);
+      setAboutPage(null);
+    } finally {
+      setLoadingPage(false);
+    }
+  };
 
   const fetchOffices = async () => {
     setLoading(true);
@@ -154,68 +177,52 @@ const PublicAbout: React.FC<PublicAboutProps> = ({ onBack }) => {
       <div className="py-12">
         {activeTab === 'about' && (
           <div className="space-y-16">
-            {/* Mission & Vision */}
-            <div className="grid md:grid-cols-2 gap-12">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="bg-white p-12 rounded-[3rem] shadow-sm border border-slate-100 hover:border-blue-500 transition-all group"
-              >
-                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-8 border border-blue-100 group-hover:scale-110 transition-transform duration-500">
-                  <Target size={32} />
-                </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-6 uppercase tracking-tight">Our Mission</h2>
-                <p className="text-slate-500 leading-relaxed font-medium text-lg">
-                  To build a progressive, inclusive, and transparent political platform that empowers every citizen to participate in the democratic process. We strive to create sustainable solutions for national challenges through evidence-based policy and grassroots engagement.
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="bg-white p-12 rounded-[3rem] shadow-sm border border-slate-100 hover:border-indigo-500 transition-all group"
-              >
-                <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-8 border border-indigo-100 group-hover:scale-110 transition-transform duration-500">
-                  <Globe size={32} />
-                </div>
-                <h2 className="text-3xl font-black text-slate-900 mb-6 uppercase tracking-tight">Our Vision</h2>
-                <p className="text-slate-500 leading-relaxed font-medium text-lg">
-                  A nation where governance is truly by the people, for the people. We envision a future defined by social justice, economic prosperity, and environmental stewardship, supported by a technologically advanced and ethically grounded political organization.
-                </p>
-              </motion.div>
-            </div>
-
-            {/* History */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-white p-12 rounded-[3rem] shadow-sm border border-slate-100"
-            >
-              <div className="flex items-center space-x-6 mb-12">
-                <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center border border-amber-100">
-                  <History size={28} />
-                </div>
-                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Our Journey</h2>
+            {loadingPage ? (
+              <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
+                <Loader2 size={48} className="text-blue-600 animate-spin mb-4" />
+                <p className="text-slate-500 font-medium uppercase tracking-widest text-[10px]">Retrieving Official Content...</p>
               </div>
-              <div className="space-y-12 relative before:absolute before:left-6 before:top-2 before:bottom-2 before:w-1 before:bg-slate-50">
-                {[
-                  { year: '2020', title: 'Foundation', desc: 'The organization was founded by a group of passionate activists and policy experts.' },
-                  { year: '2022', title: 'National Expansion', desc: 'Established presence in all provinces and major districts across the country.' },
-                  { year: '2024', title: 'Digital Transformation', desc: 'Launched the first-of-its-kind digital operating system for political management.' },
-                  { year: '2026', title: 'Present Day', desc: 'Leading the way in modern, transparent, and data-driven political engagement.' },
-                ].map((item, idx) => (
-                  <div key={idx} className="relative pl-16 group">
-                    <div className="absolute left-4 top-2 w-5 h-5 rounded-full bg-white border-4 border-blue-600 group-hover:scale-125 transition-transform z-10" />
-                    <span className="text-xs font-black text-blue-600 uppercase tracking-widest">{item.year}</span>
-                    <h3 className="text-xl font-black text-slate-900 mt-2 uppercase tracking-tight">{item.title}</h3>
-                    <p className="text-slate-500 mt-2 font-medium leading-relaxed max-w-2xl">{item.desc}</p>
+            ) : aboutPage ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white p-12 md:p-16 rounded-[3rem] shadow-sm border border-slate-100"
+              >
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100">
+                    <Globe size={24} />
                   </div>
-                ))}
+                  <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tight">{aboutPage.title}</h2>
+                </div>
+                
+                <div className="prose prose-slate max-w-none prose-headings:uppercase prose-headings:font-black prose-headings:tracking-tight prose-p:text-slate-500 prose-p:font-medium prose-p:leading-relaxed prose-p:text-lg">
+                  <Markdown>{aboutPage.content}</Markdown>
+                </div>
+
+                {aboutPage.updatedAt && (
+                  <div className="mt-12 pt-8 border-t border-slate-50 flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <span>Official Publication</span>
+                    <span>Last Updated: {new Date(aboutPage.updatedAt).toLocaleDateString()}</span>
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <div className="space-y-16">
+                {/* Fallback to original hardcoded content if CMS page is missing, but with a "Draft" or "Coming Soon" feel if preferred. 
+                    Actually, the mission says "truthful empty or unpublished-state". 
+                    I will show a clean empty state indicating content is being prepared. */}
+                <div className="py-24 text-center bg-white rounded-[3rem] border border-dashed border-slate-200 shadow-sm">
+                  <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-3xl flex items-center justify-center mx-auto mb-8">
+                    <FileText size={40} />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tight">Content Under Review</h3>
+                  <p className="text-slate-500 max-w-md mx-auto font-medium leading-relaxed">
+                    The official About Us content is currently being updated by the administration. 
+                    Please check back soon for the latest mission, vision, and organizational history.
+                  </p>
+                </div>
               </div>
-            </motion.div>
+            )}
           </div>
         )}
 

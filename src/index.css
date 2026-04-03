@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@tailwindcss/typography";
 
 /* 
   Global reset for html2canvas compatibility with Tailwind v4.

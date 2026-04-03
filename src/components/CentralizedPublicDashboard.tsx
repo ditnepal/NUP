@@ -38,6 +38,7 @@ import {
   Search,
   Pin,
   GraduationCap,
+  History,
   Layers,
   ArrowLeft,
   PlayCircle,
@@ -50,13 +51,14 @@ import {
   ShieldCheck,
   MessageCircle,
   MessageSquareText,
-  History,
   IdCard,
   AlertCircle,
+  Info,
   LayoutDashboard,
   HandCoins,
   Smartphone,
-  UserCircle
+  UserCircle,
+  Loader2,
 } from 'lucide-react';
 import MemberIdCard from './MemberIdCard';
 import { MemberCardModal } from './MemberCardModal';
@@ -149,11 +151,29 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
   });
   const [grievanceResponse, setGrievanceResponse] = useState('');
 
+  // Volunteer reporting state
+  const [isReporting, setIsReporting] = useState(false);
+  const [reportingAssignment, setReportingAssignment] = useState<any>(null);
+  const [reportData, setReportData] = useState({ content: '', hoursSpent: '' });
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  const fetchVolunteerStatus = async () => {
+    try {
+      const data = await api.get('/volunteers/me');
+      setVolunteer(data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching volunteer status:', error);
+      return null;
+    }
+  };
+
   const getProgress = () => {
     if (profile?.status === 'APPROVED' || profile?.status === 'ACTIVE') return 100;
-    if (profile?.status === 'PENDING') return 65;
+    if (profile?.status === 'VERIFIED') return 75;
+    if (profile?.status === 'PENDING') return 40;
     if (profile?.status === 'REJECTED') return 0;
-    return 30; // Default for just started
+    return 20; // Default for just started
   };
 
   useEffect(() => {
@@ -205,7 +225,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
         }
 
         // /volunteers/me only requires authentication, no specific module permission
-        promises.push(api.get('/volunteers/me').catch(() => null));
+        promises.push(fetchVolunteerStatus());
         keys.push('volunteer');
 
         if (can('FUNDRAISING', 'VIEW')) {
@@ -271,6 +291,31 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
       setRenewals(renewalsData);
     } catch (err: any) {
       toast.error(err.message || 'Failed to submit renewal request.');
+    }
+  };
+
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportingAssignment) return;
+    
+    setSubmittingReport(true);
+    try {
+      await api.post('/volunteers/report', {
+        assignmentId: reportingAssignment.id,
+        content: reportData.content,
+        hoursSpent: parseFloat(reportData.hoursSpent) || 0
+      });
+      toast.success('Activity report submitted successfully!');
+      setIsReporting(false);
+      setReportData({ content: '', hoursSpent: '' });
+      setReportingAssignment(null);
+      // Refresh volunteer data to update stats and assignment status
+      await fetchVolunteerStatus();
+    } catch (error: any) {
+      console.error('Error submitting report:', error);
+      toast.error(error.message || 'Failed to submit report');
+    } finally {
+      setSubmittingReport(false);
     }
   };
 
@@ -2073,8 +2118,8 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   </div>
                 </div>
               </div>
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm h-full">
+              <div className="lg:col-span-2 space-y-4">
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                   <h3 className="text-[11px] font-black text-slate-900 mb-3 uppercase tracking-widest flex items-center gap-2">
                     <ShieldCheck size={14} className="text-blue-500" /> MEMBERSHIP BENEFITS
                   </h3>
@@ -2095,27 +2140,98 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     ))}
                   </div>
                 </div>
+
+                {renewals.length > 0 && (
+                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <h3 className="text-[11px] font-black text-slate-900 mb-3 uppercase tracking-widest flex items-center gap-2">
+                      <History size={14} className="text-amber-500" /> RENEWAL HISTORY
+                    </h3>
+                    <div className="space-y-2">
+                      {renewals.map((renewal, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">
+                              {new Date(renewal.createdAt).toLocaleDateString()}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                              {renewal.paymentMethod || 'MANUAL'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${
+                              renewal.status === 'COMPLETED' || renewal.status === 'APPROVED' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
+                              renewal.status === 'PENDING' ? 'text-amber-600 bg-amber-50 border-amber-100' :
+                              'text-rose-600 bg-rose-50 border-rose-100'
+                            }`}>
+                              {renewal.status.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : user.role === 'APPLICANT_MEMBER' ? (
-            <div className="bg-white rounded-xl p-10 border border-slate-200 shadow-sm text-center max-w-md mx-auto border-t-4 border-t-amber-500">
-              <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
-                <Clock size={24} />
-              </div>
-              <h3 className="text-[15px] font-black text-slate-900 mb-1.5 uppercase tracking-tight">APPLICATION UNDER REVIEW</h3>
-              <p className="text-slate-500 text-[11px] mb-6 leading-relaxed font-medium uppercase tracking-tight">Your membership application is currently being processed by our verification team. We will notify you once your status is updated.</p>
-              <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest mb-2">
-                  <span className="text-slate-500">VERIFICATION PROGRESS</span>
-                  <span className="text-amber-600">65%</span>
+            <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm max-w-md mx-auto border-t-4 border-t-amber-500">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
+                  <Clock size={24} />
                 </div>
-                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                <h3 className="text-[15px] font-black text-slate-900 mb-1.5 uppercase tracking-tight">APPLICATION UNDER REVIEW</h3>
+                <p className="text-slate-500 text-[11px] leading-relaxed font-medium uppercase tracking-tight">Your membership application is currently being processed by our verification team. We will notify you once your status is updated.</p>
+              </div>
+
+              <div className="p-5 bg-slate-50 rounded-xl border border-slate-100 mb-6">
+                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest mb-2.5">
+                  <span className="text-slate-500">VERIFICATION PROGRESS</span>
+                  <span className="text-amber-600">{getProgress()}%</span>
+                </div>
+                <div className="h-2.5 bg-slate-200 rounded-full overflow-hidden border border-slate-100">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: '65%' }}
-                    className="h-full bg-amber-500 rounded-full" 
+                    animate={{ width: `${getProgress()}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.3)]" 
                   />
                 </div>
+                
+                <div className="grid grid-cols-3 gap-1.5 mt-4">
+                  <div className={`text-[8px] font-black text-center py-1 rounded-md tracking-tighter ${profile?.status === 'PENDING' || profile?.status === 'VERIFIED' || profile?.status === 'ACTIVE' ? 'text-emerald-600 bg-emerald-50 border border-emerald-100' : 'text-slate-400 bg-slate-50 border border-slate-100'}`}>
+                    SUBMITTED
+                  </div>
+                  <div className={`text-[8px] font-black text-center py-1 rounded-md tracking-tighter ${profile?.status === 'VERIFIED' || profile?.status === 'ACTIVE' ? 'text-emerald-600 bg-emerald-50 border border-emerald-100' : 'text-slate-400 bg-slate-50 border border-slate-100'}`}>
+                    VERIFIED
+                  </div>
+                  <div className={`text-[8px] font-black text-center py-1 rounded-md tracking-tighter ${profile?.status === 'ACTIVE' ? 'text-emerald-600 bg-emerald-50 border border-emerald-100' : 'text-slate-400 bg-slate-50 border border-slate-100'}`}>
+                    APPROVED
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tracking Code</span>
+                  <span className="text-[11px] font-mono font-black text-slate-900 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{profile?.trackingCode}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Payment Method</span>
+                  <span className="text-[11px] font-black text-slate-900">{profile?.paymentMethod || 'NOT SELECTED'}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Payment Status</span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${profile?.transactions?.[0]?.status === 'COMPLETED' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-amber-600 bg-amber-50 border-amber-100'}`}>
+                    {(profile?.transactions?.[0]?.status || 'PENDING').toUpperCase()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex gap-3">
+                <Info size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-blue-700 leading-relaxed font-medium">
+                  If you have already paid via a manual method, please ensure you have uploaded the receipt or contacted your local unit coordinator for verification.
+                </p>
               </div>
             </div>
           ) : (
@@ -2175,7 +2291,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                         className="w-full py-2 bg-slate-900 text-white rounded font-black text-xs uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
                         <ShieldCheck size={14} />
-                        VOLUNTEER PORTAL
+                        UPDATE PROFILE
                       </button>
                     </div>
                   </div>
@@ -2189,11 +2305,35 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       {volunteer.assignments?.length > 0 ? (
                         volunteer?.assignments?.map((as: any, i: number) => (
                           <div key={i} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center group hover:bg-white hover:border-slate-300 hover:shadow-md transition-all">
-                            <div>
-                              <h4 className="font-black text-slate-900 text-[12px] uppercase tracking-tight">{as.title}</h4>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{as.role}</p>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-black text-slate-900 text-[12px] uppercase tracking-tight">{as.taskName}</h4>
+                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border ${
+                                  as.status === 'COMPLETED' 
+                                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+                                    : 'bg-blue-100 text-blue-700 border-blue-200'
+                                }`}>
+                                  {as.status === 'COMPLETED' ? 'COMPLETED' : 'IN PROGRESS'}
+                                </span>
+                              </div>
+                              {as.campaign && (
+                                <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest mt-0.5">
+                                  Campaign: {as.campaign.title || as.campaign.name}
+                                </p>
+                              )}
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{as.description || 'No description provided'}</p>
                             </div>
-                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[8px] font-black uppercase tracking-widest border border-emerald-200">IN PROGRESS</span>
+                            {as.status !== 'COMPLETED' && (
+                              <button 
+                                onClick={() => {
+                                  setReportingAssignment(as);
+                                  setIsReporting(true);
+                                }}
+                                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-900 rounded font-black text-[9px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                              >
+                                REPORT ACTIVITY
+                              </button>
+                            )}
                           </div>
                         ))
                       ) : (
@@ -2210,15 +2350,48 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       )}
                     </div>
                   </div>
+
+                  {volunteer.recognitions && volunteer.recognitions.length > 0 && (
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm border-t-4 border-t-amber-400">
+                      <h3 className="text-[11px] font-black text-slate-900 mb-3 uppercase tracking-widest flex items-center gap-2">
+                        <Award size={14} className="text-amber-500" /> AWARDS & RECOGNITION
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {volunteer.recognitions.map((r: any, i: number) => (
+                          <div key={i} className="p-3 bg-amber-50/50 rounded-lg border border-amber-100">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Award size={12} className="text-amber-600" />
+                              <span className="text-[11px] font-black text-slate-900 uppercase">{r.title}</span>
+                            </div>
+                            <p className="text-[10px] text-slate-600 leading-tight">{r.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : (
+            ) : volunteer.status === 'PENDING' ? (
               <div className="bg-white rounded-xl p-10 border border-slate-200 shadow-sm text-center max-w-md mx-auto border-t-4 border-t-blue-500">
                 <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
                   <Clock size={24} />
                 </div>
                 <h3 className="text-xs font-black text-slate-900 mb-1.5 uppercase tracking-tight">APPLICATION PENDING</h3>
                 <p className="text-slate-500 text-xs mb-0 leading-relaxed font-medium uppercase tracking-tight">Thank you for your interest! Our team is reviewing your application and will reach out shortly via email or phone.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl p-10 border border-slate-200 shadow-sm text-center max-w-md mx-auto border-t-4 border-t-slate-500">
+                <div className="w-12 h-12 bg-slate-50 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                  <AlertCircle size={24} />
+                </div>
+                <h3 className="text-xs font-black text-slate-900 mb-1.5 uppercase tracking-tight">VOLUNTEER STATUS: {volunteer.status}</h3>
+                <p className="text-slate-500 text-xs mb-6 leading-relaxed font-medium uppercase tracking-tight">Your volunteer status is currently {volunteer.status.toLowerCase()}. If you believe this is an error or would like to reactivate, please contact us.</p>
+                <button 
+                  onClick={() => setCurrentView('volunteer-enrollment')}
+                  className="px-6 py-2 bg-slate-900 text-white rounded font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-md"
+                >
+                  RE-APPLY TO VOLUNTEER
+                </button>
               </div>
             )
           ) : (
@@ -2237,6 +2410,79 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
             </div>
           )}
         </motion.div>
+      )}
+
+      {/* Report Activity Modal */}
+      {isReporting && reportingAssignment && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200"
+          >
+            <div className="bg-slate-50 p-5 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h2 className="text-sm font-black text-slate-900 tracking-tight uppercase">REPORT ACTIVITY</h2>
+                <p className="text-slate-500 mt-0.5 text-[9px] font-bold uppercase tracking-wider">{reportingAssignment.taskName}</p>
+              </div>
+              <button 
+                onClick={() => setIsReporting(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-200"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleReportSubmit} className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">HOURS SPENT</label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <input 
+                    required
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    placeholder="E.G. 2.5"
+                    value={reportData.hoursSpent}
+                    onChange={e => setReportData({...reportData, hoursSpent: e.target.value})}
+                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all text-[12px] font-black uppercase tracking-tight"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">ACTIVITY DESCRIPTION</label>
+                <textarea 
+                  required
+                  rows={4}
+                  placeholder="DESCRIBE WHAT YOU ACCOMPLISHED DURING THIS SESSION..."
+                  value={reportData.content}
+                  onChange={e => setReportData({...reportData, content: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all resize-none text-[12px] font-black uppercase tracking-tight leading-relaxed"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsReporting(false)}
+                  className="flex-1 px-4 py-3 text-slate-500 font-black hover:bg-slate-100 rounded-xl transition-colors text-[10px] uppercase tracking-widest border border-transparent hover:border-slate-200"
+                >
+                  CANCEL
+                </button>
+                <button 
+                  type="submit"
+                  disabled={submittingReport}
+                  className="flex-[2] bg-slate-900 text-white py-3 rounded-xl font-black hover:bg-rose-600 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"
+                >
+                  {submittingReport ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle2 size={14} />}
+                  SUBMIT REPORT
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
       )}
 
       {/* Donations Tab Content */}

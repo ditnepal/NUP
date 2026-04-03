@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Plus, Search, Edit2, Trash2, Eye, FileText, Globe, CheckCircle, Clock, AlertCircle, X, Save, Filter, User, Calendar, ShieldAlert } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, FileText, Globe, CheckCircle, Clock, AlertCircle, X, Save, Filter, User, Calendar, ShieldAlert, Image as ImageIcon, Layout, Type, Link, List, Info, ChevronRight, Check } from 'lucide-react';
 import { safeFormat } from '../lib/date';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
 
 import { usePermissions } from '../hooks/usePermissions';
 import { UserProfile } from '../types';
@@ -36,6 +37,11 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<string | null>(null);
+  const [mediaList, setMediaList] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [sectionContent, setSectionContent] = useState<any>({});
 
   const [formData, setFormData] = useState<any>({
     title: '',
@@ -98,8 +104,18 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
 
   const handleOpenModal = (item: any = null) => {
     setSlugManuallyEdited(!!item);
+    setViewMode('edit');
     if (item) {
       setEditingItem(item);
+      let parsedContent = {};
+      if (activeTab === 'sections') {
+        try {
+          parsedContent = JSON.parse(item.content);
+        } catch (e) {
+          console.error('Error parsing section content:', e);
+        }
+      }
+      setSectionContent(parsedContent);
       setFormData({
         ...item,
         categoryId: item.categoryId || '',
@@ -116,10 +132,12 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
       });
     } else {
       setEditingItem(null);
+      const initialSectionContent = { headline: '', subheadline: '', ctaText: '', ctaLink: '', badge: '' };
+      setSectionContent(initialSectionContent);
       setFormData({
         title: '',
         slug: '',
-        content: activeTab === 'sections' ? JSON.stringify({ headline: '', subheadline: '', ctaText: '', ctaLink: '' }, null, 2) : '',
+        content: activeTab === 'sections' ? JSON.stringify(initialSectionContent, null, 2) : '',
         status: 'DRAFT',
         language: 'en',
         isPinned: false,
@@ -138,6 +156,40 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
     }
     setError(null);
     setIsModalOpen(true);
+  };
+
+  const fetchMedia = async () => {
+    try {
+      const data = await api.get('/cms/media');
+      setMediaList(data);
+    } catch (error) {
+      console.error('Error fetching media:', error);
+    }
+  };
+
+  const handleOpenMediaPicker = (targetField: string) => {
+    setMediaPickerTarget(targetField);
+    fetchMedia();
+    setIsMediaPickerOpen(true);
+  };
+
+  const handleSelectMedia = (url: string) => {
+    if (mediaPickerTarget === 'featuredImage') {
+      setFormData({ ...formData, featuredImage: url });
+    } else if (mediaPickerTarget?.startsWith('section.')) {
+      const field = mediaPickerTarget.split('.')[1];
+      const newSectionContent = { ...sectionContent, [field]: url };
+      setSectionContent(newSectionContent);
+      setFormData({ ...formData, content: JSON.stringify(newSectionContent, null, 2) });
+    }
+    setIsMediaPickerOpen(false);
+    setMediaPickerTarget(null);
+  };
+
+  const handleSectionContentChange = (field: string, value: any) => {
+    const newSectionContent = { ...sectionContent, [field]: value };
+    setSectionContent(newSectionContent);
+    setFormData({ ...formData, content: JSON.stringify(newSectionContent, null, 2) });
   };
 
   const [deleteNote, setDeleteNote] = useState('');
@@ -229,6 +281,45 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
             Create New {activeTab === 'pages' ? 'Page' : activeTab === 'posts' ? 'Post' : 'Section'}
           </button>
         )}
+      </div>
+
+      {/* Quick Portal Management Card */}
+      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm mb-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+            <Zap size={20} />
+          </div>
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Quick Portal Management</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button 
+            onClick={() => {
+              setActiveTab('pages');
+              const aboutPage = pages.find(p => p.slug === 'about-us');
+              if (aboutPage) {
+                handleOpenModal(aboutPage);
+              } else {
+                handleOpenModal();
+                setFormData(prev => ({ 
+                  ...prev, 
+                  title: 'About Us', 
+                  slug: 'about-us', 
+                  status: 'PUBLISHED',
+                  content: '# Our Mission\n\nTo build a progressive, inclusive, and transparent political platform...\n\n# Our Vision\n\nA nation where governance is truly by the people...'
+                }));
+              }
+            }}
+            className="flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl transition-all group border border-transparent hover:border-blue-100"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-blue-600 shadow-sm">
+                <Globe size={16} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Manage About Page</span>
+            </div>
+            <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
@@ -578,13 +669,23 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-slate-700 mb-2">Featured Image URL</label>
-                        <input
-                          type="url"
-                          value={formData.featuredImage}
-                          onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
-                          className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                          placeholder="https://example.com/image.jpg"
-                        />
+                        <div className="flex gap-2">
+                          <input
+                            type="url"
+                            value={formData.featuredImage}
+                            onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
+                            className="flex-1 px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            placeholder="https://example.com/image.jpg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleOpenMediaPicker('featuredImage')}
+                            className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all flex items-center gap-2 font-bold text-sm"
+                          >
+                            <ImageIcon size={18} />
+                            Browse
+                          </button>
+                        </div>
                       </div>
                     </>
                   )}
@@ -674,31 +775,235 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                 )}
 
                 <div className="md:col-span-2 border-t border-slate-100 pt-8">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-bold text-slate-800 font-mono uppercase tracking-tight">
-                      {activeTab === 'sections' ? 'Section Content (JSON)' : 'Content Body'}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {activeTab === 'sections' 
-                        ? 'Define the structured content for this block using JSON format.' 
-                        : `The main content of your ${activeTab === 'pages' ? 'page' : 'post'}. Markdown is supported.`}
-                    </p>
+                  <div className="mb-4 flex justify-between items-end">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800 font-mono uppercase tracking-tight">
+                        {activeTab === 'sections' ? 'Section Builder' : 'Content Body'}
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {activeTab === 'sections' 
+                          ? 'Configure the content for this section using the visual builder below.' 
+                          : `The main content of your ${activeTab === 'pages' ? 'page' : 'post'}. Markdown is supported.`}
+                      </p>
+                    </div>
+                    {activeTab !== 'sections' && (
+                      <div className="flex bg-slate-100 p-1 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => setViewMode('edit')}
+                          className={`px-3 py-1 rounded text-xs font-bold transition-all ${viewMode === 'edit' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setViewMode('preview')}
+                          className={`px-3 py-1 rounded text-xs font-bold transition-all ${viewMode === 'preview' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+                        >
+                          Preview
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <textarea
-                    required
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none h-96 font-mono text-sm leading-relaxed transition-all"
-                    placeholder={activeTab === 'sections' ? '{\n  "headline": "...",\n  "subheadline": "..."\n}' : "Write your content here using Markdown..."}
-                  />
-                  <div className="mt-2 flex justify-between items-center text-[10px] text-slate-400">
-                    <span>
-                      {activeTab === 'sections' 
-                        ? 'Ensure valid JSON format. Fields depend on section type.' 
-                        : 'Markdown supported: # H1, **bold**, *italic*, [link](url)'}
-                    </span>
-                    <span>Character count: {formData.content.length}</span>
-                  </div>
+
+                  {activeTab === 'sections' ? (
+                    <div className="space-y-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                      {formData.type === 'HERO' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Headline</label>
+                            <input
+                              type="text"
+                              value={sectionContent.headline || ''}
+                              onChange={(e) => handleSectionContentChange('headline', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Subheadline</label>
+                            <textarea
+                              value={sectionContent.subheadline || ''}
+                              onChange={(e) => handleSectionContentChange('subheadline', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none h-20"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Badge Text</label>
+                            <input
+                              type="text"
+                              value={sectionContent.badge || ''}
+                              onChange={(e) => handleSectionContentChange('badge', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Image URL</label>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={sectionContent.imageUrl || ''}
+                                onChange={(e) => handleSectionContentChange('imageUrl', e.target.value)}
+                                className="flex-1 px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleOpenMediaPicker('section.imageUrl')}
+                                className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50"
+                              >
+                                <ImageIcon size={18} />
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">CTA Text</label>
+                            <input
+                              type="text"
+                              value={sectionContent.ctaText || ''}
+                              onChange={(e) => handleSectionContentChange('ctaText', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">CTA Link</label>
+                            <input
+                              type="text"
+                              value={sectionContent.ctaLink || ''}
+                              onChange={(e) => handleSectionContentChange('ctaLink', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.type === 'CTA' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Headline</label>
+                            <input
+                              type="text"
+                              value={sectionContent.headline || ''}
+                              onChange={(e) => handleSectionContentChange('headline', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Description</label>
+                            <textarea
+                              value={sectionContent.description || ''}
+                              onChange={(e) => handleSectionContentChange('description', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none h-20"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Button Text</label>
+                            <input
+                              type="text"
+                              value={sectionContent.buttonText || ''}
+                              onChange={(e) => handleSectionContentChange('buttonText', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Button Link</label>
+                            <input
+                              type="text"
+                              value={sectionContent.buttonLink || ''}
+                              onChange={(e) => handleSectionContentChange('buttonLink', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {(formData.type === 'CONTENT_BLOCK' || formData.type === 'NOTICE_BANNER') && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Headline</label>
+                            <input
+                              type="text"
+                              value={sectionContent.headline || ''}
+                              onChange={(e) => handleSectionContentChange('headline', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Body Content</label>
+                            <textarea
+                              value={sectionContent.body || ''}
+                              onChange={(e) => handleSectionContentChange('body', e.target.value)}
+                              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none h-32"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.type === 'HIGHLIGHT' && (
+                        <div className="space-y-4">
+                           <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex items-start gap-3">
+                            <Info className="text-amber-600 flex-shrink-0" size={20} />
+                            <p className="text-sm text-amber-800">
+                              Highlight sections currently pull content from dynamic sources like News and Events. 
+                              Use the <strong>Title</strong> field above to set the section header.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-6 pt-6 border-t border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentContent = JSON.parse(formData.content);
+                            setFormData({ ...formData, content: JSON.stringify(currentContent, null, 2) });
+                            setViewMode(viewMode === 'preview' ? 'edit' : 'preview');
+                          }}
+                          className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                        >
+                          <Layout size={14} />
+                          {viewMode === 'preview' ? 'Back to Builder' : 'View Raw JSON (Advanced)'}
+                        </button>
+                        
+                        {viewMode === 'preview' && (
+                          <div className="mt-4">
+                            <textarea
+                              value={formData.content}
+                              onChange={(e) => {
+                                setFormData({ ...formData, content: e.target.value });
+                                try {
+                                  setSectionContent(JSON.parse(e.target.value));
+                                } catch (err) {}
+                              }}
+                              className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none h-48 font-mono text-xs"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {viewMode === 'edit' ? (
+                        <textarea
+                          required
+                          value={formData.content}
+                          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                          className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none h-96 font-mono text-sm leading-relaxed transition-all"
+                          placeholder="Write your content here using Markdown..."
+                        />
+                      ) : (
+                        <div className="w-full px-6 py-6 rounded-xl border border-slate-200 h-96 overflow-y-auto prose prose-slate max-w-none bg-slate-50">
+                          <ReactMarkdown>{formData.content || '*No content to preview*'}</ReactMarkdown>
+                        </div>
+                      )}
+                      <div className="mt-2 flex justify-between items-center text-[10px] text-slate-400">
+                        <span>
+                          {viewMode === 'edit' 
+                            ? 'Markdown supported: # H1, **bold**, *italic*, [link](url)' 
+                            : 'Previewing rendered Markdown'}
+                        </span>
+                        <span>Character count: {formData.content.length}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="pt-6 border-t border-slate-100">
@@ -750,6 +1055,66 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
           </div>
         </div>
       )}
+
+      {/* Media Picker Modal */}
+      {isMediaPickerOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <ImageIcon className="text-emerald-600" size={20} />
+                Select Media Asset
+              </h3>
+              <button onClick={() => setIsMediaPickerOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1">
+              {mediaList.length === 0 ? (
+                <div className="text-center py-12">
+                  <ImageIcon size={48} className="mx-auto text-slate-200 mb-4" />
+                  <p className="text-slate-500">No media assets found. Upload some in the Media tab first.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {mediaList.map((media) => (
+                    <button
+                      key={media.id}
+                      type="button"
+                      onClick={() => handleSelectMedia(media.url)}
+                      className="group relative aspect-square rounded-xl overflow-hidden border-2 border-transparent hover:border-emerald-500 transition-all bg-slate-100"
+                    >
+                      <img 
+                        src={media.url} 
+                        alt={media.title} 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Check className="text-white" size={32} />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-white/90 backdrop-blur-sm text-[10px] font-bold text-slate-700 truncate">
+                        {media.title}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setIsMediaPickerOpen(false)}
+                className="px-6 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-white transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">

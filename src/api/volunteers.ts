@@ -43,12 +43,59 @@ const reportSchema = z.object({
   hoursSpent: z.number().optional(),
 });
 
+// @route   POST /api/v1/volunteers/report
+// @desc    Submit a volunteer report
+// @access  Private
+router.post('/report', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const data = reportSchema.parse(req.body);
+    
+    // Security check: Ensure the assignment belongs to the current user's volunteer record
+    const volunteer = await volunteerService.getByUserId(req.user!.id);
+    if (!volunteer) {
+      return res.status(403).json({ error: 'Not registered as a volunteer' });
+    }
+    
+    const assignment = await prisma.volunteerAssignment.findUnique({
+      where: { id: data.assignmentId }
+    });
+    
+    if (!assignment || assignment.volunteerId !== volunteer.id) {
+      return res.status(403).json({ error: 'Assignment not found or not assigned to you' });
+    }
+
+    const report = await volunteerService.submitReport(data);
+    res.status(201).json(report);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: (error as any).errors });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// @route   GET /api/v1/volunteers/reports
+// @desc    Get volunteer reports
+// @access  Private (Admin/Staff)
+router.get('/reports', authenticate, authorize(['ADMIN', 'STAFF', 'VOLUNTEER_MANAGER']), async (req: AuthRequest, res) => {
+  try {
+    const volunteerId = req.query.volunteerId as string;
+    const reports = await volunteerService.getReports(volunteerId);
+    res.json(reports);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // @route   GET /api/v1/volunteers
 // @desc    Get volunteers
 // @access  Private
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const volunteers = await volunteerService.getActiveVolunteers();
+    const all = req.query.all === 'true';
+    const volunteers = all 
+      ? await volunteerService.getAllVolunteers()
+      : await volunteerService.getActiveVolunteers();
     res.json(volunteers);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });

@@ -265,6 +265,12 @@ export class MembershipService extends BaseService {
           }
         });
 
+        // Update associated transactions to COMPLETED
+        await this.db.transaction.updateMany({
+          where: { memberId, status: 'PENDING' },
+          data: { status: 'COMPLETED' }
+        });
+
         // 5. Upgrade linked user role to MEMBER if it exists and is currently PUBLIC
         if (member.userId) {
           const user = await this.db.user.findUnique({
@@ -495,6 +501,12 @@ export class MembershipService extends BaseService {
         reviewNote: reason || undefined,
         terminationHistory: reason ? JSON.stringify([{ reason, date: new Date() }]) : undefined
       }
+    });
+
+    // Update associated transactions to FAILED
+    await this.db.transaction.updateMany({
+      where: { memberId, status: 'PENDING' },
+      data: { status: 'FAILED' }
     });
 
     await auditService.log({

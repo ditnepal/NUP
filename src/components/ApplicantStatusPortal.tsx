@@ -105,6 +105,14 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
     }
   };
 
+  const getProgress = (status: string) => {
+    if (status === 'ACTIVE') return 100;
+    if (status === 'VERIFIED') return 75;
+    if (status === 'PENDING') return 40;
+    if (status === 'REJECTED') return 0;
+    return 20;
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'PENDING':
@@ -228,6 +236,30 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                   </div>
                 </div>
 
+                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-3">
+                    <span className="text-slate-500">VERIFICATION PROGRESS</span>
+                    <span className="text-emerald-600">{getProgress(statusData.status)}%</span>
+                  </div>
+                  <div className="h-3 bg-slate-200 rounded-full overflow-hidden border border-slate-100">
+                    <div 
+                      className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                      style={{ width: `${getProgress(statusData.status)}%` }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 mt-4">
+                    <div className={`text-[9px] font-black text-center py-1.5 rounded-lg border ${statusData.status === 'PENDING' || statusData.status === 'VERIFIED' || statusData.status === 'ACTIVE' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-slate-400 bg-slate-50 border-slate-100'}`}>
+                      SUBMITTED
+                    </div>
+                    <div className={`text-[9px] font-black text-center py-1.5 rounded-lg border ${statusData.status === 'VERIFIED' || statusData.status === 'ACTIVE' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-slate-400 bg-slate-50 border-slate-100'}`}>
+                      VERIFIED
+                    </div>
+                    <div className={`text-[9px] font-black text-center py-1.5 rounded-lg border ${statusData.status === 'ACTIVE' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-slate-400 bg-slate-50 border-slate-100'}`}>
+                      APPROVED
+                    </div>
+                  </div>
+                </div>
+
                 {statusData.status === 'PENDING' && (
                   <div className="p-6 bg-amber-50 border border-amber-100 rounded-3xl text-center animate-in fade-in duration-500">
                     <p className="text-amber-800 font-bold mb-2">
@@ -290,9 +322,11 @@ export const ApplicantStatusPortal: React.FC<ApplicantStatusPortalProps> = ({ on
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                       <CheckCircle size={12} />
-                      Payment Method
+                      Payment Status
                     </p>
-                    <p className="font-bold text-slate-700 uppercase">{statusData.paymentMethod || 'N/A'}</p>
+                    <p className={`font-bold ${statusData.latestTransaction?.status === 'COMPLETED' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {(statusData.latestTransaction?.status || 'PENDING').toUpperCase()}
+                    </p>
                   </div>
                   {statusData.membershipId && (
                     <div className="space-y-1">

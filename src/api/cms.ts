@@ -146,6 +146,21 @@ router.get('/categories', authenticate, authorize(['ADMIN', 'STAFF']), async (re
   }
 });
 
+// @route   GET /api/v1/cms/media
+// @desc    Get all media assets
+// @access  Private (Admin/Staff)
+router.get('/media', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const media = await prisma.cmsMedia.findMany({
+      include: { category: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(media);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   POST /api/v1/cms/categories
 // @desc    Create a category
 // @access  Private (Admin/Staff)

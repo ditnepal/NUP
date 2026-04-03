@@ -21,7 +21,15 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
       where: { userId: req.user?.id },
       include: { 
         orgUnit: true,
-        user: { select: { email: true, displayName: true, phoneNumber: true } }
+        user: { select: { email: true, displayName: true, phoneNumber: true } },
+        transactions: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        },
+        renewalRequests: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }
       }
     });
 

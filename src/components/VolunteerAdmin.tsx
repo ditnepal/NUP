@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Users, Briefcase, ClipboardList, CheckCircle, Clock, Plus, Search, Edit2, Trash2, X, Loader2, AlertTriangle } from 'lucide-react';
+import { Users, Briefcase, ClipboardList, CheckCircle, Clock, Plus, Search, Edit2, Trash2, X, Loader2, AlertTriangle, BarChart, Award, FileText } from 'lucide-react';
 import { Volunteer } from '../types';
 import { VolunteerProfileView } from './VolunteerProfileView';
 import { toast } from 'sonner';
 
 export const VolunteerAdmin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'volunteers' | 'applications'>('volunteers');
+  const [activeTab, setActiveTab] = useState<'volunteers' | 'applications' | 'reports'>('volunteers');
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingVolunteer, setEditingVolunteer] = useState<Volunteer | null>(null);
+  const [assigningVolunteer, setAssigningVolunteer] = useState<Volunteer | null>(null);
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -24,14 +28,46 @@ export const VolunteerAdmin: React.FC = () => {
     availability: '',
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'PENDING'
   });
+  const [assignFormData, setAssignFormData] = useState({
+    taskName: '',
+    description: '',
+    campaignId: ''
+  });
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'volunteers') {
       fetchVolunteers();
-    } else {
+    } else if (activeTab === 'applications') {
       fetchApplications();
+    } else {
+      fetchReports();
     }
   }, [activeTab]);
+
+  const fetchCampaigns = async () => {
+    try {
+      const data = await api.get('/campaigns');
+      setCampaigns(data);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+    }
+  };
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get('/volunteers/reports');
+      setReports(data);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchVolunteers = async () => {
     try {
@@ -104,6 +140,36 @@ export const VolunteerAdmin: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleOpenAssignModal = (volunteer: Volunteer) => {
+    setAssigningVolunteer(volunteer);
+    setAssignFormData({
+      taskName: '',
+      description: '',
+      campaignId: ''
+    });
+    setIsAssignModalOpen(true);
+  };
+
+  const handleAssignTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assigningVolunteer) return;
+    setSubmitting(true);
+    try {
+      await api.post('/volunteers/assign', {
+        volunteerId: assigningVolunteer.id,
+        ...assignFormData
+      });
+      toast.success('Task assigned successfully');
+      setIsAssignModalOpen(false);
+      await fetchVolunteers();
+    } catch (error: any) {
+      console.error('Error assigning task:', error);
+      toast.error(error.message || 'Failed to assign task');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -140,6 +206,13 @@ export const VolunteerAdmin: React.FC = () => {
     } finally {
       setDeleteTarget(null);
     }
+  };
+
+  const metrics = {
+    totalVolunteers: volunteers.length,
+    pendingApps: applications.length,
+    totalHours: volunteers.reduce((acc, v) => acc + (v.totalHours || 0), 0),
+    completedProjects: volunteers.reduce((acc, v) => acc + (v.projectsCount || 0), 0)
   };
 
   const filteredVolunteers = (volunteers || []).filter(v => 
@@ -197,6 +270,14 @@ export const VolunteerAdmin: React.FC = () => {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'reports' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Reports
+            </button>
           </div>
           <div className="flex gap-3">
             <div className="relative flex-1 md:w-64">
@@ -217,6 +298,46 @@ export const VolunteerAdmin: React.FC = () => {
             Register
           </button>
         </div>
+      </div>
+    </div>
+
+    {/* Metrics Overview */}
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <Users size={20} />
+          </div>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Volunteers</span>
+        </div>
+        <p className="text-2xl font-bold text-gray-900">{metrics.totalVolunteers}</p>
+      </div>
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+            <ClipboardList size={20} />
+          </div>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pending Apps</span>
+        </div>
+        <p className="text-2xl font-bold text-gray-900">{metrics.pendingApps}</p>
+      </div>
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+            <Clock size={20} />
+          </div>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Hours</span>
+        </div>
+        <p className="text-2xl font-bold text-gray-900">{metrics.totalHours}</p>
+      </div>
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+            <CheckCircle size={20} />
+          </div>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Completed Projects</span>
+        </div>
+        <p className="text-2xl font-bold text-gray-900">{metrics.completedProjects}</p>
       </div>
     </div>
 
@@ -278,6 +399,17 @@ export const VolunteerAdmin: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Hours</p>
+                    <p className="text-sm font-bold text-blue-600">{volunteer.totalHours || 0}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Completed</p>
+                    <p className="text-sm font-bold text-blue-600">{volunteer.projectsCount || 0}</p>
+                  </div>
+                </div>
+
                 <div className="mt-6 flex gap-2">
                   <button 
                     onClick={() => setSelectedVolunteerId(volunteer.id)}
@@ -285,14 +417,17 @@ export const VolunteerAdmin: React.FC = () => {
                   >
                     View Profile
                   </button>
-                  <button className="flex-1 bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                  <button 
+                    onClick={() => handleOpenAssignModal(volunteer)}
+                    className="flex-1 bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
                     Assign Task
                   </button>
                 </div>
               </div>
             </div>
           ))
-        ) : (
+        ) : activeTab === 'applications' ? (
           applications?.map((app) => (
             <div key={app.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-6">
@@ -344,6 +479,40 @@ export const VolunteerAdmin: React.FC = () => {
               </div>
             </div>
           ))
+        ) : (
+          reports?.map((report) => (
+            <div key={report.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                    <FileText size={20} />
+                  </div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    {new Date(report.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <h3 className="font-bold text-gray-900 text-sm mb-1">{report.assignment?.taskName || 'Unknown Task'}</h3>
+                <p className="text-xs text-blue-600 font-semibold mb-3">By: {report.volunteer?.fullName || 'Unknown Volunteer'}</p>
+                
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 mb-4">
+                  <p className="text-xs text-slate-600 line-clamp-3 italic">"{report.content}"</p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-slate-500">
+                    <Clock size={14} />
+                    <span className="text-xs font-bold">{report.hoursSpent || 0} Hours</span>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedVolunteerId(report.volunteerId)}
+                    className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest"
+                  >
+                    View Volunteer
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
         )}
         {activeTab === 'volunteers' && filteredVolunteers.length === 0 && (
           <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
@@ -353,6 +522,11 @@ export const VolunteerAdmin: React.FC = () => {
         {activeTab === 'applications' && applications.length === 0 && (
           <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
             No pending public applications found.
+          </div>
+        )}
+        {activeTab === 'reports' && reports.length === 0 && (
+          <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+            No activity reports submitted yet.
           </div>
         )}
       </div>
@@ -448,6 +622,75 @@ export const VolunteerAdmin: React.FC = () => {
                 >
                   {submitting && <Loader2 className="animate-spin" size={18} />}
                   {editingVolunteer ? 'Update' : 'Register'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Task Modal */}
+      {isAssignModalOpen && assigningVolunteer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">
+                Assign Task to {assigningVolunteer.fullName}
+              </h2>
+              <button onClick={() => setIsAssignModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleAssignTask} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign (Optional)</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={assignFormData.campaignId}
+                  onChange={e => setAssignFormData({ ...assignFormData, campaignId: e.target.value })}
+                >
+                  <option value="">No specific campaign</option>
+                  {campaigns.map(c => (
+                    <option key={c.id} value={c.id}>{c.title || c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Social Media Management"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={assignFormData.taskName}
+                  onChange={e => setAssignFormData({ ...assignFormData, taskName: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Describe the responsibilities..."
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                  value={assignFormData.description}
+                  onChange={e => setAssignFormData({ ...assignFormData, description: e.target.value })}
+                />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAssignModalOpen(false)}
+                  className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={submitting}
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submitting && <Loader2 className="animate-spin" size={18} />}
+                  Assign Task
                 </button>
               </div>
             </form>
