@@ -66,7 +66,6 @@ const registerSchema = z.object({
  */
 router.post('/login', async (req, res) => {
   try {
-    const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-nup-os-2026';
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
@@ -182,20 +181,15 @@ router.post('/public-register', async (req, res) => {
         displayName,
         phoneNumber,
         role: 'PUBLIC', // Assign PUBLIC role
-        isActive: false,
+        isActive: true, // Allow immediate login for public users
       },
     });
 
-    const payload = {
-      user: {
-        id: user.id,
-        role: user.role,
-      },
-    };
+    const payload = { id: user.id, email: user.email, role: user.role };
 
     jwt.sign(
       payload,
-      process.env.JWT_SECRET || 'secret',
+      JWT_SECRET,
       { expiresIn: '24h' },
       (err, token) => {
         if (err) throw err;

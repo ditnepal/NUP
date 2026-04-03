@@ -301,6 +301,16 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
     visible: { y: 0, opacity: 1 }
   };
 
+  const getBackState = () => {
+    if (selectedCourse) return { label: 'BACK TO COURSES', action: () => setSelectedCourse(null) };
+    if (selectedProgram) return { label: 'BACK TO PROGRAMS', action: () => setSelectedProgram(null) };
+    if (isEditingProfile) return { label: 'BACK TO PROFILE', action: () => setIsEditingProfile(false) };
+    if (activeTab !== 'overview') return { label: 'BACK TO DASHBOARD', action: () => setActiveTab('overview') };
+    return { label: 'EXIT TO PORTAL', action: () => setCurrentView('public') };
+  };
+
+  const backState = getBackState();
+
   return (
     <motion.div 
       variants={containerVariants}
@@ -312,25 +322,81 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => setCurrentView('public')}
+            onClick={backState.action}
             className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl text-slate-600 hover:text-slate-900 transition-all group shadow-sm"
           >
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Exit to Portal</span>
+            <span className="text-xs font-black uppercase tracking-widest">{backState.label}</span>
           </button>
           
           <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block" />
           
           <div className="hidden md:flex items-center gap-2 text-slate-400">
-            <LayoutDashboard size={14} />
-            <span className="text-[10px] font-black uppercase tracking-widest">{activeTab}</span>
+            <button 
+              onClick={() => {
+                setActiveTab('overview');
+                setSelectedProgram(null);
+                setSelectedCourse(null);
+                setIsEditingProfile(false);
+              }}
+              className={`text-xs font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${activeTab === 'overview' ? 'text-slate-900' : 'hover:text-emerald-600'}`}
+            >
+              <LayoutDashboard size={14} />
+              DASHBOARD
+            </button>
+            
+            {activeTab !== 'overview' && (
+              <>
+                <ChevronRight size={12} className="text-slate-300" />
+                <button 
+                  onClick={() => {
+                    setSelectedProgram(null);
+                    setSelectedCourse(null);
+                    setIsEditingProfile(false);
+                  }}
+                  className={`text-xs font-black uppercase tracking-widest transition-all ${(!selectedProgram && !isEditingProfile) ? 'text-slate-900' : 'hover:text-emerald-600'}`}
+                >
+                  {activeTab.toUpperCase()}
+                </button>
+              </>
+            )}
+
+            {selectedProgram && (
+              <>
+                <ChevronRight size={12} className="text-slate-300" />
+                <button 
+                  onClick={() => setSelectedCourse(null)}
+                  className={`text-xs font-black uppercase tracking-widest transition-all ${!selectedCourse ? 'text-slate-900' : 'hover:text-emerald-600'} truncate max-w-[120px]`}
+                >
+                  {selectedProgram.name.toUpperCase()}
+                </button>
+              </>
+            )}
+
+            {selectedCourse && (
+              <>
+                <ChevronRight size={12} className="text-slate-300" />
+                <span className="text-xs font-black uppercase tracking-widest text-slate-900 truncate max-w-[120px]">
+                  {selectedCourse.title.toUpperCase()}
+                </span>
+              </>
+            )}
+
+            {isEditingProfile && (
+              <>
+                <ChevronRight size={12} className="text-slate-300" />
+                <span className="text-xs font-black uppercase tracking-widest text-slate-900">
+                  EDIT PROFILE
+                </span>
+              </>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
             <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{user.displayName}</p>
-            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest opacity-70">
+            <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest opacity-70">
               {user.role.replace('_', ' ')} {user.orgUnitName ? `• ${user.orgUnitName}` : ''}
             </p>
           </div>
@@ -361,7 +427,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               <h1 className="text-2xl font-black tracking-tight text-slate-900">
                 {user.displayName}
               </h1>
-              <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${user.role === 'MEMBER' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+              <span className={`px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-widest border ${user.role === 'MEMBER' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                 {user.role.replace('_', ' ')}
               </span>
             </div>
@@ -375,7 +441,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           {/* Dynamic Status Card */}
           <div className="flex-1 bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Status</span>
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-1">Status</span>
               {user.role === 'MEMBER' ? (
                 <span className="flex items-center gap-1 text-emerald-600 text-sm font-bold">
                   <CheckCircle2 size={16} /> Verified
@@ -394,7 +460,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     className={`h-full rounded-full ${user.role === 'MEMBER' ? 'bg-emerald-500' : 'bg-amber-500'}`}
                   />
                 </div>
-                <p className="text-[10px] text-right mt-1 font-medium text-slate-500">{getProgress()}%</p>
+                <p className="text-xs text-right mt-1 font-medium text-slate-500">{getProgress()}%</p>
              </div>
           </div>
 
@@ -411,7 +477,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           {user.role === 'APPLICANT_MEMBER' && (
             <button 
               onClick={() => setActiveTab('membership')}
-              className="px-6 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+              className="px-6 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 whitespace-nowrap"
             >
               Track Status
               <ArrowRight size={14} />
@@ -449,7 +515,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   <action.icon size={16} />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold tracking-tight">{action.label}</h3>
+                  <h3 className="text-sm font-bold tracking-tight">{action.label}</h3>
                 </div>
               </button>
             ))}
@@ -462,13 +528,13 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           {/* Membership Status Widget */}
           <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-[11px] font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+              <h3 className="text-xs font-black text-slate-900 tracking-tight flex items-center gap-1.5">
                 <Award size={14} className="text-emerald-600" />
                 MEMBERSHIP STATUS
               </h3>
               <button 
                 onClick={() => setActiveTab('membership')}
-                className="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-emerald-600 transition-colors flex items-center gap-1"
+                className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-emerald-600 transition-colors flex items-center gap-1"
               >
                 Manage <ArrowRight size={10} />
               </button>
@@ -484,24 +550,28 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   <div className="flex-1 w-full space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Joined</p>
-                        <p className="text-[10px] font-bold text-slate-900">{profile?.joinedAt ? safeFormat(profile.joinedAt, 'MMM yyyy') : 'N/A'}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Joined</p>
+                        <p className="text-xs font-bold text-slate-900">
+                          {profile?.joinedDate || profile?.createdAt 
+                            ? safeFormat(profile.joinedDate || profile.createdAt, 'MMM yyyy') 
+                            : 'Pending record'}
+                        </p>
                       </div>
                       <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Expiry</p>
-                        <p className="text-[10px] font-bold text-slate-900">{profile?.expiryDate ? safeFormat(profile.expiryDate, 'dd MMM yyyy') : 'N/A'}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Expiry</p>
+                        <p className="text-xs font-bold text-slate-900">{profile?.expiryDate ? safeFormat(profile.expiryDate, 'dd MMM yyyy') : 'N/A'}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <button 
                         onClick={() => setActiveTab('membership')}
-                        className="flex-1 py-1.5 bg-slate-100 text-slate-700 rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-1.5"
+                        className="flex-1 py-1.5 bg-slate-100 text-slate-700 rounded-md font-bold text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-1.5"
                       >
                         <Download size={10} /> ID Card
                       </button>
                       <button 
                         onClick={() => { setActiveTab('membership'); setIsRenewing(true); }}
-                        className="flex-1 py-1.5 bg-emerald-50 text-emerald-700 rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-emerald-100 transition-all flex items-center justify-center gap-1.5 border border-emerald-200"
+                        className="flex-1 py-1.5 bg-emerald-50 text-emerald-700 rounded-md font-bold text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all flex items-center justify-center gap-1.5 border border-emerald-200"
                       >
                         <Clock size={10} /> Renew
                       </button>
@@ -515,13 +585,13 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       <Clock size={14} />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900 text-[11px]">Application Pending</p>
-                      <p className="text-[8px] text-amber-700 font-medium uppercase tracking-widest">Est. 3-5 business days</p>
+                      <p className="font-black text-slate-900 text-xs uppercase tracking-tight">Application Pending</p>
+                      <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest">Est. 3-5 business days</p>
                     </div>
                   </div>
                   <button 
                     onClick={() => setActiveTab('membership')}
-                    className="px-2.5 py-1 bg-white text-amber-600 rounded-md font-bold text-[9px] uppercase tracking-widest border border-amber-200 hover:bg-amber-50 transition-all"
+                    className="px-2.5 py-1 bg-white text-amber-600 rounded-md font-bold text-[10px] uppercase tracking-widest border border-amber-200 hover:bg-amber-50 transition-all"
                   >
                     Track
                   </button>
@@ -531,11 +601,11 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm">
                     <UserPlus size={14} className="text-slate-400" />
                   </div>
-                  <h4 className="text-[11px] font-bold text-slate-900 mb-0.5">Join the Movement</h4>
-                  <p className="text-slate-500 text-[9px] mb-2 max-w-[200px] mx-auto">Become an official member to unlock voting rights and exclusive party benefits.</p>
+                  <h4 className="text-xs font-black text-slate-900 mb-0.5 uppercase tracking-tight">Join the Movement</h4>
+                  <p className="text-slate-500 text-[10px] mb-2 max-w-[200px] mx-auto uppercase font-bold tracking-tight opacity-70">Become an official member to unlock voting rights and exclusive party benefits.</p>
                   <button 
                     onClick={() => setActiveTab('membership')}
-                    className="px-3 py-1.5 bg-slate-900 text-white rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all"
+                    className="px-3 py-1.5 bg-slate-900 text-white rounded-md font-bold text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all"
                   >
                     Start Application
                   </button>
@@ -547,13 +617,13 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           {/* Volunteer Hub Widget */}
           <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-[11px] font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+              <h3 className="text-xs font-black text-slate-900 tracking-tight flex items-center gap-1.5">
                 <Zap size={14} className="text-indigo-600" />
                 VOLUNTEER HUB
               </h3>
               <button 
                 onClick={() => setActiveTab('volunteer')}
-                className="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-600 transition-colors flex items-center gap-1"
+                className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-600 transition-colors flex items-center gap-1"
               >
                 Portal <ArrowRight size={10} />
               </button>
@@ -563,22 +633,22 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="space-y-1.5">
                     <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-100 flex justify-between items-center">
-                      <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Hours</p>
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Hours</p>
                       <p className="text-sm font-bold text-indigo-900">{volunteer.totalHours || 0}</p>
                     </div>
                     <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Projects</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Projects</p>
                       <p className="text-sm font-bold text-slate-900">{volunteer.assignments?.length || 0}</p>
                     </div>
                   </div>
                   <div className="p-2.5 bg-slate-900 rounded-lg text-white flex flex-col justify-between">
                     <div>
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Next Task</p>
-                      <p className="text-[9px] font-medium leading-tight text-slate-300">New community projects available in your district.</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Next Task</p>
+                      <p className="text-xs font-medium leading-tight text-slate-300">New community projects available in your district.</p>
                     </div>
                     <button 
                       onClick={() => setActiveTab('volunteer')}
-                      className="mt-2 w-full py-1 bg-indigo-500 text-white rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-indigo-400 transition-all"
+                      className="mt-2 w-full py-1 bg-indigo-500 text-white rounded-md font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-400 transition-all"
                     >
                       View Tasks
                     </button>
@@ -589,11 +659,11 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm">
                     <Zap size={14} className="text-slate-400" />
                   </div>
-                  <h4 className="text-[11px] font-bold text-slate-900 mb-0.5">Serve your Community</h4>
-                  <p className="text-slate-500 text-[9px] mb-2 max-w-[200px] mx-auto">Join our volunteer network to make a direct impact on the ground.</p>
+                  <h4 className="text-xs font-bold text-slate-900 mb-0.5">Serve your Community</h4>
+                  <p className="text-slate-500 text-[10px] mb-2 max-w-[200px] mx-auto">Join our volunteer network to make a direct impact on the ground.</p>
                   <button 
                     onClick={() => setActiveTab('volunteer')}
-                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-indigo-500 transition-all"
+                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all"
                   >
                     Apply to Volunteer
                   </button>
@@ -605,13 +675,13 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           {/* Grievances Widget */}
           <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-[11px] font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+              <h3 className="text-xs font-black text-slate-900 tracking-tight flex items-center gap-1.5">
                 <ShieldAlert size={14} className="text-rose-600" />
                 GRIEVANCES & SUPPORT
               </h3>
               <button 
                 onClick={() => setActiveTab('grievances')}
-                className="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-rose-600 transition-colors flex items-center gap-1"
+                className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-rose-600 transition-colors flex items-center gap-1"
               >
                 History <ArrowRight size={10} />
               </button>
@@ -626,10 +696,10 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                           <ShieldAlert size={12} />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-slate-900 text-[10px] truncate max-w-[150px]">{g.title}</p>
+                          <p className="font-bold text-slate-900 text-xs truncate max-w-[150px]">{g.title}</p>
                           <div className="flex items-center gap-1 mt-0.5">
                             <GrievanceStatusBadge status={g.status} />
-                            <span className="text-[8px] font-medium text-slate-500">{safeFormat(g.createdAt, 'MMM d')}</span>
+                            <span className="text-[10px] font-medium text-slate-500">{safeFormat(g.createdAt, 'MMM d')}</span>
                           </div>
                         </div>
                       </div>
@@ -638,7 +708,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   ))}
                   <button 
                     onClick={() => { setActiveTab('grievances'); setShowNewGrievanceModal(true); }}
-                    className="w-full py-1.5 bg-rose-50 text-rose-700 rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-1.5 border border-rose-200 mt-1"
+                    className="w-full py-1.5 bg-rose-50 text-rose-700 rounded-md font-bold text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-1.5 border border-rose-200 mt-1"
                   >
                     <Plus size={10} /> Submit New Request
                   </button>
@@ -648,11 +718,11 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm">
                     <ShieldAlert size={14} className="text-slate-400" />
                   </div>
-                  <h4 className="text-[11px] font-bold text-slate-900 mb-0.5">Need Assistance?</h4>
-                  <p className="text-slate-500 text-[9px] mb-2 max-w-[200px] mx-auto">Our support team is here to help you with any issues or grievances.</p>
+                  <h4 className="text-xs font-bold text-slate-900 mb-0.5">Need Assistance?</h4>
+                  <p className="text-slate-500 text-[10px] mb-2 max-w-[200px] mx-auto">Our support team is here to help you with any issues or grievances.</p>
                   <button 
                     onClick={() => { setActiveTab('grievances'); setShowNewGrievanceModal(true); }}
-                    className="px-3 py-1.5 bg-rose-600 text-white rounded-md font-bold text-[9px] uppercase tracking-widest hover:bg-rose-700 transition-all"
+                    className="px-3 py-1.5 bg-rose-600 text-white rounded-md font-bold text-[10px] uppercase tracking-widest hover:bg-rose-700 transition-all"
                   >
                     Submit Grievance
                   </button>
@@ -683,24 +753,24 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </div>
               
               <div>
-                <h4 className="text-[11px] font-black tracking-tight uppercase">{user.displayName}</h4>
-                <p className="text-slate-400 text-[7px] font-black uppercase tracking-widest mt-0.5">{user.role.replace('_', ' ')}</p>
+                <h4 className="text-xs font-black tracking-tight uppercase">{user.displayName}</h4>
+                <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mt-0.5">{user.role.replace('_', ' ')}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-1.5 w-full">
                 <div className="p-1.5 bg-white/5 rounded border border-white/10">
-                  <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-0.5">ID TAG</p>
-                  <p className="text-[8px] font-black tracking-tight">#{user.id.slice(-6).toUpperCase()}</p>
+                  <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">ID TAG</p>
+                  <p className="text-[10px] font-black tracking-tight">#{user.id.slice(-6).toUpperCase()}</p>
                 </div>
                 <div className="p-1.5 bg-white/5 rounded border border-white/10">
-                  <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-0.5">STATUS</p>
-                  <p className="text-[8px] font-black text-emerald-400 tracking-tight uppercase">VERIFIED</p>
+                  <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">STATUS</p>
+                  <p className="text-[10px] font-black text-emerald-400 tracking-tight uppercase">VERIFIED</p>
                 </div>
               </div>
 
               <button 
                 onClick={() => setActiveTab('profile')}
-                className="w-full py-1.5 bg-white text-slate-900 rounded font-black text-[8px] uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full py-1.5 bg-white text-slate-900 rounded font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <Settings size={10} /> MANAGE PROFILE
               </button>
@@ -710,13 +780,13 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           {/* Training Programs Widget */}
           <motion.div variants={itemVariants} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-[10px] font-black text-slate-900 tracking-tight flex items-center gap-1.5 uppercase">
+              <h3 className="text-xs font-black text-slate-900 tracking-tight flex items-center gap-1.5 uppercase">
                 <GraduationCap size={12} className="text-blue-600" />
                 TRAINING & SKILLS
               </h3>
               <button 
                 onClick={() => setActiveTab('training')}
-                className="text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-600 transition-colors flex items-center gap-1"
+                className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-600 transition-colors flex items-center gap-1"
               >
                 CATALOG <ArrowRight size={10} />
               </button>
@@ -1142,7 +1212,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">MY TRAINING</h2>
-              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Access official party training materials and educational resources</p>
+              <p className="text-slate-500 text-xs mt-0.5 uppercase font-bold tracking-wider">Access official party training materials and educational resources</p>
             </div>
           </div>
 
@@ -1164,7 +1234,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <button
                       key={cat}
                       onClick={() => setFilterCategory(cat)}
-                      className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                         filterCategory === cat 
                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
                         : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-200'
@@ -1190,11 +1260,11 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         {program.isPinned && (
-                          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[7px] font-black uppercase tracking-widest border border-emerald-100">
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-black uppercase tracking-widest border border-emerald-100">
                             <Pin size={8} className="fill-emerald-700" /> PINNED
                           </span>
                         )}
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[7px] font-black uppercase tracking-widest border border-blue-100">
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[9px] font-black uppercase tracking-widest border border-blue-100">
                           <Users size={8} className="text-blue-700" /> {program.audience}
                         </span>
                       </div>
@@ -1204,7 +1274,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <p className="text-slate-500 text-[10px] mb-4 line-clamp-3 flex-grow leading-relaxed font-medium">{program.description}</p>
                     
                     <div className="space-y-2.5 pt-3 border-t border-slate-100 mt-auto">
-                      <div className="flex items-center justify-between text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                      <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         <span className="flex items-center gap-1.5"><Clock size={12} /> {safeFormat(program.createdAt, 'MMM d, yyyy')}</span>
                         <span className="px-2 py-0.5 bg-slate-50 rounded text-slate-500 border border-slate-100">{program.category}</span>
                       </div>
@@ -1215,7 +1285,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                             onClick={() => setSelectedProgram(program)}
                             className="flex items-center justify-between p-2.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all group/link border border-emerald-100"
                           >
-                            <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"><Layers size={14} /> VIEW {program.courses.length} COURSES</span>
+                            <span className="text-xs font-black uppercase tracking-widest flex items-center gap-2"><Layers size={14} /> VIEW {program.courses.length} COURSES</span>
                             <ChevronRight size={14} className="opacity-0 group-hover/link:opacity-100 transition-all" />
                           </button>
                         )}
@@ -1226,7 +1296,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                             rel="noopener noreferrer"
                             className="flex items-center justify-between p-2.5 rounded bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all group/link border border-slate-200"
                           >
-                            <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"><ExternalLink size={14} /> OPEN RESOURCE</span>
+                            <span className="text-xs font-black uppercase tracking-widest flex items-center gap-2"><ExternalLink size={14} /> OPEN RESOURCE</span>
                             <ChevronRight size={14} className="opacity-0 group-hover/link:opacity-100 transition-all" />
                           </a>
                         )}
@@ -1237,7 +1307,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                             rel="noopener noreferrer"
                             className="flex items-center justify-between p-2.5 rounded bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all group/link border border-slate-200"
                           >
-                            <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"><Paperclip size={14} /> DOWNLOAD MATERIAL</span>
+                            <span className="text-xs font-black uppercase tracking-widest flex items-center gap-2"><Paperclip size={14} /> DOWNLOAD MATERIAL</span>
                             <ChevronRight size={14} className="opacity-0 group-hover/link:opacity-100 transition-all" />
                           </a>
                         )}
@@ -1251,7 +1321,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       <GraduationCap size={24} />
                     </div>
                     <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO TRAINING PROGRAMS AVAILABLE</h3>
-                    <p className="text-slate-500 text-[9px] uppercase font-bold tracking-tight">We are currently developing new training materials. Please check back soon.</p>
+                    <p className="text-slate-500 text-xs uppercase font-bold tracking-tight">We are currently developing new training materials. Please check back soon.</p>
                   </div>
                 )}
               </div>
@@ -1260,13 +1330,6 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
           {selectedProgram && !selectedCourse && (
             <div className="space-y-3">
-              <button 
-                onClick={() => setSelectedProgram(null)}
-                className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 font-black uppercase tracking-widest text-[9px] transition-all mb-1 bg-white border border-slate-200 px-3 py-2 rounded w-fit group shadow-sm"
-              >
-                <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" /> BACK TO PROGRAMS
-              </button>
-
               <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-3 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                 <div className="relative z-10">
@@ -1308,13 +1371,6 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
           {selectedCourse && (
             <div className="space-y-3">
-              <button 
-                onClick={() => setSelectedCourse(null)}
-                className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-black uppercase tracking-widest text-[9px] transition-all mb-1 bg-white border border-slate-200 px-3 py-2 rounded w-fit group shadow-sm"
-              >
-                <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" /> BACK TO COURSES
-              </button>
-
               <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-3 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                 <div className="relative z-10">
@@ -1367,18 +1423,18 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">SURVEYS & POLLS</h2>
-              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Community feedback and decision making hub</p>
+              <p className="text-slate-500 text-xs mt-0.5 uppercase font-bold tracking-wider">Community feedback and decision making hub</p>
             </div>
             <div className="flex gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
               <button 
                 onClick={() => setSurveyTab('surveys')}
-                className={`px-3 py-1 rounded font-black text-[8px] uppercase tracking-widest transition-all ${surveyTab === 'surveys' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'}`}
+                className={`px-3 py-1 rounded font-black text-[10px] uppercase tracking-widest transition-all ${surveyTab === 'surveys' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 SURVEYS
               </button>
               <button 
                 onClick={() => setSurveyTab('polls')}
-                className={`px-3 py-1 rounded font-black text-[8px] uppercase tracking-widest transition-all ${surveyTab === 'polls' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'}`}
+                className={`px-3 py-1 rounded font-black text-[10px] uppercase tracking-widest transition-all ${surveyTab === 'polls' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 POLLS
               </button>
@@ -1393,7 +1449,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform border border-emerald-100">
                       <ClipboardList size={16} />
                     </div>
-                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[7px] font-black uppercase tracking-widest border border-emerald-200">
+                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[9px] font-black uppercase tracking-widest border border-emerald-200">
                       ACTIVE
                     </span>
                   </div>
@@ -1419,7 +1475,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                           toast.error('Failed to load survey details');
                         }
                       }}
-                      className="w-full py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-sm"
+                      className="w-full py-2 bg-slate-900 text-white rounded font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-sm"
                     >
                       TAKE SURVEY <ChevronRight size={12} />
                     </button>
@@ -1432,7 +1488,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <ClipboardList size={24} />
                   </div>
                   <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO ACTIVE SURVEYS</h3>
-                  <p className="text-slate-500 text-[9px] font-medium uppercase tracking-tight">There are no surveys requiring your feedback at this time.</p>
+                  <p className="text-slate-500 text-xs font-medium uppercase tracking-tight">There are no surveys requiring your feedback at this time.</p>
                 </div>
               )}
             </div>
@@ -1443,10 +1499,10 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   <div className="flex justify-between items-start">
                     <h3 className="text-[12px] font-black text-slate-900 leading-tight uppercase tracking-tight max-w-[80%]">{poll.question}</h3>
                     <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[7px] font-black uppercase tracking-widest border border-blue-200">
+                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-black uppercase tracking-widest border border-blue-200">
                         ACTIVE
                       </span>
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{poll._count?.votes || 0} VOTES</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{poll._count?.votes || 0} VOTES</span>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -1469,7 +1525,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                             className="w-full flex justify-between items-center p-2.5 rounded bg-slate-50 hover:bg-white transition-all group border border-slate-100 hover:border-slate-300 hover:shadow-sm"
                           >
                             <span className="font-black text-[10px] text-slate-700 group-hover:text-slate-900 uppercase tracking-tight">{opt.text}</span>
-                            <span className="text-[9px] font-black text-slate-500">{Math.round(percentage)}%</span>
+                            <span className="text-xs font-black text-slate-500">{Math.round(percentage)}%</span>
                           </button>
                           <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                             <motion.div 
@@ -1482,7 +1538,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       );
                     })}
                   </div>
-                  <div className="flex justify-between items-center pt-3 text-[8px] font-black text-slate-400 uppercase tracking-widest border-t border-slate-100">
+                  <div className="flex justify-between items-center pt-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-t border-slate-100">
                     <div className="flex items-center gap-1.5">
                       <CheckCircle2 size={12} className="text-emerald-500" />
                       LIVE RESULTS
@@ -1499,7 +1555,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <Vote size={24} />
                   </div>
                   <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO ACTIVE POLLS</h3>
-                  <p className="text-slate-500 text-[9px] font-medium uppercase tracking-tight">There are no active polls at the moment. Check back later!</p>
+                  <p className="text-slate-500 text-xs font-medium uppercase tracking-tight">There are no active polls at the moment. Check back later!</p>
                 </div>
               )}
             </div>
@@ -1524,7 +1580,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
             <div className="mb-4">
               <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">{currentSurvey.title}</h2>
-              <p className="text-slate-500 text-[9px] font-medium leading-relaxed mt-0.5">{currentSurvey.description}</p>
+              <p className="text-slate-500 text-xs font-medium leading-relaxed mt-0.5">{currentSurvey.description}</p>
             </div>
             
             <form onSubmit={async (e) => {
@@ -1636,7 +1692,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">GRIEVANCE CENTER</h2>
-              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Report issues, seek assistance, or provide feedback</p>
+              <p className="text-slate-500 text-xs mt-0.5 uppercase font-bold tracking-wider">Report issues, seek assistance, or provide feedback</p>
             </div>
             <button 
               onClick={() => setShowNewGrievanceModal(true)}
@@ -1655,11 +1711,11 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block mb-1">TOTAL</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">TOTAL</span>
                     <span className="text-xl font-black text-slate-900 leading-none">{grievances.length}</span>
                   </div>
                   <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                    <span className="text-[7px] font-black text-emerald-600 uppercase tracking-widest block mb-1">RESOLVED</span>
+                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block mb-1">RESOLVED</span>
                     <span className="text-xl font-black text-emerald-700 leading-none">
                       {grievances.filter(g => g.status === 'RESOLVED').length}
                     </span>
@@ -1671,8 +1727,8 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-white/20 transition-all" />
                 <div className="relative z-10">
                   <h3 className="text-[10px] font-black uppercase tracking-widest mb-2">NEED URGENT HELP?</h3>
-                  <p className="text-emerald-100 text-[9px] leading-relaxed mb-3 font-medium">Our dedicated support team is available 24/7 for critical party matters.</p>
-                  <button className="w-full py-2 bg-white text-emerald-900 rounded font-black text-[8px] uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-sm">
+                  <p className="text-emerald-100 text-xs leading-relaxed mb-3 font-medium">Our dedicated support team is available 24/7 for critical party matters.</p>
+                  <button className="w-full py-2 bg-white text-emerald-900 rounded font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-sm">
                     CONTACT SUPPORT
                   </button>
                 </div>
@@ -1690,7 +1746,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <ShieldCheck size={24} />
                   </div>
                   <h3 className="text-[11px] font-black text-slate-900 mb-1 uppercase tracking-widest">NO GRIEVANCES FOUND</h3>
-                  <p className="text-slate-500 text-[9px] font-medium uppercase tracking-tight">You haven't submitted any grievances or help requests yet.</p>
+                  <p className="text-slate-500 text-xs font-medium uppercase tracking-tight">You haven't submitted any grievances or help requests yet.</p>
                 </div>
               ) : (
                 <div className="grid gap-3">
@@ -1967,7 +2023,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">MY MEMBERSHIP</h2>
-              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Manage your official party membership and access exclusive benefits</p>
+              <p className="text-slate-500 text-xs mt-0.5 uppercase font-bold tracking-wider">Manage your official party membership and access exclusive benefits</p>
             </div>
           </div>
 
@@ -1981,34 +2037,34 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                   </h3>
                   <div className="space-y-3">
                     <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                      <p className="text-[7px] font-black text-emerald-600 uppercase tracking-widest mb-1">STATUS</p>
+                      <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">STATUS</p>
                       <p className="text-[12px] font-black text-emerald-900 uppercase">ACTIVE MEMBER</p>
                     </div>
                     <div className="space-y-2 px-1">
                       <div className="flex justify-between items-center">
-                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">MEMBER ID</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">MEMBER ID</span>
                         <span className="font-mono font-black text-slate-800 text-[10px]">{profile?.membershipId || '---'}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">PROVINCE</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">PROVINCE</span>
                         <span className="font-black text-slate-800 text-[10px] uppercase tracking-tight">{profile?.province || '---'}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">DISTRICT</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">DISTRICT</span>
                         <span className="font-black text-slate-800 text-[10px] uppercase tracking-tight">{profile?.district || '---'}</span>
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 pt-2">
                       <button 
                         onClick={() => setShowIdCard(true)}
-                        className="w-full py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
+                        className="w-full py-2 bg-slate-900 text-white rounded font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
                         <IdCard size={14} />
                         VIEW DIGITAL ID
                       </button>
                       <button 
                         onClick={() => setIsRenewing(true)}
-                        className="w-full py-2 bg-emerald-600 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-sm flex items-center justify-center gap-2"
+                        className="w-full py-2 bg-emerald-600 text-white rounded font-black text-xs uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
                         <Clock size={14} />
                         RENEW MEMBERSHIP
@@ -2086,7 +2142,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">VOLUNTEER HUB</h2>
-              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Manage your volunteer activities and track your impact</p>
+              <p className="text-slate-500 text-xs mt-0.5 uppercase font-bold tracking-wider">Manage your volunteer activities and track your impact</p>
             </div>
           </div>
 
@@ -2101,22 +2157,22 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     </h3>
                     <div className="space-y-3">
                       <div className="p-3 bg-rose-50 rounded-lg border border-rose-100">
-                        <p className="text-[7px] font-black text-rose-600 uppercase tracking-widest mb-1">STATUS</p>
+                        <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-1">STATUS</p>
                         <p className="text-[12px] font-black text-rose-900 uppercase">ACTIVE VOLUNTEER</p>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">HOURS</p>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">HOURS</p>
                           <p className="text-lg font-black text-slate-900 leading-none">{volunteer.totalHours || 0}</p>
                         </div>
                         <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">PROJECTS</p>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">PROJECTS</p>
                           <p className="text-lg font-black text-slate-900 leading-none">{volunteer.projectsCount || 0}</p>
                         </div>
                       </div>
                       <button 
                         onClick={() => setCurrentView('volunteer-enrollment')}
-                        className="w-full py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm flex items-center justify-center gap-2"
+                        className="w-full py-2 bg-slate-900 text-white rounded font-black text-xs uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
                         <ShieldCheck size={14} />
                         VOLUNTEER PORTAL
@@ -2143,10 +2199,10 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       ) : (
                         <div className="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
                           <Heart size={24} className="mx-auto text-slate-300 mb-2 opacity-50" />
-                          <p className="text-slate-500 font-black text-[9px] uppercase tracking-widest">No active assignments found</p>
+                          <p className="text-slate-500 font-black text-xs uppercase tracking-widest">No active assignments found</p>
                           <button 
                             onClick={() => setCurrentView('volunteer-enrollment')}
-                            className="mt-3 text-[8px] font-black text-emerald-600 hover:text-emerald-700 underline uppercase tracking-widest"
+                            className="mt-3 text-[10px] font-black text-emerald-600 hover:text-emerald-700 underline uppercase tracking-widest"
                           >
                             BROWSE OPPORTUNITIES
                           </button>
@@ -2161,8 +2217,8 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
                   <Clock size={24} />
                 </div>
-                <h3 className="text-[14px] font-black text-slate-900 mb-1.5 uppercase tracking-tight">APPLICATION PENDING</h3>
-                <p className="text-slate-500 text-[10px] mb-0 leading-relaxed font-medium uppercase tracking-tight">Thank you for your interest! Our team is reviewing your application and will reach out shortly via email or phone.</p>
+                <h3 className="text-xs font-black text-slate-900 mb-1.5 uppercase tracking-tight">APPLICATION PENDING</h3>
+                <p className="text-slate-500 text-xs mb-0 leading-relaxed font-medium uppercase tracking-tight">Thank you for your interest! Our team is reviewing your application and will reach out shortly via email or phone.</p>
               </div>
             )
           ) : (
@@ -2170,11 +2226,11 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-rose-100">
                 <Heart size={28} />
               </div>
-              <h3 className="text-[16px] font-black text-slate-900 mb-2 uppercase tracking-tight">VOLUNTEER FOR CHANGE</h3>
-              <p className="text-slate-500 text-[11px] mb-8 leading-relaxed font-medium uppercase tracking-tight">Join our team of dedicated volunteers and make a real impact on the ground. Your skills and time can help us build a better future.</p>
+              <h3 className="text-lg font-black text-slate-900 mb-2 uppercase tracking-tight">VOLUNTEER FOR CHANGE</h3>
+              <p className="text-slate-500 text-xs mb-8 leading-relaxed font-medium uppercase tracking-tight">Join our team of dedicated volunteers and make a real impact on the ground. Your skills and time can help us build a better future.</p>
               <button 
                 onClick={() => setCurrentView('volunteer-enrollment')}
-                className="px-8 py-3 bg-slate-900 text-white rounded-lg font-black text-[11px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-md flex items-center justify-center gap-2 mx-auto"
+                className="px-8 py-3 bg-slate-900 text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-rose-600 transition-all shadow-md flex items-center justify-center gap-2 mx-auto"
               >
                 APPLY TO VOLUNTEER <ArrowRight size={14} />
               </button>
@@ -2189,7 +2245,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">DONATIONS & IMPACT</h2>
-              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Track your contributions and support active campaigns</p>
+              <p className="text-slate-500 text-xs mt-0.5 uppercase font-bold tracking-wider">Track your contributions and support active campaigns</p>
             </div>
           </div>
 
@@ -2197,26 +2253,26 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="bg-rose-600 rounded-xl p-4 text-white shadow-md border border-rose-500 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-white/20 transition-all" />
-              <p className="text-[8px] font-black text-rose-200 uppercase tracking-widest mb-1 relative z-10">TOTAL CONTRIBUTIONS</p>
+              <p className="text-[10px] font-black text-rose-200 uppercase tracking-widest mb-1 relative z-10">TOTAL CONTRIBUTIONS</p>
               <p className="text-2xl font-black tracking-tight relative z-10">NPR {(donorProfile?.totalDonated || donations.reduce((acc, d) => acc + d.amount, 0)).toLocaleString()}</p>
-              <div className="mt-2 flex items-center gap-2 text-rose-100 text-[9px] font-black uppercase tracking-widest relative z-10">
+              <div className="mt-2 flex items-center gap-2 text-rose-100 text-xs font-black uppercase tracking-widest relative z-10">
                 <Heart size={14} />
                 <span>{donations.length} TRANSACTIONS</span>
               </div>
             </div>
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-center">
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">DONOR LEVEL</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">DONOR LEVEL</p>
               <p className="text-xl font-black text-slate-900 tracking-tight uppercase">{donorProfile?.donorLevel || 'SUPPORTER'}</p>
-              <p className="mt-1 text-slate-500 text-[9px] font-black uppercase tracking-widest">Your support fuels our movement</p>
+              <p className="mt-1 text-slate-500 text-xs font-black uppercase tracking-widest">Your support fuels our movement</p>
             </div>
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">QUICK ACTION</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">QUICK ACTION</p>
                 <p className="text-[12px] font-black text-slate-900 uppercase tracking-tight">SUPPORT A CAMPAIGN</p>
               </div>
               <button 
                 onClick={() => setCurrentView('donate')}
-                className="mt-3 w-full py-2 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm flex items-center justify-center gap-2"
+                className="mt-3 w-full py-2 bg-slate-900 text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm flex items-center justify-center gap-2"
               >
                 DONATE NOW <ArrowRight size={12} />
               </button>
@@ -2239,15 +2295,15 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                           <Heart size={16} />
                         </div>
                         <div>
-                          <h4 className="font-black text-slate-900 text-[11px] uppercase tracking-tight">{donation.campaign?.title || 'GENERAL DONATION'}</h4>
-                          <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest mt-1">
+                          <h4 className="font-black text-slate-900 text-xs uppercase tracking-tight">{donation.campaign?.title || 'GENERAL DONATION'}</h4>
+                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">
                             {safeFormat(donation.transaction?.date || donation.createdAt || new Date(), 'MMM d, yyyy')}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-slate-900 text-[11px] uppercase tracking-tight">NPR {(Number(donation.transaction?.amount || donation.amount) || 0).toLocaleString()}</p>
-                        <p className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded inline-block mt-1 border ${
+                        <p className="font-black text-slate-900 text-xs uppercase tracking-tight">NPR {(Number(donation.transaction?.amount || donation.amount) || 0).toLocaleString()}</p>
+                        <p className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded inline-block mt-1 border ${
                           donation.transaction?.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
                         }`}>
                           {donation.transaction?.status || 'PENDING'}
@@ -2258,7 +2314,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 ) : (
                   <div className="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
                     <Heart size={24} className="mx-auto text-slate-300 mb-2 opacity-50" />
-                    <p className="text-slate-500 font-black text-[9px] uppercase tracking-widest">No contributions recorded yet</p>
+                    <p className="text-slate-500 font-black text-xs uppercase tracking-widest">No contributions recorded yet</p>
                   </div>
                 )}
               </div>
@@ -2276,16 +2332,16 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     <div key={i} className="p-4 bg-slate-50 rounded-lg border border-slate-100 space-y-3 group hover:bg-white hover:shadow-md transition-all">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-black text-slate-900 text-[11px] uppercase tracking-tight">{campaign.title}</h4>
-                          <p className="text-[10px] text-slate-500 line-clamp-1 mt-1 leading-relaxed font-medium uppercase tracking-tight">{campaign.description}</p>
+                          <h4 className="font-black text-slate-900 text-xs uppercase tracking-tight">{campaign.title}</h4>
+                          <p className="text-xs text-slate-500 line-clamp-1 mt-1 leading-relaxed font-medium uppercase tracking-tight">{campaign.description}</p>
                         </div>
-                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[8px] font-black rounded uppercase tracking-widest border border-emerald-100 shrink-0 ml-2">
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded uppercase tracking-widest border border-emerald-100 shrink-0 ml-2">
                           {(campaign.fundraiserType || '').replace('_', ' ')}
                         </span>
                       </div>
                       
                       <div className="space-y-2">
-                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                           <span className="text-slate-400">FUNDING PROGRESS</span>
                           <span className="text-emerald-600">{Math.round((Number(campaign.currentAmount || 0) / Number(campaign.goalAmount || 1)) * 100)}%</span>
                         </div>
@@ -2296,7 +2352,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                             className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
                           />
                         </div>
-                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                           <span className="text-slate-900">NPR {(Number(campaign.currentAmount) || 0).toLocaleString()}</span>
                           <span className="text-slate-400">GOAL: NPR {(Number(campaign.goalAmount) || 0).toLocaleString()}</span>
                         </div>
@@ -2304,7 +2360,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
                       <button 
                         onClick={() => setCurrentView('donate')}
-                        className="w-full py-2 bg-emerald-600 text-white rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-sm flex items-center justify-center gap-2"
+                        className="w-full py-2 bg-emerald-600 text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
                         SUPPORT CAMPAIGN <ArrowRight size={12} />
                       </button>
@@ -2313,7 +2369,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 ) : (
                   <div className="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
                     <Megaphone size={24} className="mx-auto text-slate-300 mb-2 opacity-50" />
-                    <p className="text-slate-500 font-black text-[9px] uppercase tracking-widest">No active campaigns at this time</p>
+                    <p className="text-slate-500 font-black text-xs uppercase tracking-widest">No active campaigns at this time</p>
                   </div>
                 )}
               </div>
@@ -2331,7 +2387,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">USER PROFILE & SETTINGS</h2>
-              <p className="text-slate-500 text-[9px] mt-0.5 uppercase font-bold tracking-wider">Manage your personal information and account security</p>
+              <p className="text-slate-500 text-xs mt-0.5 uppercase font-bold tracking-wider">Manage your personal information and account security</p>
             </div>
           </div>
 
@@ -2341,7 +2397,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">EDIT PROFILE DETAILS</h2>
                 <button 
                   onClick={() => setIsEditingProfile(false)}
-                  className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded font-black hover:bg-slate-200 transition-all text-[8px] uppercase tracking-widest border border-slate-200"
+                  className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded font-black hover:bg-slate-200 transition-all text-[10px] uppercase tracking-widest border border-slate-200"
                 >
                   CANCEL
                 </button>
@@ -2375,13 +2431,13 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                     </div>
                   </div>
                   <h2 className="text-[14px] font-black text-slate-900 uppercase tracking-tight">{user.displayName}</h2>
-                  <p className="text-slate-400 font-black uppercase tracking-widest text-[9px] mt-0.5">{user.role.replace('_', ' ')}</p>
+                  <p className="text-slate-400 font-black uppercase tracking-widest text-xs mt-0.5">{user.role.replace('_', ' ')}</p>
                   
                   <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400 font-black uppercase tracking-widest text-[8px]">VERIFICATION</span>
+                      <span className="text-slate-400 font-black uppercase tracking-widest text-xs">VERIFICATION</span>
                       <div className="flex items-center gap-1.5">
-                        <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest border ${
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
                           user.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'
                         }`}>
                           {user.isActive ? 'VERIFIED' : 'UNVERIFIED'}
@@ -2397,7 +2453,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                                 toast.error('Verification failed');
                               }
                             }}
-                            className="text-[8px] font-black text-emerald-600 hover:text-emerald-700 underline uppercase tracking-widest"
+                            className="text-xs font-black text-emerald-600 hover:text-emerald-700 underline uppercase tracking-widest"
                           >
                             VERIFY NOW
                           </button>
@@ -2405,15 +2461,15 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400 font-black uppercase tracking-widest text-[8px]">MEMBER SINCE</span>
-                      <span className="text-slate-900 font-black text-[9px] uppercase tracking-tight">{safeFormat(user.createdAt, 'MMM yyyy')}</span>
+                      <span className="text-slate-400 font-black uppercase tracking-widest text-xs">MEMBER SINCE</span>
+                      <span className="text-slate-900 font-black text-xs uppercase tracking-tight">{safeFormat(user.createdAt, 'MMM yyyy')}</span>
                     </div>
                   </div>
 
                   {(user.role === 'MEMBER' || user.role === 'APPLICANT_MEMBER') && (
                     <button 
                       onClick={() => setIsEditingProfile(true)}
-                      className="w-full mt-4 py-2 bg-slate-900 text-white rounded font-black text-[9px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
+                      className="w-full mt-4 py-2 bg-slate-900 text-white rounded font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
                     >
                       <Settings size={14} />
                       EDIT PROFILE DETAILS
@@ -2423,7 +2479,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
                 {/* Identity Context */}
                 <div className="bg-slate-900 rounded-xl p-4 text-white shadow-md border border-slate-800">
-                  <h3 className="text-[8px] font-black uppercase tracking-widest text-emerald-400 mb-3">LINKED IDENTITY</h3>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-3">LINKED IDENTITY</h3>
                   <div className="space-y-3">
                     {user.role === 'MEMBER' && (
                       <div className="flex items-center gap-3">
@@ -2431,7 +2487,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                           <Shield size={16} />
                         </div>
                         <div>
-                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">MEMBERSHIP</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MEMBERSHIP</p>
                           <p className="font-black text-white text-[11px] uppercase tracking-tight">ACTIVE PARTY MEMBER</p>
                         </div>
                       </div>
@@ -2442,14 +2498,14 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                           <Heart size={16} />
                         </div>
                         <div>
-                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">VOLUNTEER</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">VOLUNTEER</p>
                           <p className="font-black text-white text-[11px] uppercase tracking-tight">{volunteer.status === 'APPROVED' ? 'ACTIVE VOLUNTEER' : 'VOLUNTEER APPLICANT'}</p>
                         </div>
                       </div>
                     )}
                     {!volunteer && user.role === 'PUBLIC' && (
                       <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                        <p className="text-[10px] text-slate-300 leading-relaxed font-medium uppercase tracking-tight">
+                        <p className="text-xs text-slate-300 leading-relaxed font-medium uppercase tracking-tight">
                           You are currently a <span className="text-white font-black">REGISTERED USER</span>. Join as a member or volunteer to unlock more features.
                         </p>
                       </div>
@@ -2462,25 +2518,25 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               <div className="lg:col-span-2 space-y-3">
                 {/* Personal Information */}
                 <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                  <h3 className="text-[10px] font-black text-slate-900 mb-3.5 flex items-center gap-1.5 uppercase tracking-widest">
+                  <h3 className="text-xs font-black text-slate-900 mb-3.5 flex items-center gap-1.5 uppercase tracking-widest">
                     <User size={14} className="text-emerald-500" />
                     PERSONAL INFORMATION
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">FULL NAME</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">FULL NAME</p>
                       <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{user.displayName}</p>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">EMAIL ADDRESS</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">EMAIL ADDRESS</p>
                       <p className="text-[11px] font-black text-slate-900">{user.email}</p>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PHONE NUMBER</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PHONE NUMBER</p>
                       <p className="text-[11px] font-black text-slate-900">{user.phoneNumber || 'NOT PROVIDED'}</p>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ACCOUNT TYPE</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ACCOUNT TYPE</p>
                       <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{user.role.replace('_', ' ')}</p>
                     </div>
                   </div>
@@ -2489,25 +2545,25 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                 {/* Member Specific Details */}
                 {profile && (
                   <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                    <h3 className="text-[10px] font-black text-slate-900 mb-3.5 flex items-center gap-1.5 uppercase tracking-widest">
+                    <h3 className="text-xs font-black text-slate-900 mb-3.5 flex items-center gap-1.5 uppercase tracking-widest">
                       <Award size={14} className="text-blue-500" />
                       MEMBERSHIP DETAILS
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">MEMBERSHIP ID</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">MEMBERSHIP ID</p>
                         <p className="text-[11px] font-mono font-black text-slate-900 uppercase tracking-tight">{profile.membershipId || 'PENDING'}</p>
                       </div>
                       <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PROVINCE</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PROVINCE</p>
                         <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{profile.province || 'NOT SPECIFIED'}</p>
                       </div>
                       <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">DISTRICT</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">DISTRICT</p>
                         <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{profile.district || 'NOT SPECIFIED'}</p>
                       </div>
                       <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">LOCAL LEVEL</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">LOCAL LEVEL</p>
                         <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{profile.localLevel || 'NOT SPECIFIED'}</p>
                       </div>
                     </div>
@@ -2516,7 +2572,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
 
                 {/* Account Security */}
                 <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                  <h3 className="text-[10px] font-black text-slate-900 mb-3 flex items-center gap-1.5 uppercase tracking-widest">
+                  <h3 className="text-xs font-black text-slate-900 mb-3 flex items-center gap-1.5 uppercase tracking-widest">
                     <Shield size={14} className="text-rose-500" />
                     ACCOUNT SECURITY
                   </h3>
@@ -2528,10 +2584,10 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                         </div>
                         <div>
                           <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">PASSWORD</p>
-                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">LAST CHANGED {safeFormat(user.createdAt, 'MMM d, yyyy')}</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LAST CHANGED {safeFormat(user.createdAt, 'MMM d, yyyy')}</p>
                         </div>
                       </div>
-                      <button className="text-[8px] font-black text-slate-900 hover:text-emerald-600 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">CHANGE</button>
+                      <button className="text-xs font-black text-slate-900 hover:text-emerald-600 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">CHANGE</button>
                     </div>
                     <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 group hover:bg-white hover:shadow-sm transition-all">
                       <div className="flex items-center gap-2.5">
@@ -2540,10 +2596,10 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
                         </div>
                         <div>
                           <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">TWO-FACTOR AUTH</p>
-                          <p className="text-[7px] font-black text-emerald-600 uppercase tracking-widest">ENABLED</p>
+                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">ENABLED</p>
                         </div>
                       </div>
-                      <button className="text-[8px] font-black text-slate-900 hover:text-emerald-600 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">MANAGE</button>
+                      <button className="text-xs font-black text-slate-900 hover:text-emerald-600 uppercase tracking-widest bg-white px-2 py-1 rounded border border-slate-200">MANAGE</button>
                     </div>
                   </div>
                 </div>
@@ -2577,7 +2633,7 @@ export const CentralizedPublicDashboard: React.FC<CentralizedPublicDashboardProp
               </div>
 
               <div className="mb-4">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
                   Additional Note (Optional)
                 </label>
                 <textarea

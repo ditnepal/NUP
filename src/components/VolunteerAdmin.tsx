@@ -301,7 +301,12 @@ export const VolunteerAdmin: React.FC = () => {
                     {app.fullName.charAt(0)}
                   </div>
                   <div className="flex gap-2">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-600">
+                    <span className={`px-2 py-1 text-[10px] font-black rounded uppercase tracking-widest border ${
+                      app.source === 'MEMBER_DASHBOARD' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-slate-50 text-slate-700 border-slate-100'
+                    }`}>
+                      {app.source === 'MEMBER_DASHBOARD' ? 'MEMBER' : 'PUBLIC'}
+                    </span>
+                    <span className="px-2 py-1 text-[10px] font-black rounded uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-100">
                       {app.status}
                     </span>
                     <button 

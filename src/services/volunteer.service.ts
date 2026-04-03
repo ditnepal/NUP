@@ -114,38 +114,69 @@ export class VolunteerService extends BaseService {
   }
 
   /**
-   * Get all volunteer applications
+   * Get all volunteer applications (including pending member registrations)
    */
   async getApplications() {
-    return await this.db.volunteerApplication.findMany({
+    const guestApps = await this.db.volunteerApplication.findMany({
+      where: { status: 'PENDING' },
       orderBy: { createdAt: 'desc' }
     });
+
+    const memberApps = await this.db.volunteer.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return [
+      ...guestApps.map(app => ({ ...app, source: 'PUBLIC_FORM' })),
+      ...memberApps.map(app => ({ ...app, source: 'MEMBER_DASHBOARD' }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   /**
    * Approve volunteer application
    */
   async approveApplication(applicationId: string) {
-    const app = await this.db.volunteerApplication.update({
-      where: { id: applicationId },
-      data: { status: 'APPROVED' }
-    });
-    const volunteer = await this.db.volunteer.create({
-      data: {
-        fullName: app.fullName,
-        email: app.email,
-        phone: app.phone,
-        skills: app.skills,
-        availability: app.availability
+    // Try to find in VolunteerApplication first
+    const app = await this.db.volunteerApplication.findUnique({ where: { id: applicationId } });
+    
+    if (app) {
+      await this.db.volunteerApplication.update({
+        where: { id: applicationId },
+        data: { status: 'APPROVED' }
+      });
+      
+      // Check if a volunteer record already exists for this email (to avoid duplicates if they registered twice)
+      const existing = await this.db.volunteer.findFirst({ where: { email: app.email } });
+      if (existing) {
+        return await this.db.volunteer.update({
+          where: { id: existing.id },
+          data: { status: 'ACTIVE' }
+        });
       }
-    });
-    await auditService.log({
-      action: 'VOLUNTEER_APPLICATION_APPROVED',
-      entityType: 'Volunteer',
-      entityId: volunteer.id,
-      details: { applicationId }
-    });
-    return volunteer;
+
+      return await this.db.volunteer.create({
+        data: {
+          fullName: app.fullName,
+          email: app.email,
+          phone: app.phone,
+          skills: app.skills,
+          availability: app.availability,
+          status: 'ACTIVE'
+        }
+      });
+    }
+
+    // If not found, check if it's a PENDING volunteer (member-origin)
+    const volunteer = await this.db.volunteer.findUnique({ where: { id: applicationId } });
+    if (volunteer && volunteer.status === 'PENDING') {
+      return await this.db.volunteer.update({
+        where: { id: applicationId },
+        data: { status: 'ACTIVE' }
+      });
+    }
+
+    throw new Error('Application not found or already processed');
   }
 
   /**

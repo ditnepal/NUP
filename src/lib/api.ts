@@ -19,8 +19,13 @@ const getAuthHeaders = (endpoint: string, method: string = 'GET', isFormData: bo
     headers['Content-Type'] = 'application/json';
   }
   
-  // Only send token if it exists and is not a placeholder string
-  if (token && token !== 'null' && token !== 'undefined' && token.length > 10) {
+  // Do not send Authorization header for public endpoints to avoid infrastructure/proxy 403 blocks
+  // when a stale or invalid token is present in localStorage.
+  const publicEndpoints = ['/auth/login', '/auth/public-register', '/public/config', '/public/posts', '/public/surveys', '/public/polls'];
+  const isPublicEndpoint = publicEndpoints.some(p => endpoint.includes(p));
+
+  // Only send token if it exists, is not a placeholder, and it's not a public endpoint
+  if (!isPublicEndpoint && token && token !== 'null' && token !== 'undefined' && token.length > 10) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   

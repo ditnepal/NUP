@@ -157,7 +157,11 @@ export const MemberProfileSettings: React.FC<MemberProfileSettingsProps> = ({ pr
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Joined Date</p>
-                <p className="font-bold text-slate-900 text-xs">{profile.joinedDate ? new Date(profile.joinedDate).toLocaleDateString() : 'N/A'}</p>
+                <p className="font-bold text-slate-900 text-xs">
+                  {profile.joinedDate || profile.createdAt 
+                    ? new Date(profile.joinedDate || profile.createdAt).toLocaleDateString() 
+                    : 'Pending record'}
+                </p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Issue Date</p>
