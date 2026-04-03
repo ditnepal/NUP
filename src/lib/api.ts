@@ -21,7 +21,18 @@ const getAuthHeaders = (endpoint: string, method: string = 'GET', isFormData: bo
   
   // Do not send Authorization header for public endpoints to avoid infrastructure/proxy 403 blocks
   // when a stale or invalid token is present in localStorage.
-  const publicEndpoints = ['/auth/login', '/auth/public-register', '/public/config', '/public/posts', '/public/surveys', '/public/polls'];
+  const publicEndpoints = [
+    '/auth/login', 
+    '/auth/public-register', 
+    '/public/config', 
+    '/public/posts', 
+    '/public/surveys', 
+    '/public/polls',
+    '/public/navigation',
+    '/public/footer-links',
+    '/public/social-links',
+    '/public/pages'
+  ];
   const isPublicEndpoint = publicEndpoints.some(p => endpoint.includes(p));
 
   // Only send token if it exists, is not a placeholder, and it's not a public endpoint

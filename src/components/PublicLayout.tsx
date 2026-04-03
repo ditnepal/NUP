@@ -22,9 +22,13 @@ import {
   LayoutDashboard,
   LogIn,
   UserPlus,
-  ShieldAlert
+  ShieldAlert,
+  Linkedin,
+  PlayCircle,
+  ExternalLink
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { CmsNavigation, CmsFooterLink, CmsSocialLink } from '../types';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -70,20 +74,53 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
     PARTY_NAME: 'Nagarik Unmukti Party',
     PARTY_TAGLINE: 'Empowering Citizens, Building the Future',
     CONTACT_EMAIL: 'info@nupos.org',
-    CONTACT_PHONE: '+977-1-0000000'
+    CONTACT_PHONE: '+977-1-0000000',
+    LOGO_URL: ''
   });
+  const [navigation, setNavigation] = useState<CmsNavigation[]>([]);
+  const [footerLinks, setFooterLinks] = useState<CmsFooterLink[]>([]);
+  const [socialLinks, setSocialLinks] = useState<CmsSocialLink[]>([]);
 
   useEffect(() => {
-    const fetchSystemConfig = async () => {
+    const fetchData = async () => {
       try {
-        const config = await api.get('/public/config');
+        const [config, navs, footers, socials] = await Promise.all([
+          api.get('/public/config'),
+          api.get('/public/navigation'),
+          api.get('/public/footer-links'),
+          api.get('/public/social-links')
+        ]);
         setSystemConfig(config);
+        setNavigation(navs);
+        setFooterLinks(footers);
+        setSocialLinks(socials);
       } catch (error) {
-        console.error('Error fetching system config:', error);
+        console.error('Error fetching public layout data:', error);
       }
     };
-    fetchSystemConfig();
+    fetchData();
   }, []);
+
+  const getSocialIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'facebook': return <Facebook size={18} />;
+      case 'twitter': return <Twitter size={18} />;
+      case 'instagram': return <Instagram size={18} />;
+      case 'youtube': return <Youtube size={18} />;
+      case 'linkedin': return <Linkedin size={18} />;
+      case 'tiktok': return <PlayCircle size={18} />;
+      default: return <Globe size={18} />;
+    }
+  };
+
+  const handleLinkClick = (url: string) => {
+    if (url.startsWith('http')) {
+      window.open(url, '_blank');
+    } else {
+      // Handle internal routing if needed, for now just use window.location
+      window.location.href = url;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans flex flex-col">
@@ -93,15 +130,19 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
           <div className="flex justify-between h-20 items-center">
             <div className="flex items-center gap-6">
               <button onClick={onHomeClick} className="flex items-center gap-3 group transition-all">
-                <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition-transform">
-                  <Globe size={22} className="text-white" />
+                <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition-transform overflow-hidden">
+                  {systemConfig['LOGO_URL'] ? (
+                    <img src={systemConfig['LOGO_URL']} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <Globe size={22} className="text-white" />
+                  )}
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="font-black text-xl tracking-tighter text-slate-900 uppercase leading-none">
                     {systemConfig['PARTY_NAME'] || 'Nagarik Unmukti Party'}
                   </span>
                   <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-1 opacity-80">
-                    Official Public Portal
+                    {systemConfig['PARTY_TAGLINE'] || 'Official Public Portal'}
                   </span>
                 </div>
               </button>
@@ -109,21 +150,33 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
             
             <div className="hidden lg:flex items-center gap-1">
               <nav className="flex items-center mr-4 pr-4 border-r border-slate-200 gap-1">
-                {[
-                  { label: 'About', onClick: onAboutClick, icon: Globe },
-                  { label: 'News', onClick: onNewsClick, icon: Megaphone },
-                  { label: 'Candidates', onClick: onCandidatesClick, icon: UserCheck },
-                  { label: 'Manifesto', onClick: onDocumentsClick, icon: Shield },
-                  { label: 'Status', onClick: onStatusClick, icon: Activity },
-                ].map((item) => (
-                  <button 
-                    key={item.label}
-                    onClick={item.onClick} 
-                    className="px-4 py-2 text-[10px] font-black text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl transition-all uppercase tracking-widest flex items-center gap-2"
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                {navigation.length > 0 ? (
+                  navigation.map((item) => (
+                    <button 
+                      key={item.id}
+                      onClick={() => handleLinkClick(item.url)} 
+                      className="px-4 py-2 text-[10px] font-black text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl transition-all uppercase tracking-widest flex items-center gap-2"
+                    >
+                      {item.label}
+                    </button>
+                  ))
+                ) : (
+                  [
+                    { label: 'About', onClick: onAboutClick },
+                    { label: 'News', onClick: onNewsClick },
+                    { label: 'Candidates', onClick: onCandidatesClick },
+                    { label: 'Manifesto', onClick: onDocumentsClick },
+                    { label: 'Status', onClick: onStatusClick },
+                  ].map((item) => (
+                    <button 
+                      key={item.label}
+                      onClick={item.onClick} 
+                      className="px-4 py-2 text-[10px] font-black text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl transition-all uppercase tracking-widest flex items-center gap-2"
+                    >
+                      {item.label}
+                    </button>
+                  ))
+                )}
               </nav>
 
               {user ? (
@@ -230,43 +283,36 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-2">Information</h3>
+                  <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-2">Navigation</h3>
                   <div className="grid grid-cols-1 gap-1">
-                    {[
-                      { label: 'About Us', onClick: onAboutClick, icon: Globe },
-                      { label: 'Latest News', onClick: onNewsClick, icon: Megaphone },
-                      { label: 'Our Candidates', onClick: onCandidatesClick, icon: UserCheck },
-                      { label: 'Manifesto & Docs', onClick: onDocumentsClick, icon: Shield },
-                    ].map((item) => (
-                      <button 
-                        key={item.label}
-                        onClick={() => { item.onClick?.(); setIsMenuOpen(false); }} 
-                        className="flex items-center gap-4 p-4 text-sm font-black text-slate-800 hover:bg-emerald-50 rounded-2xl transition-all group"
-                      >
-                        <item.icon size={18} className="text-slate-400 group-hover:text-emerald-600" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 px-2">Services</h3>
-                  <div className="grid grid-cols-1 gap-1">
-                    {[
-                      { label: 'Check Status', onClick: onStatusClick, icon: Activity },
-                      { label: 'Training Portal', onClick: onTrainingClick, icon: GraduationCap },
-                      { label: 'Help & Support', onClick: onGrievanceClick, icon: ShieldAlert },
-                    ].map((item) => (
-                      <button 
-                        key={item.label}
-                        onClick={() => { item.onClick?.(); setIsMenuOpen(false); }} 
-                        className="flex items-center gap-4 p-4 text-sm font-black text-slate-800 hover:bg-blue-50 rounded-2xl transition-all group"
-                      >
-                        <item.icon size={18} className="text-slate-400 group-hover:text-blue-600" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-                      </button>
-                    ))}
+                    {navigation.length > 0 ? (
+                      navigation.map((item) => (
+                        <button 
+                          key={item.id}
+                          onClick={() => { handleLinkClick(item.url); setIsMenuOpen(false); }} 
+                          className="flex items-center gap-4 p-4 text-sm font-black text-slate-800 hover:bg-emerald-50 rounded-2xl transition-all group"
+                        >
+                          <Globe size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                        </button>
+                      ))
+                    ) : (
+                      [
+                        { label: 'About Us', onClick: onAboutClick, icon: Globe },
+                        { label: 'Latest News', onClick: onNewsClick, icon: Megaphone },
+                        { label: 'Our Candidates', onClick: onCandidatesClick, icon: UserCheck },
+                        { label: 'Manifesto & Docs', onClick: onDocumentsClick, icon: Shield },
+                      ].map((item) => (
+                        <button 
+                          key={item.label}
+                          onClick={() => { item.onClick?.(); setIsMenuOpen(false); }} 
+                          className="flex items-center gap-4 p-4 text-sm font-black text-slate-800 hover:bg-emerald-50 rounded-2xl transition-all group"
+                        >
+                          <item.icon size={18} className="text-slate-400 group-hover:text-emerald-600" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -312,32 +358,49 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
                 {systemConfig['PARTY_TAGLINE'] || 'Empowering citizens through digital transparency and grassroots organization.'}
               </p>
               <div className="flex gap-4">
-                {['Facebook', 'Twitter', 'Instagram', 'Youtube'].map((social) => (
-                  <div key={social} className="w-10 h-10 bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-400 border border-white/10 rounded-xl flex items-center justify-center transition-all cursor-pointer group">
-                    <span className="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 absolute -top-8 bg-slate-800 px-2 py-1 rounded text-white pointer-events-none transition-opacity">{social}</span>
-                    <Globe size={18} />
-                  </div>
-                ))}
+                {socialLinks.length > 0 ? (
+                  socialLinks.map((social) => (
+                    <button 
+                      key={social.id} 
+                      onClick={() => handleLinkClick(social.url)}
+                      className="w-10 h-10 bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-400 border border-white/10 rounded-xl flex items-center justify-center transition-all cursor-pointer group relative"
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 absolute -top-8 bg-slate-800 px-2 py-1 rounded text-white pointer-events-none transition-opacity whitespace-nowrap">{social.platform}</span>
+                      {getSocialIcon(social.platform)}
+                    </button>
+                  ))
+                ) : (
+                  ['Facebook', 'Twitter', 'Instagram', 'Youtube'].map((social) => (
+                    <div key={social} className="w-10 h-10 bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-400 border border-white/10 rounded-xl flex items-center justify-center transition-all cursor-pointer group relative">
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 absolute -top-8 bg-slate-800 px-2 py-1 rounded text-white pointer-events-none transition-opacity whitespace-nowrap">{social}</span>
+                      <Globe size={18} />
+                    </div>
+                  ))
+                )}
               </div>
             </div>
             
-            <div className="md:col-span-2">
-              <h4 className="font-black text-[10px] mb-8 uppercase tracking-[0.3em] text-emerald-400 opacity-80">Resources</h4>
-              <ul className="space-y-5 text-slate-400 text-sm font-bold">
-                <li><button onClick={onAboutClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">About Us</button></li>
-                <li><button onClick={onCandidatesClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Candidates</button></li>
-                <li><button onClick={onCampaignsClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Campaigns</button></li>
-                <li><button onClick={onDocumentsClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Manifesto</button></li>
-              </ul>
-            </div>
-
-            <div className="md:col-span-2">
-              <h4 className="font-black text-[10px] mb-8 uppercase tracking-[0.3em] text-emerald-400 opacity-80">Support</h4>
-              <ul className="space-y-5 text-slate-400 text-sm font-bold">
-                <li><button onClick={onTrainingClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Training</button></li>
-                <li><button onClick={onStatusClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Check Status</button></li>
-                <li><button onClick={onJoinClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Join Us</button></li>
-                <li><button onClick={onPortalClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Help Center</button></li>
+            <div className="md:col-span-4">
+              <h4 className="font-black text-[10px] mb-8 uppercase tracking-[0.3em] text-emerald-400 opacity-80">Quick Links</h4>
+              <ul className="grid grid-cols-2 gap-x-8 gap-y-5 text-slate-400 text-sm font-bold">
+                {footerLinks.length > 0 ? (
+                  footerLinks.map((link) => (
+                    <li key={link.id}>
+                      <button onClick={() => handleLinkClick(link.url)} className="hover:text-emerald-400 transition-colors uppercase tracking-widest text-left">
+                        {link.label}
+                      </button>
+                    </li>
+                  ))
+                ) : (
+                  <>
+                    <li><button onClick={onAboutClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">About Us</button></li>
+                    <li><button onClick={onCandidatesClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Candidates</button></li>
+                    <li><button onClick={onCampaignsClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Campaigns</button></li>
+                    <li><button onClick={onDocumentsClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Manifesto</button></li>
+                    <li><button onClick={onTrainingClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Training</button></li>
+                    <li><button onClick={onStatusClick} className="hover:text-emerald-400 transition-colors uppercase tracking-widest">Check Status</button></li>
+                  </>
+                )}
               </ul>
             </div>
 

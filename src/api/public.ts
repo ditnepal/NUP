@@ -594,12 +594,22 @@ router.get('/fundraisers', async (req, res) => {
 // @desc    Get public system configurations
 // @access  Public
 router.get('/config', async (req, res) => {
-  const keys = ['PARTY_NAME', 'PARTY_TAGLINE', 'CONTACT_EMAIL', 'CONTACT_PHONE', 'DEFAULT_LANGUAGE'];
+  const keys = [
+    'PARTY_NAME', 
+    'PARTY_TAGLINE', 
+    'CONTACT_EMAIL', 
+    'CONTACT_PHONE', 
+    'CONTACT_ADDRESS',
+    'LOGO_URL',
+    'DEFAULT_LANGUAGE'
+  ];
   const defaultValues: Record<string, string> = {
     PARTY_NAME: 'Progressive People\'s Organization',
     PARTY_TAGLINE: 'Empowering Citizens, Building the Future',
     CONTACT_EMAIL: 'info@ppos.org',
     CONTACT_PHONE: '+977-1-0000000',
+    CONTACT_ADDRESS: 'Kathmandu, Nepal',
+    LOGO_URL: '',
     DEFAULT_LANGUAGE: 'en'
   };
 
@@ -688,6 +698,56 @@ router.get('/my-application', authenticate, async (req: AuthRequest, res) => {
     res.json(member);
   } catch (error: any) {
     console.error('Error fetching my application:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/public/navigation
+// @desc    Get published navigation items
+// @access  Public
+router.get('/navigation', async (req, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: 'CMS_NAVIGATION' }
+    });
+    const items = config ? JSON.parse(config.value) : [];
+    const published = items.filter((item: any) => item.status === 'PUBLISHED');
+    published.sort((a: any, b: any) => a.order - b.order);
+    res.json(published);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/public/footer-links
+// @desc    Get published footer links
+// @access  Public
+router.get('/footer-links', async (req, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: 'CMS_FOOTER_LINKS' }
+    });
+    const items = config ? JSON.parse(config.value) : [];
+    const published = items.filter((item: any) => item.status === 'PUBLISHED');
+    published.sort((a: any, b: any) => a.order - b.order);
+    res.json(published);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/v1/public/social-links
+// @desc    Get published social links
+// @access  Public
+router.get('/social-links', async (req, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: 'CMS_SOCIAL_LINKS' }
+    });
+    const items = config ? JSON.parse(config.value) : [];
+    const published = items.filter((item: any) => item.status === 'PUBLISHED');
+    res.json(published);
+  } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -467,6 +467,7 @@ model CmsPage {
   language       String    @default("en")
   isSystem       Boolean   @default(false)
   isPinned       Boolean   @default(false)
+  placement      String?
   publishedAt    DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -567,6 +568,35 @@ model CmsSectionContent {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   section     CmsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+}
+
+model CmsNavigation {
+  id        String   @id @default(uuid())
+  label     String
+  url       String
+  order     Int      @default(0)
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CmsFooterLink {
+  id        String   @id @default(uuid())
+  label     String
+  url       String
+  order     Int      @default(0)
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CmsSocialLink {
+  id        String   @id @default(uuid())
+  platform  String
+  url       String
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Issue {

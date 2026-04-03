@@ -20,6 +20,7 @@ const pageSchema = z.object({
   isPinned: z.boolean().optional(),
   publishedAt: z.string().optional().transform(val => val ? new Date(val) : undefined),
   decisionNote: z.string().optional(),
+  placement: z.enum(['MAIN_MENU', 'FOOTER', 'HIDDEN']).optional(),
 });
 
 const postSchema = z.object({
@@ -235,5 +236,195 @@ router.delete('/sections/:id', authenticate, authorize(['ADMIN', 'STAFF']), asyn
     res.status(500).json({ error: error.message });
   }
 });
+
+// --- Navigation ---
+
+const navSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(1),
+  url: z.string().min(1),
+  order: z.number().default(0),
+  status: z.enum(['DRAFT', 'PUBLISHED']),
+  decisionNote: z.string().optional(),
+});
+
+router.get('/navigation', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: 'CMS_NAVIGATION' }
+    });
+    const items = config ? JSON.parse(config.value) : [];
+    items.sort((a: any, b: any) => a.order - b.order);
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/navigation', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const data = navSchema.parse(req.body);
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'CMS_NAVIGATION' } });
+    let items: any[] = config ? JSON.parse(config.value) : [];
+    
+    if (data.id) {
+      items = items.map(item => item.id === data.id ? { ...item, ...data, updatedAt: new Date().toISOString() } : item);
+    } else {
+      items.push({ ...data, id: Math.random().toString(36).substring(2, 9), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    }
+
+    await prisma.systemConfig.upsert({
+      where: { key: 'CMS_NAVIGATION' },
+      update: { value: JSON.stringify(items) },
+      create: { key: 'CMS_NAVIGATION', value: JSON.stringify(items) }
+    });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/navigation/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'CMS_NAVIGATION' } });
+    if (config) {
+      let items: any[] = JSON.parse(config.value);
+      items = items.filter(item => item.id !== req.params.id);
+      await prisma.systemConfig.update({
+        where: { key: 'CMS_NAVIGATION' },
+        data: { value: JSON.stringify(items) }
+      });
+    }
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Footer Links ---
+
+const footerLinkSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(1),
+  url: z.string().min(1),
+  order: z.number().default(0),
+  status: z.enum(['DRAFT', 'PUBLISHED']),
+  decisionNote: z.string().optional(),
+});
+
+router.get('/footer-links', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: 'CMS_FOOTER_LINKS' }
+    });
+    const items = config ? JSON.parse(config.value) : [];
+    items.sort((a: any, b: any) => a.order - b.order);
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/footer-links', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const data = footerLinkSchema.parse(req.body);
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'CMS_FOOTER_LINKS' } });
+    let items: any[] = config ? JSON.parse(config.value) : [];
+    
+    if (data.id) {
+      items = items.map(item => item.id === data.id ? { ...item, ...data, updatedAt: new Date().toISOString() } : item);
+    } else {
+      items.push({ ...data, id: Math.random().toString(36).substring(2, 9), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    }
+
+    await prisma.systemConfig.upsert({
+      where: { key: 'CMS_FOOTER_LINKS' },
+      update: { value: JSON.stringify(items) },
+      create: { key: 'CMS_FOOTER_LINKS', value: JSON.stringify(items) }
+    });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/footer-links/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'CMS_FOOTER_LINKS' } });
+    if (config) {
+      let items: any[] = JSON.parse(config.value);
+      items = items.filter(item => item.id !== req.params.id);
+      await prisma.systemConfig.update({
+        where: { key: 'CMS_FOOTER_LINKS' },
+        data: { value: JSON.stringify(items) }
+      });
+    }
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Social Links ---
+
+const socialLinkSchema = z.object({
+  id: z.string().optional(),
+  platform: z.string().min(1),
+  url: z.string().min(1),
+  status: z.enum(['DRAFT', 'PUBLISHED']),
+  decisionNote: z.string().optional(),
+});
+
+router.get('/social-links', authenticate, authorize(['ADMIN', 'STAFF']), async (req, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: 'CMS_SOCIAL_LINKS' }
+    });
+    res.json(config ? JSON.parse(config.value) : []);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/social-links', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const data = socialLinkSchema.parse(req.body);
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'CMS_SOCIAL_LINKS' } });
+    let items: any[] = config ? JSON.parse(config.value) : [];
+    
+    if (data.id) {
+      items = items.map(item => item.id === data.id ? { ...item, ...data, updatedAt: new Date().toISOString() } : item);
+    } else {
+      items.push({ ...data, id: Math.random().toString(36).substring(2, 9), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    }
+
+    await prisma.systemConfig.upsert({
+      where: { key: 'CMS_SOCIAL_LINKS' },
+      update: { value: JSON.stringify(items) },
+      create: { key: 'CMS_SOCIAL_LINKS', value: JSON.stringify(items) }
+    });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/social-links/:id', authenticate, authorize(['ADMIN', 'STAFF']), async (req: AuthRequest, res) => {
+  try {
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'CMS_SOCIAL_LINKS' } });
+    if (config) {
+      let items: any[] = JSON.parse(config.value);
+      items = items.filter(item => item.id !== req.params.id);
+      await prisma.systemConfig.update({
+        where: { key: 'CMS_SOCIAL_LINKS' },
+        data: { value: JSON.stringify(items) }
+      });
+    }
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 export default router;

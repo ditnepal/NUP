@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Plus, Search, Edit2, Trash2, Eye, FileText, Globe, CheckCircle, Clock, AlertCircle, X, Save, Filter, User, Calendar, ShieldAlert, Image as ImageIcon, Layout, Type, Link, List, Info, ChevronRight, Check } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, FileText, Globe, CheckCircle, Clock, AlertCircle, X, Save, Filter, User, Calendar, ShieldAlert, Image as ImageIcon, Layout, Type, Link, List, Info, ChevronRight, Check, Zap } from 'lucide-react';
 import { safeFormat } from '../lib/date';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
@@ -19,14 +19,20 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
     { id: 'pages', permission: { module: 'CMS', action: 'VIEW' } },
     { id: 'posts', permission: { module: 'CMS', action: 'VIEW' } },
     { id: 'sections', permission: { module: 'CMS', action: 'VIEW' } },
+    { id: 'navigation', permission: { module: 'CMS', action: 'VIEW' } },
+    { id: 'footer-links', permission: { module: 'CMS', action: 'VIEW' } },
+    { id: 'social-links', permission: { module: 'CMS', action: 'VIEW' } },
   ].filter(tab => can(tab.permission.module as any, tab.permission.action as any));
 
   const [pages, setPages] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
+  const [navigation, setNavigation] = useState<any[]>([]);
+  const [footerLinks, setFooterLinks] = useState<any[]>([]);
+  const [socialLinks, setSocialLinks] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pages' | 'posts' | 'sections'>(
+  const [activeTab, setActiveTab] = useState<'pages' | 'posts' | 'sections' | 'navigation' | 'footer-links' | 'social-links'>(
     (availableTabs[0]?.id as any) || 'pages'
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,6 +66,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
     categoryId: '',
     featuredImage: '',
     decisionNote: '',
+    placement: 'HIDDEN',
   });
 
   useEffect(() => {
@@ -76,9 +83,18 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
       } else if (activeTab === 'posts') {
         const postsData = await api.get('/cms/posts');
         setPosts(postsData);
-      } else {
+      } else if (activeTab === 'sections') {
         const sectionsData = await api.get('/cms/sections');
         setSections(sectionsData);
+      } else if (activeTab === 'navigation') {
+        const navData = await api.get('/cms/navigation');
+        setNavigation(navData);
+      } else if (activeTab === 'footer-links') {
+        const footerData = await api.get('/cms/footer-links');
+        setFooterLinks(footerData);
+      } else if (activeTab === 'social-links') {
+        const socialData = await api.get('/cms/social-links');
+        setSocialLinks(socialData);
       }
     } catch (error: any) {
       console.error('Error fetching CMS data:', error);
@@ -125,10 +141,14 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
         seoDescription: item.seoDescription || '',
         seoKeywords: item.seoKeywords || '',
         publishedAt: item.publishedAt ? new Date(item.publishedAt).toISOString().split('T')[0] : '',
-        // Section specific
+        // Section/Shell specific
         isEnabled: item.isEnabled ?? true,
         order: item.order ?? 0,
+        label: item.label || '',
+        url: item.url || '',
+        platform: item.platform || '',
         decisionNote: '',
+        placement: item.placement || 'HIDDEN',
       });
     } else {
       setEditingItem(null);
@@ -151,7 +171,11 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
         featuredImage: '',
         isEnabled: true,
         order: 0,
+        label: '',
+        url: '',
+        platform: '',
         decisionNote: '',
+        placement: 'HIDDEN',
       });
     }
     setError(null);
@@ -197,7 +221,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
   const handleDelete = async (id: string) => {
     try {
       await api.delete(`/cms/${activeTab}/${id}`, { data: { decisionNote: deleteNote } });
-      toast.success(`${activeTab === 'pages' ? 'Page' : activeTab === 'posts' ? 'Post' : 'Section'} deleted successfully`);
+      toast.success(`${activeTab.replace('-', ' ')} deleted successfully`);
       setDeleteConfirm(null);
       setDeleteNote('');
       fetchCmsData();
@@ -228,8 +252,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
     setError(null);
 
     try {
-      const endpoint = activeTab === 'pages' ? '/cms/pages' : 
-                       activeTab === 'posts' ? '/cms/posts' : '/cms/sections';
+      const endpoint = `/cms/${activeTab}`;
       
       // Validate JSON for sections
       if (activeTab === 'sections') {
@@ -246,7 +269,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
       if (editingItem) payload.id = editingItem.id;
 
       await api.post(endpoint, payload);
-      toast.success(`${activeTab === 'pages' ? 'Page' : activeTab === 'posts' ? 'Post' : 'Section'} ${editingItem ? 'updated' : 'created'} successfully`);
+      toast.success(`${activeTab.replace('-', ' ')} ${editingItem ? 'updated' : 'created'} successfully`);
       setIsModalOpen(false);
       fetchCmsData();
     } catch (err: any) {
@@ -258,12 +281,23 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
     }
   };
 
-  const filteredItems = ((activeTab === 'pages' ? pages : activeTab === 'posts' ? posts : sections) || []).filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (item.slug && item.slug.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = activeTab === 'sections' ? true : (statusFilter === 'ALL' || item.status === statusFilter);
-    return matchesSearch && matchesStatus;
-  });
+  const filteredItems = (() => {
+    const items = activeTab === 'pages' ? pages : 
+                  activeTab === 'posts' ? posts : 
+                  activeTab === 'sections' ? sections : 
+                  activeTab === 'navigation' ? navigation : 
+                  activeTab === 'footer-links' ? footerLinks : socialLinks;
+    
+    return (items || []).filter(item => {
+      const title = item.title || item.label || item.platform || '';
+      const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (item.slug && item.slug.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesStatus = (activeTab === 'sections' || activeTab === 'navigation' || activeTab === 'footer-links' || activeTab === 'social-links') 
+                           ? true 
+                           : (statusFilter === 'ALL' || item.status === statusFilter);
+      return matchesSearch && matchesStatus;
+    });
+  })();
 
   return (
     <div className="p-6">
@@ -278,7 +312,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
             className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 font-bold"
           >
             <Plus size={20} />
-            Create New {activeTab === 'pages' ? 'Page' : activeTab === 'posts' ? 'Post' : 'Section'}
+            Create New {activeTab === 'pages' ? 'Page' : activeTab === 'posts' ? 'Post' : activeTab === 'sections' ? 'Section' : activeTab === 'navigation' ? 'Nav Item' : activeTab === 'footer-links' ? 'Footer Link' : 'Social Link'}
           </button>
         )}
       </div>
@@ -323,31 +357,18 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-        <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
-          <button
-            onClick={() => setActiveTab('pages')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-              activeTab === 'pages' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Pages
-          </button>
-          <button
-            onClick={() => setActiveTab('posts')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-              activeTab === 'posts' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Posts
-          </button>
-          <button
-            onClick={() => setActiveTab('sections')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-              activeTab === 'sections' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Homepage Sections
-          </button>
+        <div className="flex bg-gray-100 p-1 rounded-xl w-fit overflow-x-auto max-w-full">
+          {availableTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                activeTab === tab.id ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.id.charAt(0).toUpperCase() + tab.id.slice(1).replace('-', ' ')}
+            </button>
+          ))}
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
@@ -408,12 +429,12 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mr-3 flex-shrink-0">
-                        <FileText size={20} />
+                        {activeTab === 'social-links' ? <Globe size={20} /> : activeTab === 'navigation' || activeTab === 'footer-links' ? <Link size={20} /> : <FileText size={20} />}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-gray-900 truncate">{item.title}</div>
+                        <div className="font-bold text-gray-900 truncate">{item.title || item.label || item.platform}</div>
                         <div className="text-xs text-gray-500 font-mono truncate">
-                          {activeTab === 'sections' ? item.type : `/${item.slug}`}
+                          {activeTab === 'sections' ? item.type : item.slug ? `/${item.slug}` : item.url}
                         </div>
                       </div>
                     </div>
@@ -536,46 +557,142 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
               <div className="space-y-6">
                 <div className="border-b border-slate-100 pb-4">
                   <h3 className="text-lg font-bold text-slate-800 font-mono uppercase tracking-tight">
-                    {activeTab === 'sections' ? 'Section Configuration' : 'General Information'}
+                    {activeTab === 'sections' ? 'Section Configuration' : 
+                     activeTab === 'navigation' ? 'Navigation Item' :
+                     activeTab === 'footer-links' ? 'Footer Link' :
+                     activeTab === 'social-links' ? 'Social Link' : 'General Information'}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {activeTab === 'sections' ? 'Configure the structure and behavior of this homepage section.' : `Basic details about your ${activeTab === 'pages' ? 'page' : 'post'}.`}
+                    {activeTab === 'sections' ? 'Configure the structure and behavior of this homepage section.' : 
+                     activeTab === 'navigation' ? 'Manage a main navigation menu item.' :
+                     activeTab === 'footer-links' ? 'Manage a link in the site footer.' :
+                     activeTab === 'social-links' ? 'Manage a social media profile link.' :
+                     `Basic details about your ${activeTab === 'pages' ? 'page' : 'post'}.`}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Title <span className="text-rose-500">*</span></label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.title}
-                      onChange={(e) => activeTab === 'sections' ? setFormData({ ...formData, title: e.target.value }) : handleTitleChange(e.target.value)}
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                      placeholder={activeTab === 'sections' ? "e.g. Featured News" : "e.g. About Our Party"}
-                    />
-                    <p className="text-[10px] text-slate-400 mt-1">The main headline for this content.</p>
-                  </div>
+                  {(activeTab === 'pages' || activeTab === 'posts' || activeTab === 'sections') && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Title <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.title}
+                        onChange={(e) => activeTab === 'sections' ? setFormData({ ...formData, title: e.target.value }) : handleTitleChange(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                        placeholder={activeTab === 'sections' ? "e.g. Featured News" : "e.g. About Our Party"}
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">The main headline for this content.</p>
+                    </div>
+                  )}
 
-                  {activeTab !== 'sections' && (
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Slug <span className="text-rose-500">*</span></label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">/</span>
+                  {(activeTab === 'navigation' || activeTab === 'footer-links') && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Label <span className="text-rose-500">*</span></label>
                         <input
                           type="text"
                           required
-                          value={formData.slug}
-                          onChange={(e) => {
-                            setFormData({ ...formData, slug: e.target.value });
-                            setSlugManuallyEdited(true);
-                          }}
-                          className="w-full pl-6 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono text-sm"
-                          placeholder="about-us"
+                          value={formData.label}
+                          onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                          className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                          placeholder="e.g. About Us"
                         />
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-1">The URL-friendly name. Auto-generated from title if left empty.</p>
-                    </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">URL <span className="text-rose-500">*</span></label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.url}
+                          onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                          className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono text-sm"
+                          placeholder="/about or https://..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Display Order</label>
+                        <input
+                          type="number"
+                          value={formData.order}
+                          onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                          className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {activeTab === 'social-links' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Platform <span className="text-rose-500">*</span></label>
+                        <select
+                          required
+                          value={formData.platform}
+                          onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                          className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                        >
+                          <option value="">Select Platform</option>
+                          <option value="Facebook">Facebook</option>
+                          <option value="Twitter">Twitter</option>
+                          <option value="Instagram">Instagram</option>
+                          <option value="YouTube">YouTube</option>
+                          <option value="LinkedIn">LinkedIn</option>
+                          <option value="TikTok">TikTok</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">URL <span className="text-rose-500">*</span></label>
+                        <input
+                          type="url"
+                          required
+                          value={formData.url}
+                          onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                          className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono text-sm"
+                          placeholder="https://facebook.com/..."
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {(activeTab === 'pages' || activeTab === 'posts') && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Slug <span className="text-rose-500">*</span></label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">/</span>
+                          <input
+                            type="text"
+                            required
+                            value={formData.slug}
+                            onChange={(e) => {
+                              setFormData({ ...formData, slug: e.target.value });
+                              setSlugManuallyEdited(true);
+                            }}
+                            className="w-full pl-6 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono text-sm"
+                            placeholder="about-us"
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1">The URL-friendly name. Auto-generated from title if left empty.</p>
+                      </div>
+                      
+                      {activeTab === 'pages' && (
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Menu Placement</label>
+                          <select
+                            value={formData.placement || 'HIDDEN'}
+                            onChange={(e) => setFormData({ ...formData, placement: e.target.value })}
+                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                          >
+                            <option value="HIDDEN">Keep Hidden (No Menu)</option>
+                            <option value="MAIN_MENU">Show in Main Menu</option>
+                            <option value="FOOTER">Show in Footer</option>
+                          </select>
+                          <p className="text-[10px] text-slate-400 mt-1">Where this page should appear in the public portal.</p>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {activeTab === 'sections' && (
@@ -734,7 +851,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                   )}
                 </div>
 
-                {activeTab !== 'sections' && (
+                {(activeTab === 'pages' || activeTab === 'posts') && (
                   <div className="md:col-span-2 border-t border-slate-100 pt-8">
                     <div className="mb-4">
                       <h3 className="text-lg font-bold text-slate-800 font-mono uppercase tracking-tight">SEO Settings</h3>
@@ -774,18 +891,19 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                   </div>
                 )}
 
-                <div className="md:col-span-2 border-t border-slate-100 pt-8">
-                  <div className="mb-4 flex justify-between items-end">
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-800 font-mono uppercase tracking-tight">
-                        {activeTab === 'sections' ? 'Section Builder' : 'Content Body'}
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        {activeTab === 'sections' 
-                          ? 'Configure the content for this section using the visual builder below.' 
-                          : `The main content of your ${activeTab === 'pages' ? 'page' : 'post'}. Markdown is supported.`}
-                      </p>
-                    </div>
+                {(activeTab === 'pages' || activeTab === 'posts' || activeTab === 'sections') && (
+                  <div className="md:col-span-2 border-t border-slate-100 pt-8">
+                    <div className="mb-4 flex justify-between items-end">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-800 font-mono uppercase tracking-tight">
+                          {activeTab === 'sections' ? 'Section Builder' : 'Content Body'}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {activeTab === 'sections' 
+                            ? 'Configure the content for this section using the visual builder below.' 
+                            : `The main content of your ${activeTab === 'pages' ? 'page' : 'post'}. Markdown is supported.`}
+                        </p>
+                      </div>
                     {activeTab !== 'sections' && (
                       <div className="flex bg-slate-100 p-1 rounded-lg">
                         <button
@@ -1005,6 +1123,7 @@ export const CmsAdmin: React.FC<CmsAdminProps> = ({ user }) => {
                     </>
                   )}
                 </div>
+              )}
 
                 <div className="pt-6 border-t border-slate-100">
                   <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">

@@ -20,18 +20,67 @@ export class CmsAdminService extends BaseService {
     isPinned?: boolean;
     publishedAt?: Date;
     decisionNote?: string;
+    placement?: 'MAIN_MENU' | 'FOOTER' | 'HIDDEN';
   }) {
-    const { id, decisionNote, ...rest } = data;
+    const { id, decisionNote, placement, ...rest } = data;
     const page = id 
       ? await this.db.cmsPage.update({ where: { id }, data: rest })
       : await this.db.cmsPage.create({ data: rest });
+
+    // Handle placement
+    if (placement) {
+      const pageUrl = `/pages/${page.slug}`;
+      const navConfig = await this.db.systemConfig.findUnique({ where: { key: 'CMS_NAVIGATION' } });
+      const footerConfig = await this.db.systemConfig.findUnique({ where: { key: 'CMS_FOOTER_LINKS' } });
+      
+      let navItems: any[] = navConfig ? JSON.parse(navConfig.value) : [];
+      let footerItems: any[] = footerConfig ? JSON.parse(footerConfig.value) : [];
+
+      // Remove from both first to ensure clean state
+      navItems = navItems.filter(item => item.url !== pageUrl);
+      footerItems = footerItems.filter(item => item.url !== pageUrl);
+
+      if (placement === 'MAIN_MENU') {
+        navItems.push({
+          id: Math.random().toString(36).substring(2, 9),
+          label: page.title,
+          url: pageUrl,
+          order: navItems.length,
+          status: page.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      } else if (placement === 'FOOTER') {
+        footerItems.push({
+          id: Math.random().toString(36).substring(2, 9),
+          label: page.title,
+          url: pageUrl,
+          order: footerItems.length,
+          status: page.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+
+      await this.db.systemConfig.upsert({
+        where: { key: 'CMS_NAVIGATION' },
+        update: { value: JSON.stringify(navItems) },
+        create: { key: 'CMS_NAVIGATION', value: JSON.stringify(navItems) }
+      });
+
+      await this.db.systemConfig.upsert({
+        where: { key: 'CMS_FOOTER_LINKS' },
+        update: { value: JSON.stringify(footerItems) },
+        create: { key: 'CMS_FOOTER_LINKS', value: JSON.stringify(footerItems) }
+      });
+    }
 
     await auditService.log({
       action: id ? 'CMS_PAGE_UPDATED' : 'CMS_PAGE_CREATED',
       userId: data.authorId,
       entityType: 'CmsPage',
       entityId: page.id,
-      details: { slug: data.slug, decisionNote }
+      details: { slug: data.slug, decisionNote, placement }
     });
 
     return page;

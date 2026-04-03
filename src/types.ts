@@ -802,3 +802,32 @@ export interface CommunicationProvider {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CmsNavigation {
+  id: string;
+  label: string;
+  url: string;
+  order: number;
+  status: 'DRAFT' | 'PUBLISHED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CmsFooterLink {
+  id: string;
+  label: string;
+  url: string;
+  order: number;
+  status: 'DRAFT' | 'PUBLISHED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CmsSocialLink {
+  id: string;
+  platform: string;
+  url: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  createdAt: string;
+  updatedAt: string;
+}
